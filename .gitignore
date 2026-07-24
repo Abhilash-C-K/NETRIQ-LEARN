@@ -1,0 +1,30 @@
+# Datasets and Large Data Files
+datasets/
+*.csv
+*.parquet
+*.paraquet
+*.pcap
+
+# Trained AI Models & Binary Serialized Artifacts
+models/
+*.pkl
+*.joblib
+
+# Python Bytecode and Environment Files
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# Logs and System Files
+logs/
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE Configuration
+.idea/
+.vscode/

@@ -1,15 +1,23 @@
-"""
-Custom exceptions for the NetrIQ system.
-"""
-
-class ModelLoadError(Exception):
-    """Raised when models, scalers, or encoders fail to load, or metadata is invalid/missing."""
+class NetriqException(Exception):
+    """Base exception for all NETRIQ custom errors."""
     pass
 
-class PredictionError(Exception):
-    """Raised when an error occurs during inference (e.g., model routing or execution failure)."""
-    pass
+# --- Auth & Security ---
+class InvalidCredentialsError(NetriqException): pass
+class AccountLockedError(NetriqException): pass
+class TokenExpiredError(NetriqException): pass
+class InvalidTokenError(NetriqException): pass
+class WeakPasswordError(NetriqException): pass
+class InsufficientPermissionError(NetriqException): pass
 
-class FeatureEncodingError(Exception):
-    """Raised when feature encoding fails and cannot be recovered."""
-    pass
+# --- Database ---
+class DatabaseConnectionError(NetriqException): pass
+class DocumentNotFoundError(NetriqException): pass
+
+# --- Response & Network ---
+class FirewallUnreachableError(NetriqException): pass
+class QuarantineFailedError(NetriqException): pass
+
+# --- API & Validation ---
+class ValidationError(NetriqException): pass
+class RateLimitExceededError(NetriqException): pass

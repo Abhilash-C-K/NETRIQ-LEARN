@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 from backend.utils.exceptions import NetriqException
 from backend.utils.logger import get_logger
@@ -64,6 +64,10 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 # --- Routers ---
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
+
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(analytics_router, prefix="/api/v1")

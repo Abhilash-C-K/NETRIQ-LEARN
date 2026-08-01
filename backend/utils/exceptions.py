@@ -21,3 +21,17 @@ class QuarantineFailedError(NetriqException): pass
 # --- API & Validation ---
 class ValidationError(NetriqException): pass
 class RateLimitExceededError(NetriqException): pass
+
+# --- AI & ML ---
+class PredictionError(NetriqException): pass
+class ModelLoadError(NetriqException): pass
+class FeatureEncodingError(NetriqException): pass
+
+# --- Response & Sandbox ---
+class SandboxRoutingError(NetriqException): pass
+class FirewallApiError(NetriqException): pass
+
+# --- Database & Backup ---
+class FatalRestoreError(NetriqException): pass
+class DuplicateKeyError(NetriqException): pass
+

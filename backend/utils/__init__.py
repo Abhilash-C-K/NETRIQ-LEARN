@@ -9,7 +9,8 @@ __all__ = [
     "CustomJSONEncoder",
     "NetriqException", "InvalidCredentialsError", "AccountLockedError", "TokenExpiredError", 
     "InvalidTokenError", "WeakPasswordError", "InsufficientPermissionError",
-    "DatabaseConnectionError", "DocumentNotFoundError",
-    "FirewallUnreachableError", "QuarantineFailedError",
-    "ValidationError", "RateLimitExceededError"
+    "DatabaseConnectionError", "DocumentNotFoundError", "DuplicateKeyError", "FatalRestoreError",
+    "FirewallUnreachableError", "QuarantineFailedError", "SandboxRoutingError", "FirewallApiError",
+    "ValidationError", "RateLimitExceededError",
+    "PredictionError", "ModelLoadError", "FeatureEncodingError"
 ]

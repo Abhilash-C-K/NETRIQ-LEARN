@@ -1,6 +1,9 @@
 import time
 import queue
 import threading
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 try:
     from scapy.all import sniff, IP, IPv6, TCP, UDP, ICMP
@@ -88,7 +91,7 @@ class PacketSniffer:
 
     def _sniff_loop(self):
         if not SCAPY_AVAILABLE:
-            print("[packet_sniffer] Error: Scapy library is not installed.")
+            logger.error("[packet_sniffer] Scapy is not installed. Cannot capture live packets.")
             return
 
         try:
@@ -100,7 +103,7 @@ class PacketSniffer:
                 stop_filter=lambda p: not self.is_running
             )
         except Exception as e:
-            print(f"[packet_sniffer] Error in sniff loop: {e}")
+            logger.error(f"[packet_sniffer] Sniff loop error: {e}")
 
     def start(self):
         if self.is_running:
@@ -108,13 +111,13 @@ class PacketSniffer:
         self.is_running = True
         self.sniffer_thread = threading.Thread(target=self._sniff_loop, daemon=True)
         self.sniffer_thread.start()
-        print(f"[packet_sniffer] Started packet capture on interface '{self.interface or 'default'}'.")
+        logger.info(f"[packet_sniffer] Started packet capture on interface '{self.interface or 'default'}'.")
 
     def stop(self):
         self.is_running = False
         if self.sniffer_thread and self.sniffer_thread.is_alive():
             self.sniffer_thread.join(timeout=2.0)
-        print("[packet_sniffer] Stopped packet capture.")
+        logger.info("[packet_sniffer] Stopped packet capture.")
 
     def get_packet(self, timeout=1.0):
         try:

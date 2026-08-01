@@ -111,6 +111,7 @@ class FlowBuilder:
     def __init__(self, idle_timeout_sec=3.0):
         self.idle_timeout_sec = idle_timeout_sec
         self.active_flows = {}
+        self.last_cleanup_time = time.time()
 
     def process_packet(self, pkt_info: dict) -> list:
         completed_flows = []
@@ -137,14 +138,17 @@ class FlowBuilder:
         if flags.get('FIN') or flags.get('RST'):
             completed_flows.append(self.active_flows.pop(key_tuple))
             
-        keys_to_remove = []
-        for k, f in list(self.active_flows.items()):
-            if k == key_tuple:
-                continue
-            if (now - f.last_time) >= self.idle_timeout_sec:
-                keys_to_remove.append(k)
-                
-        for k in keys_to_remove:
-            completed_flows.append(self.active_flows.pop(k))
+        # Periodic cleanup instead of per-packet (fixes O(n) issue)
+        if now - self.last_cleanup_time > (self.idle_timeout_sec / 2):
+            keys_to_remove = []
+            for k, f in list(self.active_flows.items()):
+                if k == key_tuple:
+                    continue
+                if (now - f.last_time) >= self.idle_timeout_sec:
+                    keys_to_remove.append(k)
+                    
+            for k in keys_to_remove:
+                completed_flows.append(self.active_flows.pop(k))
+            self.last_cleanup_time = now
             
         return completed_flows

@@ -4,11 +4,10 @@ from backend.utils.logger import get_logger
 from backend.auth.roles import Role
 from backend.websocket.broadcaster import broadcaster
 from backend.websocket.events import MonitorStatusEvent
-
-# We mock live_monitor.monitor_service since it's outside this prompt's scope
-# from backend.live_monitor.monitor_service import monitor_service
+from backend.live_monitor.monitor_service import monitor_service as live_monitor
 
 logger = get_logger(__name__)
+
 
 class MonitoringService:
     def __init__(self):
@@ -21,12 +20,11 @@ class MonitoringService:
             if self._is_running:
                 logger.info("Monitoring already running.")
                 return True
-                
-            # await monitor_service.start()
+
+            await live_monitor.start()
             self._is_running = True
             logger.info("Live Monitoring Pipeline Started.")
-            
-            # Broadcast status change
+
             event = MonitorStatusEvent(payload={"status": "started"})
             await broadcaster.publish(event)
             return True
@@ -37,14 +35,14 @@ class MonitoringService:
             if not self._is_running:
                 logger.info("Monitoring already stopped.")
                 return True
-                
-            # await monitor_service.stop()
+
+            await live_monitor.stop()
             self._is_running = False
             logger.info("Live Monitoring Pipeline Stopped.")
-            
-            # Broadcast status change
+
             event = MonitorStatusEvent(payload={"status": "stopped"})
             await broadcaster.publish(event)
             return True
+
 
 monitoring_service = MonitoringService()

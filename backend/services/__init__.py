@@ -7,6 +7,7 @@ from backend.services.notification_service import notification_service, Notifica
 from backend.services.predict_service import predict_service, PredictService
 from backend.services.report_service import ReportService
 from backend.services.settings_service import settings_service, SettingsService
+from backend.services.user_service import user_service, UserService
 
 __all__ = [
     "analytics_service", "AnalyticsService",
@@ -17,5 +18,6 @@ __all__ = [
     "notification_service", "NotificationService",
     "predict_service", "PredictService",
     "ReportService",
-    "settings_service", "SettingsService"
+    "settings_service", "SettingsService",
+    "user_service", "UserService"
 ]

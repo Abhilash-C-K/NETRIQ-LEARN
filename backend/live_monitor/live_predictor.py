@@ -5,23 +5,33 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(_
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
-from backend.predictor import get_predictor
+from backend.ai.predictor import Predictor
+from backend.ai.contracts import TrafficType
 
 class LivePredictor:
     """
-    Step 4: Passes extracted numerical features to NetrIQ model manager and returns prediction, confidence, and threat level.
+    Step 4: Passes extracted numerical features to NetrIQ AI predictor and returns prediction, confidence, and threat level.
     """
     def __init__(self, dataset_name="cicids2017"):
+        # Ported from backend/predictor.py on consolidation:
+        # Centralized inference via the backend/ai/ module.
         self.dataset_name = dataset_name
-        self.predictor = get_predictor(dataset_name)
+        self._predictor = None  # Lazy-initialized on first predict() call
+
+    def _get_predictor(self) -> Predictor:
+        if self._predictor is None:
+            self._predictor = Predictor()
+        return self._predictor
 
     def predict(self, feature_dict: dict) -> dict:
-        result = self.predictor.predict_flow(feature_dict)
+        # Route to NETWORK model (replaces old dataset-specific router)
+        result = self._get_predictor().predict(feature_dict, traffic_type=TrafficType.NETWORK)
+        
         return {
             "dataset": self.dataset_name,
-            "prediction": result["prediction"],
-            "confidence": round(result["confidence"] * 100, 2),
-            "threat_level": result["threat_level"],
-            "is_anomaly": result["is_anomaly"],
-            "class_id": result["class_id"]
+            "prediction": "ANOMALY" if result.verdict else "BENIGN",
+            "confidence": round(result.confidence, 2),
+            "threat_level": result.risk_category.value.upper(),
+            "is_anomaly": result.verdict,
+            "class_id": 1 if result.verdict else 0
         }

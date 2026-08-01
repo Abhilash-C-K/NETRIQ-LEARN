@@ -1,9 +1,15 @@
+from dotenv import load_dotenv
+load_dotenv()  # Load .env BEFORE any module-level os.getenv() calls
+
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.exceptions import RequestValidationError
 from backend.utils.exceptions import NetriqException
 from backend.utils.logger import get_logger
+from backend.database.database import DatabaseManager
+from backend.response.response_engine import ResponseEngine
 
 # Import Middlewares
 from backend.middleware.logging import LoggingMiddleware
@@ -29,7 +35,26 @@ from backend.api.websocket import router as websocket_router
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="NETRIQ API", version="1.0.0")
+# Module-level engine instance to be closed on shutdown
+_response_engine = ResponseEngine()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Startup and shutdown lifecycle manager."""
+    # --- STARTUP ---
+    logger.info("Starting NETRIQ API...")
+    await DatabaseManager.connect_db()
+    logger.info("Database connected.")
+    yield
+    # --- SHUTDOWN ---
+    logger.info("Shutting down NETRIQ API...")
+    await DatabaseManager.close_db()
+    await _response_engine.close()
+    logger.info("Cleanup complete.")
+
+
+app = FastAPI(title="NETRIQ API", version="1.0.0", lifespan=lifespan)
 
 # --- Middlewares ---
 # Order matters: Executed from bottom to top of declaration, except CORSMiddleware
@@ -44,7 +69,6 @@ app.add_middleware(LoggingMiddleware)
 @app.exception_handler(NetriqException)
 async def netriq_exception_handler(request: Request, exc: NetriqException):
     logger.error(f"Domain Error: {exc.__class__.__name__}: {str(exc)}")
-    # Default to 400 for domain errors, specific ones can be mapped differently
     status_code = 400
     if exc.__class__.__name__ in ["InvalidCredentialsError", "TokenExpiredError", "InvalidTokenError"]:
         status_code = 401
@@ -80,7 +104,7 @@ app.include_router(response_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
-app.include_router(websocket_router) # WebSockets typically sit at root /ws
+app.include_router(websocket_router)  # WebSockets sit at root /ws
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

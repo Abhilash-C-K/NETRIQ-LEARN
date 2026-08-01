@@ -1,5 +1,6 @@
 import time
 import os
+import hashlib
 from typing import Dict, Any
 
 from backend.utils.logger import get_logger
@@ -31,6 +32,11 @@ class AuthService:
     Owns all business logic for authentication.
     Note: Token extraction from HTTP headers is handled separately by middleware/auth.py.
     """
+    @staticmethod
+    def _hash_token(token: str) -> str:
+        """SHA-256 hash a token before storing — never store raw tokens in DB."""
+        return hashlib.sha256(token.encode()).hexdigest()
+
     async def login(self, email: str, password: str) -> Dict[str, str]:
         """Validates credentials, enforces lockout, issues tokens."""
         # 1. Fetch user by email
@@ -73,10 +79,8 @@ class AuthService:
         access_token = create_access_token(user_id, role)
         refresh_token = create_refresh_token(user_id)
         
-        # Store refresh token statefully for revocation
-        # We store the active refresh token hash or just the token to invalidate later
-        # For this implementation, we store the current refresh token directly.
-        await users_repo.update(user_id, {"active_refresh_token": refresh_token})
+        # Store hashed refresh token for revocation — never store plaintext
+        await users_repo.update(user_id, {"active_refresh_token_hash": self._hash_token(refresh_token)})
         
         logger.info(f"Successful login for user: {email}")
         return {
@@ -130,14 +134,14 @@ class AuthService:
         if not user or not user.get("is_active", False):
             raise InvalidTokenError("User is inactive or deleted.")
             
-        stored_refresh_token = user.get("active_refresh_token")
+        stored_hash = user.get("active_refresh_token_hash")
         
-        if stored_refresh_token != old_refresh_token:
+        if stored_hash != self._hash_token(old_refresh_token):
             # Token Rotation Security Alert: 
             # A validly signed old refresh token was used, meaning it might have been stolen and reused.
             # We must revoke ALL access by clearing the stored token.
             logger.critical(f"Token rotation anomaly detected for user {user_id}. Revoking sessions.")
-            await users_repo.update(user_id, {"active_refresh_token": None})
+            await users_repo.update(user_id, {"active_refresh_token_hash": None})
             raise InvalidTokenError("Compromised refresh token detected. Please login again.")
             
         # 3. Issue new tokens (Rotation)
@@ -145,8 +149,8 @@ class AuthService:
         new_access_token = create_access_token(user_id, role)
         new_refresh_token = create_refresh_token(user_id)
         
-        # Update stored refresh token
-        await users_repo.update(user_id, {"active_refresh_token": new_refresh_token})
+        # Update stored refresh token hash (rotation)
+        await users_repo.update(user_id, {"active_refresh_token_hash": self._hash_token(new_refresh_token)})
         
         logger.info(f"Token refreshed successfully for user: {user_id}")
         return {
@@ -158,7 +162,7 @@ class AuthService:
     async def logout(self, user_id: str) -> bool:
         """Invalidates the active refresh token."""
         try:
-            await users_repo.update(user_id, {"active_refresh_token": None})
+            await users_repo.update(user_id, {"active_refresh_token_hash": None})
             logger.info(f"User logged out successfully: {user_id}")
             return True
         except Exception as e:

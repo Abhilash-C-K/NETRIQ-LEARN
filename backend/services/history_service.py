@@ -20,3 +20,5 @@ class HistoryService:
         except Exception as e:
             logger.error(f"Failed to fetch raw logs: {e}")
             return []
+
+history_service = HistoryService()

@@ -28,8 +28,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             client_ip = request.client.host if request.client else "unknown"
             path = request.url.path
             
-            # Determine if this is a strict auth route
-            is_auth = path.startswith("/auth/")
+            # Determine if this is a strict auth route (actual prefix is /api/v1/auth/)
+            is_auth = path.startswith("/api/v1/auth/")
             limit = self.auth_max if is_auth else self.max_requests
             window = self.auth_window if is_auth else self.window_seconds
             

@@ -2,6 +2,7 @@ from typing import Dict, Any
 from backend.utils.logger import get_logger
 from backend.auth.roles import Role
 from backend.ai.contracts import PredictionResult
+from backend.utils.exceptions import InsufficientPermissionError
 
 logger = get_logger(__name__)
 
@@ -12,7 +13,7 @@ class PredictService:
         Defense in depth: only admins or analysts should test models manually.
         """
         if role == Role.VIEWER:
-            raise Exception("Viewers cannot perform manual inference testing.")
+            raise InsufficientPermissionError("Viewers cannot perform manual inference testing.")
             
         # Stub for calling ai.predictor
         # return await predictor.predict(features)

@@ -43,6 +43,7 @@ class DatabaseManager:
                 await cls.client.server_info()
                 cls.db = cls.client[MONGO_DB_NAME]
                 logger.info(f"Successfully connected to MongoDB database: {MONGO_DB_NAME}")
+                await cls._ensure_indexes()
                 return
             except (ConnectionFailure, ServerSelectionTimeoutError) as e:
                 logger.error(f"MongoDB connection failed: {e}")
@@ -70,6 +71,18 @@ class DatabaseManager:
         if cls.db is None:
             raise DatabaseConnectionError("Database is not connected. Call connect_db() first.")
         return cls.db
+
+    @classmethod
+    async def _ensure_indexes(cls):
+        """Creates compound and unique database indexes for performance."""
+        try:
+            if cls.db is not None:
+                await cls.db["users"].create_index("email", unique=True)
+                await cls.db["threats"].create_index([("timestamp", -1), ("severity", 1)])
+                await cls.db["incidents"].create_index([("created_at", -1), ("status", 1)])
+                logger.info("MongoDB index initialization complete.")
+        except Exception as e:
+            logger.warning(f"Database index creation warning: {e}")
 
     @classmethod
     async def health_check(cls) -> bool:

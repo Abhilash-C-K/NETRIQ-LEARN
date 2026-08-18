@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
 from backend.auth.jwt_handler import verify_token
 from backend.auth.exceptions import TokenExpiredError, InvalidTokenError
@@ -13,16 +14,21 @@ router = APIRouter(tags=["websocket"])
 async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint. Auth is performed via first-message handshake:
-    Client must send: {"type": "auth", "token": "<access_token>"} as the first message.
-    This avoids leaking tokens in URLs, server logs, and browser history.
+    Client must send: {"type": "auth", "token": "<access_token>"} within 5 seconds.
+    This prevents token leakage in URLs/logs and protects against socket exhaustion DoS.
     """
     # Accept connection first (needed to send close codes if auth fails)
     await websocket.accept()
 
-    # Wait for auth handshake message
+    # Wait for auth handshake message with a strict 5.0-second timeout
     try:
-        auth_msg = await websocket.receive_json()
+        auth_msg = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
+    except asyncio.TimeoutError:
+        logger.warning("WebSocket auth failed: Handshake timed out after 5 seconds")
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+        return
     except Exception:
+        logger.warning("WebSocket auth failed: Invalid JSON in handshake")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 

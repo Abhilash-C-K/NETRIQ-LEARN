@@ -4,7 +4,7 @@ from backend.schemas.user import UserPublic, UserUpdateReq
 from backend.auth.roles import Capabilities
 from backend.auth.permissions import require_permission
 from backend.services.user_service import user_service
-from backend.database.exceptions import DocumentNotFoundError
+from backend.utils.exceptions import DocumentNotFoundError
 
 router = APIRouter(prefix="/users", tags=["users"])
 

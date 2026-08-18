@@ -12,6 +12,11 @@ class IncidentService:
     async def list(self, role: Role, limit: int = 100) -> List[Dict[str, Any]]:
         return await incidents_repo.list(limit=limit)
 
+    async def update(self, incident_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
+        updates["updated_at"] = time.time()
+        await incidents_repo.update(incident_id, updates)
+        return await incidents_repo.get(incident_id)
+
     async def create_from_response_action(self, target_ip: str, prediction: PredictionResult, action: Action, success: bool):
         """
         Triggered by ResponseEngine when an enforcement action is taken.

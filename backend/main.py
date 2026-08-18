@@ -57,13 +57,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="NETRIQ API", version="1.0.0", lifespan=lifespan)
 
 # --- Middlewares ---
-# Order matters: Executed from bottom to top of declaration, except CORSMiddleware
-# Logging is first to catch everything
-app.add_middleware(RateLimitMiddleware)
-app.add_middleware(AuthMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
-add_cors_middleware(app)
+# Starlette executes middleware in reverse order of addition.
+# Sequence below ensures execution order: RateLimit -> Auth -> SecurityHeaders -> CORS -> Logging
 app.add_middleware(LoggingMiddleware)
+add_cors_middleware(app)
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(AuthMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 # --- Exception Handlers ---
 @app.exception_handler(NetriqException)

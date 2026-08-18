@@ -13,6 +13,7 @@ logger = get_logger(__name__)
 FIREWALL_ADAPTER_TYPE = os.getenv("FIREWALL_ADAPTER_TYPE", "noop").lower()
 FIREWALL_API_URL = os.getenv("FIREWALL_API_URL", "https://firewall.local/api/v1")
 FIREWALL_API_KEY = os.getenv("FIREWALL_API_KEY", "secret")
+FIREWALL_FAIL_MODE = os.getenv("FIREWALL_FAIL_MODE", "fail_open").lower()  # Options: fail_open, fail_closed
 
 class FirewallAdapter(ABC):
     @abstractmethod
@@ -28,6 +29,10 @@ class FirewallAdapter(ABC):
     @abstractmethod
     async def get_status(self) -> Dict[str, Any]:
         """Checks the health and status of the external firewall."""
+        pass
+
+    async def close(self):
+        """Cleanup resources."""
         pass
 
 class GenericRESTFirewallAdapter(FirewallAdapter):

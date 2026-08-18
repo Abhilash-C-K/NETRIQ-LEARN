@@ -135,3 +135,8 @@ class Predictor:
         """Minimal hook to log data distribution for future drift analysis."""
         # TODO: Implement drift tracking (e.g., streaming features to a Kafka topic or drift DB)
         pass
+
+    async def predict_async(self, raw_features: Dict[str, Any], traffic_type: TrafficType, anomaly_baseline: float = 0.0) -> PredictionResult:
+        """Async wrapper around sync inference method using asyncio.to_thread to keep event loop unblocked."""
+        import asyncio
+        return await asyncio.to_thread(self.predict, raw_features, traffic_type, anomaly_baseline)

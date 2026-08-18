@@ -2,15 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from backend.schemas.response import ReverseActionReq, MessageResponse
 from backend.auth.roles import Capabilities
 from backend.auth.permissions import require_permission
-from backend.response.response_engine import ResponseEngine
+from backend.services.response_service import response_service
 
 router = APIRouter(prefix="/response", tags=["response"])
-response_engine = ResponseEngine()
 
 @router.post("/reverse", response_model=MessageResponse, dependencies=[Depends(require_permission(Capabilities.REVERSE_RESPONSE_ACTION))])
 async def reverse_action(req: ReverseActionReq):
     try:
-        success = await response_engine.reverse_action(action=req.action, target_ip=req.target_ip, target_mac=req.target_mac)
+        success = await response_service.reverse_action(action=req.action, target_ip=req.target_ip, target_mac=req.target_mac)
         if success:
             return MessageResponse(message="Action reversed successfully.", success=True)
         else:

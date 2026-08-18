@@ -28,3 +28,8 @@ Thumbs.db
 # IDE Configuration
 .idea/
 .vscode/
+
+# Environment Variables
+.env
+*.env
+backend/.env

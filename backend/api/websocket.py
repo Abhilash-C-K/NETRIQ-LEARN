@@ -17,9 +17,6 @@ async def websocket_endpoint(websocket: WebSocket):
     Client must send: {"type": "auth", "token": "<access_token>"} within 5 seconds.
     This prevents token leakage in URLs/logs and protects against socket exhaustion DoS.
     """
-    # Accept connection first (needed to send close codes if auth fails)
-    await websocket.accept()
-
     # Wait for auth handshake message with a strict 5.0-second timeout
     try:
         auth_msg = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)

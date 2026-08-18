@@ -39,7 +39,11 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             async with self._lock:
                 # Cleanup old entries to prevent memory leak
                 if len(self._cache) > 10000:
-                    self._cache.clear() # Primitive but safe fail-open fallback
+                    expired_keys = [k for k, v in self._cache.items() if now > v["reset_time"]]
+                    for k in expired_keys:
+                        del self._cache[k]
+                    if len(self._cache) > 10000:
+                        self._cache.clear() # Fail-open fallback if still oversized
                 
                 record = self._cache.get(key, {"count": 0, "reset_time": now + window})
                 

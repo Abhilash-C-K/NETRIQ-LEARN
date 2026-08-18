@@ -9,7 +9,6 @@ from backend.auth.exceptions import (
     AccountLockedError,
     TokenExpiredError,
     InvalidTokenError,
-    InsufficientPermissionError
 )
 from backend.auth.password import verify_password, hash_password, validate_password_policy
 from backend.auth.jwt_handler import (
@@ -98,7 +97,8 @@ class AuthService:
         # Check if email exists
         existing = await users_repo.list({"email": email}, limit=1)
         if existing:
-            raise InvalidCredentialsError("Email already registered.")
+            from backend.utils.exceptions import DuplicateKeyError
+            raise DuplicateKeyError("Email already registered.")
             
         new_user = {
             "email": email,

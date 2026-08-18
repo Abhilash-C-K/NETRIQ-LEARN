@@ -1,3 +1,4 @@
+import os
 import logging
 import json
 import sys
@@ -28,7 +29,7 @@ def get_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     
     if not logger.handlers:
-        logger.setLevel(logging.INFO) # Ideally configurable via os.getenv("LOG_LEVEL")
+        logger.setLevel(os.getenv("LOG_LEVEL", "INFO").upper())
         
         handler = logging.StreamHandler(sys.stdout)
         handler.setFormatter(JSONFormatter())

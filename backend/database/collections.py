@@ -25,13 +25,16 @@ class BaseRepository:
             doc["id"] = str(doc.pop("_id"))
         return doc
 
-    async def get(self, doc_id: str) -> dict:
-        """Retrieves a single document by ID."""
+    def _parse_id(self, doc_id: str) -> ObjectId:
+        """Parses ObjectId or raises DocumentNotFoundError."""
         try:
-            obj_id = ObjectId(doc_id)
+            return ObjectId(doc_id)
         except Exception:
             raise DocumentNotFoundError(f"Invalid ID format: {doc_id}")
-            
+
+    async def get(self, doc_id: str) -> dict:
+        """Retrieves a single document by ID."""
+        obj_id = self._parse_id(doc_id)
         doc = await self.collection.find_one({"_id": obj_id})
         if not doc:
             raise DocumentNotFoundError(f"Document with ID {doc_id} not found in {self.collection_name}")
@@ -51,11 +54,7 @@ class BaseRepository:
 
     async def update(self, doc_id: str, data: dict) -> bool:
         """Updates a document by ID."""
-        try:
-            obj_id = ObjectId(doc_id)
-        except Exception:
-            raise DocumentNotFoundError(f"Invalid ID format: {doc_id}")
-
+        obj_id = self._parse_id(doc_id)
         clean_data = self._prepare_doc(data)
         clean_data.pop("id", None)
         clean_data.pop("_id", None)
@@ -76,11 +75,7 @@ class BaseRepository:
 
     async def delete(self, doc_id: str) -> bool:
         """Deletes a document by ID."""
-        try:
-            obj_id = ObjectId(doc_id)
-        except Exception:
-            raise DocumentNotFoundError(f"Invalid ID format: {doc_id}")
-
+        obj_id = self._parse_id(doc_id)
         result = await self.collection.delete_one({"_id": obj_id})
         if result.deleted_count == 0:
             raise DocumentNotFoundError(f"Document with ID {doc_id} not found in {self.collection_name}")
@@ -118,6 +113,27 @@ class ThreatRepository(BaseRepository):
         docs = await cursor.to_list(length=100)
         return [self._format_out(doc) for doc in docs]
 
+class PredictionsRepository(BaseRepository):
+    """
+    Stores raw prediction records (raw_features + fusion metadata) for lazy on-demand
+    explainability. Each document corresponds to one inference call.
+
+    DATA RETENTION NOTE: Documents contain raw_features (71 network flow statistics).
+    Apply TTL index or anonymisation policy before production deployment.
+    See PredictionRecord docstring in contracts.py.
+    """
+    def __init__(self):
+        super().__init__("predictions")
+
+    async def store_prediction(self, record: dict) -> str:
+        """Inserts a prediction record and returns its string ID."""
+        return await self.create(record)
+
+    async def get_prediction(self, prediction_id: str) -> dict:
+        """Retrieves a prediction record by ID. Raises DocumentNotFoundError if absent."""
+        return await self.get(prediction_id)
+
+
 # Expose instantiated repositories to be imported by services
 threats_repo = ThreatRepository()
 incidents_repo = BaseRepository("incidents")
@@ -126,3 +142,4 @@ users_repo = BaseRepository("users")
 feedback_repo = BaseRepository("feedback")
 reports_repo = BaseRepository("reports")
 settings_repo = BaseRepository("settings")
+predictions_repo = PredictionsRepository()

@@ -36,3 +36,9 @@ PERMISSION_MATRIX = {
         # Viewers can only access the high-level dashboard summaries
     ]
 }
+
+def get_request_role(request) -> Role:
+    """Extracts user role from request.state, falling back to Role.VIEWER."""
+    user = getattr(request.state, "user", None) or {}
+    role_val = user.get("role", "")
+    return Role(role_val) if role_val in Role._value2member_map_ else Role.VIEWER

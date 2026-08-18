@@ -21,10 +21,7 @@ class Broadcaster:
         asyncio.create_task(self._fanout(event))
         
     async def _fanout(self, event: Event):
-        tasks = []
-        for role in set(event.target_audience):
-            tasks.append(manager.broadcast_to_role(role, event))
-            
+        tasks = [manager.broadcast_to_role(role, event) for role in set(event.target_audience)]
         if tasks:
             await asyncio.gather(*tasks, return_exceptions=True)
 

@@ -1,24 +1,4 @@
-import re
-import ipaddress
 from backend.utils.exceptions import ValidationError, WeakPasswordError
-
-def validate_ip(ip: str) -> bool:
-    """Validates if a string is a valid IPv4 or IPv6 address."""
-    try:
-        ipaddress.ip_address(ip)
-        return True
-    except ValueError:
-        return False
-
-def validate_mac(mac: str) -> bool:
-    """Validates MAC address format (e.g., 00:1A:2B:3C:4D:5E)."""
-    pattern = re.compile(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$')
-    return bool(pattern.match(mac))
-
-def validate_email(email: str) -> bool:
-    """Simple regex email validation."""
-    pattern = re.compile(r'^[\w\.-]+@[\w\.-]+\.\w+$')
-    return bool(pattern.match(email))
 
 def validate_password_policy(password: str) -> bool:
     """

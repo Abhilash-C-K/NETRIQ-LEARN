@@ -1,4 +1,5 @@
 import time
+import asyncio
 import numpy as np
 from typing import Dict, Any, List
 from backend.ai.contracts import PredictionResult, TrafficType, RiskCategory
@@ -44,7 +45,7 @@ class Predictor:
             
             # Maintain feature order based on dictionary keys (ideally this should match training exactly)
             # In production, we'd rely on a fixed feature list from metadata.json
-            self._feature_names = list(encoded_dict.keys())
+            feature_names = list(encoded_dict.keys())
             feature_vector = np.array([list(encoded_dict.values())])
             
             # 2. Scale features
@@ -77,7 +78,7 @@ class Predictor:
             risk_category = self.risk_engine.calculate_risk(confidence, anomaly_baseline)
             
             # 6. Explainability
-            explainability = self._generate_explainability(model, scaled_vector)
+            explainability = self._generate_explainability(model, scaled_vector, feature_names)
             
             # 7. Drift Tracking Hook
             self._track_model_drift_hook(scaled_vector, float(verdict))
@@ -97,7 +98,7 @@ class Predictor:
             logger.error(f"Prediction failed: {e}", exc_info=True)
             raise PredictionError(f"Inference failed: {str(e)}") from e
 
-    def _generate_explainability(self, model: Any, processed_features: np.ndarray) -> List[Dict[str, float]]:
+    def _generate_explainability(self, model: Any, processed_features: np.ndarray, feature_names: List[str]) -> List[Dict[str, float]]:
         """
         Generates SHAP values or falls back to feature importance mapping.
         Returns top 3 contributing features.
@@ -112,7 +113,7 @@ class Predictor:
                 vals = shap_values[1][0] if isinstance(shap_values, list) else shap_values[0]
                 
                 # Pair with feature names
-                feature_importances = list(zip(self._feature_names, vals))
+                feature_importances = list(zip(feature_names, vals))
                 # Sort by absolute impact
                 feature_importances.sort(key=lambda x: abs(x[1]), reverse=True)
                 
@@ -121,7 +122,7 @@ class Predictor:
             elif hasattr(model, "feature_importances_"):
                 # Fallback to global feature importance for the top features
                 importances = model.feature_importances_
-                feature_importances = list(zip(self._feature_names, importances))
+                feature_importances = list(zip(feature_names, importances))
                 feature_importances.sort(key=lambda x: x[1], reverse=True)
                 
                 for name, imp in feature_importances[:3]:
@@ -138,5 +139,4 @@ class Predictor:
 
     async def predict_async(self, raw_features: Dict[str, Any], traffic_type: TrafficType, anomaly_baseline: float = 0.0) -> PredictionResult:
         """Async wrapper around sync inference method using asyncio.to_thread to keep event loop unblocked."""
-        import asyncio
         return await asyncio.to_thread(self.predict, raw_features, traffic_type, anomaly_baseline)

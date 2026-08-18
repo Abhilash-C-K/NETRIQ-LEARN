@@ -35,15 +35,14 @@ async def refresh(request: RefreshRequest):
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout(request: Request, refresh_req: RefreshRequest):
-    # Optional: Check if user is logged in via access token
-    # If using middleware, request.state.user might be available.
     user = getattr(request.state, "user", None)
     user_id = user.get("sub") if user else None
     
-    if user_id:
-        success = await auth_service.logout(user_id)
-        return MessageResponse(message="Logged out successfully", success=success)
-    return MessageResponse(message="No active session found", success=False)
+    if not user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated.")
+    
+    success = await auth_service.logout(user_id)
+    return MessageResponse(message="Logged out successfully.", success=success)
 
 @router.post("/register", response_model=MessageResponse, dependencies=[Depends(require_permission(Capabilities.MANAGE_USERS))])
 async def register(request: RegisterRequest, req: Request):

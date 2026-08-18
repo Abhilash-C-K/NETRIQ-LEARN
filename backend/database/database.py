@@ -8,7 +8,7 @@ from backend.database.exceptions import DatabaseConnectionError
 logger = get_logger(__name__)
 
 # Fallback config defaults if not using a central config manager
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_URI = os.getenv("MONGODB_URL", os.getenv("MONGO_URI", "mongodb://localhost:27017"))
 MONGO_DB_NAME = os.getenv("MONGO_DB", "netriq_db")
 MIN_POOL_SIZE = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
 MAX_POOL_SIZE = int(os.getenv("MONGO_MAX_POOL_SIZE", "100"))
@@ -74,15 +74,9 @@ class DatabaseManager:
 
     @classmethod
     async def _ensure_indexes(cls):
-        """Creates compound and unique database indexes for performance."""
-        try:
-            if cls.db is not None:
-                await cls.db["users"].create_index("email", unique=True)
-                await cls.db["threats"].create_index([("timestamp", -1), ("severity", 1)])
-                await cls.db["incidents"].create_index([("created_at", -1), ("status", 1)])
-                logger.info("MongoDB index initialization complete.")
-        except Exception as e:
-            logger.warning(f"Database index creation warning: {e}")
+        """Delegates to the authoritative index definitions in database/indexes.py."""
+        from backend.database.indexes import ensure_indexes  # lazy to avoid circular import
+        await ensure_indexes()
 
     @classmethod
     async def health_check(cls) -> bool:

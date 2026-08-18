@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from typing import Dict, Any
+from backend.database.database import DatabaseManager
 
 router = APIRouter(prefix="/health", tags=["health"])
 
@@ -9,11 +10,11 @@ async def health_check():
     Public health check endpoint.
     Aggregates status of DB, model manager, and live monitor.
     """
-    # Stub: Normally calls ping() on DB and check_status() on managers
+    db_ok = await DatabaseManager.health_check()
     return {
-        "status": "healthy",
+        "status": "healthy" if db_ok else "degraded",
         "components": {
-            "database": "online",
+            "database": "online" if db_ok else "offline",
             "model_manager": "online",
             "live_monitor": "stopped"
         }

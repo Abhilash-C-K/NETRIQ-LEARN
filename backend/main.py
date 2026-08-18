@@ -35,9 +35,6 @@ from backend.api.websocket import router as websocket_router
 
 logger = get_logger(__name__)
 
-# Module-level engine instance to be closed on shutdown
-_response_engine = ResponseEngine()
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -46,11 +43,12 @@ async def lifespan(app: FastAPI):
     logger.info("Starting NETRIQ API...")
     await DatabaseManager.connect_db()
     logger.info("Database connected.")
+    app.state.response_engine = ResponseEngine()  # init AFTER DB is ready
     yield
     # --- SHUTDOWN ---
     logger.info("Shutting down NETRIQ API...")
     await DatabaseManager.close_db()
-    await _response_engine.close()
+    await app.state.response_engine.close()
     logger.info("Cleanup complete.")
 
 

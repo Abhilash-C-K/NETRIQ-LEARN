@@ -125,7 +125,9 @@ class FlowBuilder:
         key_tuple, direction = fk.get_key_and_direction()
         
         if key_tuple not in self.active_flows:
-            self.active_flows[key_tuple] = FlowData(key_tuple, now)
+            flow_data = FlowData(key_tuple, now)
+            flow_data.initiator_ip = pkt_info['src_ip']
+            self.active_flows[key_tuple] = flow_data
             
         flow = self.active_flows[key_tuple]
         flags = pkt_info.get('flags', {})

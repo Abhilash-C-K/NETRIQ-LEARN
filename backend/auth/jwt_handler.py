@@ -1,24 +1,26 @@
 import os
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 from backend.utils.logger import get_logger
 from backend.auth.exceptions import TokenExpiredError, InvalidTokenError
 
 logger = get_logger(__name__)
 
-# Configuration
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "super_secret_key_change_in_prod")
+# Configuration (Ensure 32+ byte default key for HMAC-SHA256)
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "netriq_super_secret_jwt_key_32_bytes_min!!")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_EXPIRY_MINUTES = int(os.getenv("JWT_ACCESS_EXPIRY_MINUTES", "15"))
 JWT_REFRESH_EXPIRY_DAYS = int(os.getenv("JWT_REFRESH_EXPIRY_DAYS", "7"))
 
 def create_access_token(user_id: str, role: str) -> str:
-    """Creates a short-lived access token with role and user_id claims."""
-    expire = datetime.utcnow() + timedelta(minutes=JWT_ACCESS_EXPIRY_MINUTES)
+    """Creates a short-lived access token with role, user_id, exp, and iat claims."""
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(minutes=JWT_ACCESS_EXPIRY_MINUTES)
     to_encode = {
         "sub": user_id,
         "role": role,
+        "iat": now,
         "exp": expire,
         "type": "access"
     }
@@ -26,10 +28,12 @@ def create_access_token(user_id: str, role: str) -> str:
     return encoded_jwt
 
 def create_refresh_token(user_id: str) -> str:
-    """Creates a long-lived refresh token."""
-    expire = datetime.utcnow() + timedelta(days=JWT_REFRESH_EXPIRY_DAYS)
+    """Creates a long-lived refresh token with sub, iat, exp, and type claims."""
+    now = datetime.now(timezone.utc)
+    expire = now + timedelta(days=JWT_REFRESH_EXPIRY_DAYS)
     to_encode = {
         "sub": user_id,
+        "iat": now,
         "exp": expire,
         "type": "refresh"
     }

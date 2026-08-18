@@ -3,6 +3,7 @@ import sys
 import time
 import random
 import argparse
+import ipaddress
 
 # Ensure UTF-8 output encoding for Windows terminal
 if hasattr(sys.stdout, 'reconfigure'):
@@ -15,90 +16,114 @@ if PROJECT_ROOT not in sys.path:
 from backend.live_monitor.packet_sniffer import PacketSniffer
 from backend.live_monitor.flow_builder import FlowBuilder
 from backend.live_monitor.feature_extractor import FeatureExtractor
-from backend.live_monitor.live_predictor import LivePredictor
+from framework.engine import NetriqEngine
+from backend.ai.contracts import TrafficType
 
-class ResponseEngine:
+
+RFC1918_NETWORKS = [
+    ipaddress.ip_network("10.0.0.0/8"),
+    ipaddress.ip_network("172.16.0.0/12"),
+    ipaddress.ip_network("192.168.0.0/16"),
+]
+
+def is_private_ip(ip_str: str) -> bool:
+    """Checks if an IP address strictly belongs to RFC1918 private IP space."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return any(ip in net for net in RFC1918_NETWORKS)
+    except ValueError:
+        return False
+
+
+def check_is_internal_flow(src_ip: str, dst_ip: str) -> bool:
     """
-    Step 5: Automated Response Engine for NetrIQ.
-    Decides system action: 'SAFE', 'ALERT_ADMIN', or 'BLOCK_FIREWALL'.
+    RFC1918 Check for Layer 1 vs Layer 2 Decision Engine Routing:
+    - src_ip is private RFC1918 (internal asset sending traffic) -> Layer 2 (is_internal = True).
+    - src_ip is public/external (external host scanning/attacking in) -> Layer 1 (is_internal = False).
     """
-    def __init__(self, block_confidence_threshold=85.0):
-        self.block_confidence_threshold = block_confidence_threshold
-        self.blocked_ips = set()
+    return is_private_ip(src_ip)
 
-    def process_prediction(self, prediction_res: dict, flow) -> dict:
-        is_anomaly = prediction_res["is_anomaly"]
-        confidence = prediction_res["confidence"]
-        prediction = prediction_res["prediction"]
-        src_ip = flow.src_ip
-
-        if not is_anomaly:
-            action = "SAFE"
-            decision_msg = "Traffic verified normal. No action required."
-        elif confidence >= self.block_confidence_threshold:
-            action = "BLOCK_FIREWALL"
-            self.blocked_ips.add(src_ip)
-            decision_msg = f"High severity threat detected ({prediction} @ {confidence}%). Automated firewall block applied to IP: {src_ip}"
-        else:
-            action = "ALERT_ADMIN"
-            decision_msg = f"Moderate severity anomaly detected ({prediction} @ {confidence}%). Alert dispatched to admin dashboard."
-
-        return {
-            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(flow.last_time)),
-            "connection": f"{flow.src_ip}:{flow.src_port} -> {flow.dst_ip}:{flow.dst_port} ({flow.protocol})",
-            "src_ip": flow.src_ip,
-            "dst_ip": flow.dst_ip,
-            "src_port": flow.src_port,
-            "dst_port": flow.dst_port,
-            "protocol": flow.protocol,
-            "prediction": prediction,
-            "confidence": confidence,
-            "threat_level": prediction_res["threat_level"],
-            "is_anomaly": is_anomaly,
-            "action": action,
-            "decision_msg": decision_msg,
-            "flow_summary": {
-                "duration_ms": round((flow.last_time - flow.start_time) * 1000.0, 2),
-                "fwd_packets": flow.fwd_packets,
-                "bwd_packets": flow.bwd_packets,
-                "total_bytes": sum(flow.fwd_lengths) + sum(flow.bwd_lengths)
-            }
-        }
 
 class LiveMonitorRunner:
     """
     Master pipeline orchestrating the execution chain:
-    packet_sniffer -> flow_builder -> feature_extractor -> live_predictor -> response_engine
+    packet_sniffer -> flow_builder -> feature_extractor -> NetriqEngine (AI + Two-Layer Rules)
     """
-    def __init__(self, dataset_name="cicids2017"):
+    def __init__(self, dataset_name: str = "cicids2017"):
         self.dataset_name = dataset_name
         self.flow_builder = FlowBuilder(idle_timeout_sec=3.0)
-        self.predictor = LivePredictor(dataset_name=dataset_name)
-        self.response_engine = ResponseEngine()
+        self.engine = NetriqEngine()
         self.sniffer = PacketSniffer()
 
-    def process_packet(self, pkt_info: dict) -> list:
+    def process_packet(self, pkt_info: dict, enforce: bool = False) -> list:
         completed_flows = self.flow_builder.process_packet(pkt_info)
         responses = []
 
         for flow in completed_flows:
             features = FeatureExtractor.extract_features(flow)
-            prediction_res = self.predictor.predict(features)
-            response = self.response_engine.process_prediction(prediction_res, flow)
-            responses.append(response)
+            
+            # 1. Determine if initiating asset is internal (Layer 2) or external (Layer 1)
+            eval_ip = getattr(flow, 'initiator_ip', flow.src_ip)
+            is_internal = is_private_ip(eval_ip)
+            
+            # 2. Evaluate features through NetriqEngine (AI Risk Engine + Decision Engine)
+            result, decision = self.engine.evaluate_features(
+                features=features,
+                traffic_type=TrafficType.NETWORK,
+                is_internal=is_internal
+            )
+            
+            enforced_status = "EVALUATION_ONLY"
+            if enforce:
+                # Live mode: trigger real hardware adapters (firewall REST / SDN quarantine)
+                if decision.action.value == "recommend_block":
+                    import asyncio
+                    asyncio.run(self.engine.firewall.block_ip(eval_ip, decision.reason))
+                    enforced_status = "FIREWALL_RECOMMENDED"
+                elif decision.action.value == "quarantine":
+                    import asyncio
+                    asyncio.run(self.engine.quarantine.quarantine_device(eval_ip, None, decision.reason))
+                    enforced_status = "DEVICE_QUARANTINED"
+            
+            prediction_str = "ANOMALY" if result.verdict else "BENIGN"
+            
+            responses.append({
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(flow.last_time)),
+                "connection": f"{flow.src_ip}:{flow.src_port} -> {flow.dst_ip}:{flow.dst_port} ({flow.protocol})",
+                "src_ip": flow.src_ip,
+                "dst_ip": flow.dst_ip,
+                "src_port": flow.src_port,
+                "dst_port": flow.dst_port,
+                "protocol": flow.protocol,
+                "prediction": prediction_str,
+                "confidence": round(result.confidence, 2),
+                "threat_level": result.risk_category.value.upper(),
+                "is_anomaly": result.verdict,
+                "is_internal": is_internal,
+                "action": decision.action.value.upper(),
+                "target_layer": decision.target_layer,
+                "decision_msg": decision.reason,
+                "enforce_status": enforced_status,
+                "flow_summary": {
+                    "duration_ms": round((flow.last_time - flow.start_time) * 1000.0, 2),
+                    "fwd_packets": flow.fwd_packets,
+                    "bwd_packets": flow.bwd_packets,
+                    "total_bytes": sum(flow.fwd_lengths) + sum(flow.bwd_lengths)
+                }
+            })
 
         return responses
 
-    def run_live(self, interface=None):
+    def run_live(self, interface: str = None, enforce: bool = True):
         self.sniffer.interface = interface
         self.sniffer.start()
-        print(f"[LiveMonitorRunner] Live Monitoring Active (Dataset: {self.dataset_name.upper()})...\n")
+        print(f"[LiveMonitorRunner] Live Monitoring Active (Dataset: {self.dataset_name.upper()}, Enforce: {enforce})...\n")
 
         try:
             while True:
                 pkt = self.sniffer.get_packet(timeout=1.0)
                 if pkt:
-                    responses = self.process_packet(pkt)
+                    responses = self.process_packet(pkt, enforce=enforce)
                     for resp in responses:
                         self._print_response(resp)
         except KeyboardInterrupt:
@@ -106,18 +131,28 @@ class LiveMonitorRunner:
         finally:
             self.sniffer.stop()
 
-    def run_simulation(self, count=5, delay_sec=0.5):
+    def run_simulation(self, count: int = 5, delay_sec: float = 0.5):
         print(f"[LiveMonitorRunner:Simulation] Running pipeline chain for {count} simulated flows...\n")
-        attack_types = ['BENIGN', 'DDoS', 'PortScan', 'DoS Hulk', 'SSH-Patator']
+        attack_types = ['DDoS', 'PortScan', 'DoS Hulk', 'BENIGN', 'SSH-Patator']
+        
+        # Mix of external IPs (Layer 1 recommend block) and internal IPs (Layer 2 auto-quarantine)
+        external_ips = ["203.0.113.45", "198.51.100.12", "198.51.100.89", "45.33.32.156"]
+        internal_ips = ["192.168.1.50", "192.168.1.102", "10.0.0.15", "172.16.0.44"]
         
         for i in range(1, count + 1):
             traffic_type = random.choice(attack_types)
-            src_ip = f"192.168.1.{random.randint(10, 250)}"
-            dst_ip = "192.168.1.1"
             
+            # Alternate between external-attacker (Layer 1) and internal-compromised-host (Layer 2)
+            if i % 2 == 1:
+                src_ip = random.choice(external_ips) # External -> Layer 1
+                dst_ip = "192.168.1.1"
+            else:
+                src_ip = random.choice(internal_ips) # Internal -> Layer 2
+                dst_ip = "192.168.1.1"
+
             if traffic_type == 'PortScan':
                 src_port = random.randint(40000, 60000)
-                dst_port = random.choice([21, 22, 80, 443, 8080, 3306])
+                dst_port = random.choice([21, 22, 80, 443, 8080])
                 pkts_fwd, pkts_bwd = 1, 0
                 pkt_len_fwd = random.randint(40, 64)
                 pkt_len_bwd = 0
@@ -171,8 +206,9 @@ class LiveMonitorRunner:
 
             time.sleep(delay_sec)
 
-    def _print_response(self, resp):
-        badge = f"[ACTION: {resp['action']}]"
+    def _print_response(self, resp: dict):
+        status_tag = f"[{resp['enforce_status']}]" if resp.get("enforce_status") != "EVALUATION_ONLY" else "[SIMULATED DRY-RUN]"
+        badge = f"[ACTION: {resp['action']}] [{resp['target_layer']}] {status_tag}"
         print(f"[{resp['timestamp']}] {badge} Threat Level: {resp['threat_level']}")
         print(f"  Connection : {resp['connection']}")
         print(f"  Prediction : {resp['prediction']} (Confidence: {resp['confidence']}%)")
@@ -180,8 +216,9 @@ class LiveMonitorRunner:
         print(f"  Flow Stats : {resp['flow_summary']['duration_ms']} ms | Packets: {resp['flow_summary']['fwd_packets']} Fwd / {resp['flow_summary']['bwd_packets']} Bwd | Bytes: {resp['flow_summary']['total_bytes']:,} B")
         print("-" * 75)
 
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="NetrIQ Live Monitor Execution Chain")
+    parser = argparse.ArgumentParser(description="NETRIQ Live Monitor Execution Chain")
     parser.add_argument("--mode", choices=["live", "simulate"], default="simulate")
     parser.add_argument("--dataset", default="cicids2017")
     parser.add_argument("--count", type=int, default=5)

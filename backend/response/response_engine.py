@@ -123,13 +123,9 @@ class ResponseEngine:
         
     async def close(self):
         """Cleanup resources."""
-        if hasattr(self.firewall, "close"):
-            try:
-                await self.firewall.close()
-            except Exception:
-                pass
-        if hasattr(self.quarantine, "close"):
-            try:
-                await self.quarantine.close()
-            except Exception:
-                pass
+        for target in (self.firewall, self.quarantine):
+            if hasattr(target, "close"):
+                try:
+                    await target.close()
+                except Exception:
+                    pass

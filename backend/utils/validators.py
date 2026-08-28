@@ -22,3 +22,29 @@ def validate_pagination(limit: int, offset: int) -> bool:
     if offset < 0:
         raise ValidationError("Offset cannot be negative.")
     return True
+
+
+import ipaddress
+import re
+
+def validate_ip(ip_str: str) -> bool:
+    """Returns True if ip_str is a valid IPv4 or IPv6 address."""
+    if not ip_str:
+        return False
+    try:
+        ipaddress.ip_address(ip_str)
+        return True
+    except ValueError:
+        return False
+
+def validate_mac(mac_str: str) -> bool:
+    """Returns True if mac_str is a valid colon-separated MAC address (XX:XX:XX:XX:XX:XX)."""
+    if not mac_str:
+        return False
+    return bool(re.match(r"^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$", mac_str))
+
+def validate_email(email_str: str) -> bool:
+    """Returns True if email_str is a valid email format."""
+    if not email_str:
+        return False
+    return bool(re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email_str))

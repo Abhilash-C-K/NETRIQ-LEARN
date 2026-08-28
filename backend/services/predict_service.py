@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from typing import Any, Dict, Optional, Tuple
@@ -9,6 +10,7 @@ from backend.ai.contracts import (
     FusedPredictionResult,
     RiskCategory,
     Decision,
+    Action,
     TrafficType,
     ExplanationResult,
     PredictionRecord,
@@ -16,6 +18,7 @@ from backend.ai.contracts import (
 from backend.ai.risk_engine import classify_risk, RiskEngine
 from backend.ai.decision_engine import decide
 from backend.utils.exceptions import InsufficientPermissionError
+import backend.config.config as config
 
 logger = get_logger(__name__)
 
@@ -84,7 +87,7 @@ class PredictService:
             supervised_failed = True
             result = None
 
-        anomaly_score = anomaly_detector.predict(features)
+        anomaly_score = await asyncio.to_thread(anomaly_detector.predict, features)
 
         # 2. Fusion & Partial Failure Handling
         if not supervised_failed and result is not None:
@@ -169,7 +172,6 @@ class PredictService:
                     f"[PredictService][HEURISTIC_FALLBACK] QUARANTINE ceiling enforced! "
                     f"Downgrading decision to RECOMMEND_BLOCK (matched {matched_count}/{min_rules} rules required for internal QUARANTINE)."
                 )
-                from backend.ai.contracts import Action
                 decision_obj.action = Action.RECOMMEND_BLOCK
                 decision_obj.reason += " (Heuristic escalation ceiling enforced: capped at RECOMMEND_BLOCK)"
 

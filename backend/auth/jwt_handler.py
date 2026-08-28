@@ -9,7 +9,11 @@ from backend.auth.exceptions import TokenExpiredError, InvalidTokenError
 logger = get_logger(__name__)
 
 # Configuration (Ensure 32+ byte default key for HMAC-SHA256)
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "netriq_super_secret_jwt_key_32_bytes_min!!")
+_DEFAULT_JWT_KEY = "netriq_super_secret_jwt_key_32_bytes_min!!"
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", _DEFAULT_JWT_KEY)
+if JWT_SECRET_KEY == _DEFAULT_JWT_KEY:
+    logger.warning("SECURITY WARNING: JWT_SECRET_KEY is using the default fallback value. Set JWT_SECRET_KEY in environment variables for production security.")
+
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_EXPIRY_MINUTES = int(os.getenv("JWT_ACCESS_EXPIRY_MINUTES", "15"))
 JWT_REFRESH_EXPIRY_DAYS = int(os.getenv("JWT_REFRESH_EXPIRY_DAYS", "7"))

@@ -29,7 +29,7 @@ class TestAuthModule(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(WeakPasswordError):
             validate_password_policy("NOLOWERCASE123") # no lower
             
-        self.assertTrue(validate_password_policy("ValidPassw0rd"))
+        self.assertTrue(validate_password_policy("ValidPassw0rd!"))
 
     def test_jwt_generation_and_decode(self):
         """Test that JWT tokens encode and decode claims properly."""

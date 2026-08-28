@@ -1,4 +1,5 @@
 import asyncio
+import ipaddress
 from typing import Dict, Any
 
 from backend.ai.contracts import Action, PredictionResult
@@ -7,6 +8,7 @@ from backend.response.firewall import get_firewall_adapter
 from backend.response.quarantine import QuarantineService
 from backend.response.whitelist import WhitelistManager
 from backend.response.response_logger import ResponseLogger
+from backend.services.incident_service import incident_service
 
 logger = get_logger(__name__)
 
@@ -21,6 +23,15 @@ class ResponseEngine:
         self.whitelist = WhitelistManager()
         self.logger = ResponseLogger()
 
+    def _is_valid_ip(self, ip_str: str) -> bool:
+        if not ip_str or ip_str == "unknown":
+            return False
+        try:
+            ipaddress.ip_address(ip_str)
+            return True
+        except ValueError:
+            return False
+
     async def handle_verdict(self, prediction: PredictionResult, action: Action, context: Dict[str, Any]) -> bool:
         """
         Dispatches action based on the Action enum.
@@ -29,6 +40,12 @@ class ResponseEngine:
         target_ip = context.get("src_ip", "unknown")
         target_mac = context.get("src_mac")
         reason = f"AI Verdict: {prediction.model_used} - Confidence: {prediction.confidence:.2f}%"
+
+        # Validate IP before enforcement if action requires blocking/quarantining
+        if action in (Action.RECOMMEND_BLOCK, Action.QUARANTINE) and not self._is_valid_ip(target_ip):
+            logger.warning(f"Aborting response action {action.name}: Invalid or missing target IP '{target_ip}'")
+            await self.logger.log_action(action, target_ip, "Aborted (Invalid IP)", False, context)
+            return False
         
         # 1. Whitelist Check (Before Enforcement)
         if await self.whitelist.is_whitelisted(target_ip, target_mac):
@@ -90,10 +107,10 @@ class ResponseEngine:
 
     async def _notify_incident_service(self, target_ip: str, prediction: PredictionResult, action: Action, success: bool):
         """Notifies the incident management service of the response action taken."""
-        # Typically imported from backend.service.incident_service
-        # For now, it's a stub to represent the integration contract
-        logger.debug(f"Incident service notified of {action.name} against {target_ip} (Success: {success})")
-        pass
+        try:
+            await incident_service.create_from_response_action(target_ip, prediction, action, success)
+        except Exception as e:
+            logger.error(f"[ResponseEngine] Failed to create incident record for {target_ip}: {e}")
 
     async def reverse_action(self, action: Action, target_ip: str, target_mac: str = None) -> bool:
         """

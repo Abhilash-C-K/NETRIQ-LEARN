@@ -1,44 +1,37 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
 from typing import Dict, Any
 from backend.auth.roles import Capabilities, get_request_role
 from backend.auth.permissions import require_permission
 from backend.services.predict_service import predict_service, ExplanationNotFoundError, ExplanationFailedError
 from backend.ai.contracts import PredictionResult, ExplanationResult
+from backend.utils.logger import get_logger
 
+logger = get_logger(__name__)
 router = APIRouter(prefix="/prediction", tags=["prediction"])
 
 
-@router.post(
-    "/test",
-    response_model=PredictionResult,
-    dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))],
-    summary="Run manual inference on raw features",
-)
+@router.post("/test", response_model=PredictionResult, dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))], summary="Run manual inference on raw features")
 async def test_prediction(payload: Dict[str, Any], req: Request):
     """
     Runs the full supervised + anomaly + fusion pipeline on the supplied feature dict.
     Persists a PredictionRecord for later on-demand explanation.
     Returns prediction_id in response header X-Prediction-Id for use with /explain.
     """
-    from fastapi.responses import JSONResponse
     try:
         result, _, prediction_id = await predict_service.predict_manual(
             role=get_request_role(req), features=payload
         )
-        response = JSONResponse(content=result.model_dump())
+        response = JSONResponse(content=result.model_dump(mode="json"))
         if prediction_id:
             response.headers["X-Prediction-Id"] = prediction_id
         return response
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        logger.error(f"Manual inference failed: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Prediction failed")
 
 
-@router.get(
-    "/{prediction_id}/explain",
-    response_model=ExplanationResult,
-    dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))],
-    summary="On-demand SHAP or deviation explainability for a stored prediction",
-)
+@router.get("/{prediction_id}/explain", response_model=ExplanationResult, dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))], summary="On-demand SHAP or deviation explainability for a stored prediction")
 async def explain_prediction(prediction_id: str, req: Request):
     """
     Returns per-feature attribution for a previously stored prediction.
@@ -65,4 +58,5 @@ async def explain_prediction(prediction_id: str, req: Request):
             detail=str(e),
         )
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        logger.error(f"Explanation failed for prediction {prediction_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Explanation failed")

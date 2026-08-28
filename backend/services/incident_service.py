@@ -10,7 +10,21 @@ logger = get_logger(__name__)
 
 class IncidentService:
     async def list(self, role: Role, limit: int = 100) -> List[Dict[str, Any]]:
-        return await incidents_repo.list(limit=limit)
+        """Returns incidents. Viewers receive a simplified summary; Analysts/Admins get full records."""
+        results = await incidents_repo.list(limit=limit)
+        if role == Role.VIEWER:
+            # Strip internal technical fields from viewer scope
+            return [
+                {
+                    "id": item.get("id"),
+                    "status": item.get("status"),
+                    "severity": item.get("severity"),
+                    "description": item.get("description"),
+                    "created_at": item.get("created_at"),
+                }
+                for item in results
+            ]
+        return results
 
     async def update(self, incident_id: str, updates: Dict[str, Any]) -> Dict[str, Any]:
         updates["updated_at"] = time.time()

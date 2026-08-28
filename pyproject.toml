@@ -42,8 +42,7 @@ dependencies = [
 ]
 
 [project.scripts]
-netriq-cli = "framework.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["framework*", "backend*"]
+include = ["backend*"]

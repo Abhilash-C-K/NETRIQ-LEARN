@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 class NetriqEngine:
     """
-    High-level orchestrator for the NETRIQ Security Framework.
+    High-level orchestrator for the NETRIQ Security Engine.
     Integrates Supervised ML (Random Forest/XGBoost/LightGBM), Unsupervised Anomaly Detection (Isolation Forest),
     Fusion Engine, Risk Engine, Decision Engine, and Two-Layer Response Drivers.
     """

@@ -16,7 +16,7 @@ if PROJECT_ROOT not in sys.path:
 from backend.live_monitor.packet_sniffer import PacketSniffer
 from backend.live_monitor.flow_builder import FlowBuilder
 from backend.live_monitor.feature_extractor import FeatureExtractor
-from framework.engine import NetriqEngine
+from backend.engine import NetriqEngine
 from backend.ai.contracts import TrafficType
 
 

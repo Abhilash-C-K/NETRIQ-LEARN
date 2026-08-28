@@ -25,11 +25,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def validate_password_policy(password: str) -> bool:
     """
-    Enforces password complexity rules (OWASP ASVS v4.0.3 Level 2):
+    Enforces password complexity rules (OWASP ASVS v4.0.3 Level 2 / NIST SP 800-63B):
     - Min 12 characters (ASVS 2.1.1)
     - At least 1 uppercase letter
     - At least 1 lowercase letter
     - At least 1 number
+    - At least 1 special character (ASVS 2.1.7)
     """
     if len(password) < 12:
         raise WeakPasswordError("Password must be at least 12 characters long.")
@@ -39,5 +40,7 @@ def validate_password_policy(password: str) -> bool:
         raise WeakPasswordError("Password must contain at least one lowercase letter.")
     if not re.search(r"[0-9]", password):
         raise WeakPasswordError("Password must contain at least one number.")
+    if not re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?`~]", password):
+        raise WeakPasswordError("Password must contain at least one special character (!@#$%^&* etc.).")
         
     return True

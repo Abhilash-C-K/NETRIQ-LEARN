@@ -13,11 +13,13 @@ MONGO_DB_NAME = os.getenv("MONGO_DB", "netriq_db")
 MIN_POOL_SIZE = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
 MAX_POOL_SIZE = int(os.getenv("MONGO_MAX_POOL_SIZE", "100"))
 
+from typing import Optional
+
 class DatabaseManager:
     """
     Async Singleton Connection Manager for MongoDB.
     """
-    client: AsyncIOMotorClient = None
+    client: Optional[AsyncIOMotorClient] = None
     db = None
 
     @classmethod

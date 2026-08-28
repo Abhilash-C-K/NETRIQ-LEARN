@@ -10,6 +10,7 @@ from backend.ai.anomaly_detector import EXPECTED_FEATURE_NAMES
 from backend.utils.logger import get_logger
 from backend.utils.exceptions import PredictionError
 
+shap = None
 try:
     import shap
     SHAP_AVAILABLE = True
@@ -118,7 +119,7 @@ class Predictor:
         """
         top_features = []
         try:
-            if SHAP_AVAILABLE and hasattr(model, "predict_proba"):
+            if SHAP_AVAILABLE and shap is not None and hasattr(model, "predict_proba"):
                 # Warning: TreeExplainer can be slow for real-time. 
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(processed_features)

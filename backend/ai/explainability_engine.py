@@ -27,6 +27,7 @@ from backend.ai.contracts import (
 )
 from backend.ai.anomaly_detector import EXPECTED_FEATURE_NAMES
 from backend.utils.logger import get_logger
+from backend.utils.exceptions import FeatureEncodingError
 
 logger = get_logger(__name__)
 
@@ -55,6 +56,8 @@ def _get_or_create_explainer(model: Any) -> Any:
     with _cache_lock:
         if model_id not in _explainer_cache:
             logger.info(f"[ExplainabilityEngine] Creating TreeExplainer for model id={model_id} (one-time cost).")
+            if shap is None:
+                raise FeatureEncodingError("SHAP is not available.")
             _explainer_cache[model_id] = shap.TreeExplainer(model)
     return _explainer_cache[model_id]
 

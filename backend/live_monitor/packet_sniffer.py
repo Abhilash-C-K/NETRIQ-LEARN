@@ -6,6 +6,13 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+IP = None
+IPv6 = None
+TCP = None
+UDP = None
+ICMP = None
+sniff = None
+
 try:
     from scapy.all import sniff, IP, IPv6, TCP, UDP, ICMP
     SCAPY_AVAILABLE = True
@@ -79,6 +86,10 @@ class PacketSniffer:
         length = len(pkt)
 
         # Case B Parsing Attempt: IP layer is present, attempt transport layer extraction
+        ip_layer = None
+        tcp = None
+        udp = None
+
         try:
             if pkt.haslayer(IP):
                 ip_layer = pkt[IP]
@@ -189,7 +200,7 @@ class PacketSniffer:
             logger.error(f"[packet_sniffer][CASE_B_PARSER_BUG] Unexpected exception in packet processing: {bug_e}", exc_info=True)
 
     def _sniff_loop(self) -> None:
-        if not SCAPY_AVAILABLE:
+        if not SCAPY_AVAILABLE or sniff is None:
             logger.error("[packet_sniffer] Scapy is not installed. Cannot capture live packets.")
             return
 

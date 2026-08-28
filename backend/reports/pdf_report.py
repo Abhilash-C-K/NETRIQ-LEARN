@@ -34,7 +34,7 @@ async def generate_pdf_report(role: Role, data: List[Dict[str, Any]], chart_data
     c.drawString(50, 750, template.TITLE)
     
     # Chart
-    if chart_data:
+    if chart_data and ImageReader is not None:
         chart_buffer = await generate_bar_chart(chart_data, "Threat Distribution")
         img = ImageReader(chart_buffer)
         c.drawImage(img, 50, 450, width=400, height=250)

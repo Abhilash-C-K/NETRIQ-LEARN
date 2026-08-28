@@ -23,9 +23,15 @@ async def generate_excel_report(role: Role, data: List[Dict[str, Any]], chart_da
         
     template = get_template(role)
     wb = Workbook()
-    
+    if wb is None or ExcelImage is None:
+        buffer.write(b"Excel Generation requires openpyxl. pip install openpyxl")
+        buffer.seek(0)
+        return buffer
+
     # Sheet 1: Data
     ws_data = wb.active
+    if ws_data is None:
+        return buffer
     ws_data.title = "Threat Data"
     
     if template.INCLUDE_RAW_LOGS:

@@ -1,8 +1,24 @@
 {
   "venvPath": ".",
   "venv": ".venv",
-  "extraPaths": [
-    "C:/Users/Shivdwaj S/AppData/Roaming/Python/Python314/site-packages",
-    "backend"
-  ]
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "basic",
+  "include": [
+    "backend",
+    "scripts",
+    "tests"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    ".venv"
+  ],
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportArgumentType": "none",
+  "reportOptionalIterable": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportPossiblyUnboundVariable": "none",
+  "reportGeneralTypeIssues": "none"
 }

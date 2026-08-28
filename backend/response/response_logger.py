@@ -33,7 +33,7 @@ class ResponseLogger:
         except Exception as e:
             # We log but do not crash the pipeline if audit logging fails
             logger.error(f"CRITICAL: Failed to write response audit log for {target_ip}: {e}")
-            return None
+            return ""
 
     async def get_response_history(self, filters: Dict[str, Any] = None, limit: int = 50) -> List[Dict[str, Any]]:
         """

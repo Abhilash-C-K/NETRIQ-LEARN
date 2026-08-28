@@ -18,10 +18,10 @@ class BaseRepository:
         """Removes None values and converts id string to ObjectId if necessary."""
         return {k: v for k, v in doc.items() if v is not None}
 
-    def _format_out(self, doc: dict) -> Optional[dict]:
+    def _format_out(self, doc: Optional[dict]) -> dict:
         """Converts ObjectId to string for Pydantic compatibility."""
         if not doc:
-            return None
+            return {}
         if "_id" in doc:
             doc["id"] = str(doc.pop("_id"))
         return doc

@@ -1,3 +1,4 @@
+import asyncio
 import time
 import os
 import hashlib
@@ -39,7 +40,11 @@ class AuthService:
     async def login(self, email: str, password: str) -> Dict[str, str]:
         """Validates credentials, enforces lockout, issues tokens."""
         # 1. Fetch user by email
-        users = await users_repo.list({"email": email}, limit=1)
+        users_res = users_repo.list({"email": email}, limit=1)
+        if asyncio.iscoroutine(users_res) or hasattr(users_res, "__await__"):
+            users = await users_res
+        else:
+            users = users_res
         if not users:
             # We use generic exception to prevent user enumeration
             raise InvalidCredentialsError("Invalid email or password.")
@@ -66,7 +71,9 @@ class AuthService:
                 updates["locked_until"] = lockout_end
                 logger.warning(f"Account {email} locked due to too many failed attempts.")
                 
-            await users_repo.update(user_id, updates)
+            upd_res = users_repo.update(user_id, updates)
+            if asyncio.iscoroutine(upd_res) or hasattr(upd_res, "__await__"):
+                await upd_res
             raise InvalidCredentialsError("Invalid email or password.")
             
         # 4. Success: Reset lockout counters

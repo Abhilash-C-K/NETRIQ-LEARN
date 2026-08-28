@@ -30,6 +30,7 @@ from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
+shap = None
 try:
     import shap
     SHAP_AVAILABLE = True

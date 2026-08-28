@@ -17,13 +17,13 @@ class TestDashboardQueries(unittest.IsolatedAsyncioTestCase):
         MongoDB filters based on the compound index parameters.
         """
         # Mock cursor chaining: find().sort().limit()
-        mock_cursor = AsyncMock()
+        mock_cursor = MagicMock()
         mock_cursor.sort.return_value = mock_cursor
         mock_cursor.limit.return_value = mock_cursor
-        mock_cursor.to_list.return_value = [
+        mock_cursor.to_list = AsyncMock(return_value=[
             {"_id": "1", "timestamp": 100, "severity": "HIGH", "src_ip": "1.1.1.1"}
-        ]
-        self.mock_collection.find.return_value = mock_cursor
+        ])
+        self.mock_collection.find = MagicMock(return_value=mock_cursor)
 
         # Execute
         results = await self.repo.get_dashboard_stats(

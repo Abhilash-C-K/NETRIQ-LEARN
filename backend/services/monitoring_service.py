@@ -46,7 +46,9 @@ class MonitoringService:
                 logger.info("Live Monitoring Pipeline Started.")
 
                 event = MonitorStatusEvent(payload={"status": "started"})
-                await broadcaster.publish(event)
+                res = broadcaster.publish(event)
+                if asyncio.iscoroutine(res) or hasattr(res, "__await__"):
+                    await res
                 return True
             except Exception as e:
                 self._is_running = False
@@ -71,7 +73,9 @@ class MonitoringService:
                 logger.info("Live Monitoring Pipeline Stopped.")
 
                 event = MonitorStatusEvent(payload={"status": "stopped"})
-                await broadcaster.publish(event)
+                res = broadcaster.publish(event)
+                if asyncio.iscoroutine(res) or hasattr(res, "__await__"):
+                    await res
             return True
 
 

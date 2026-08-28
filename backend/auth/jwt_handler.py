@@ -11,8 +11,13 @@ logger = get_logger(__name__)
 # Configuration (Ensure 32+ byte default key for HMAC-SHA256)
 _DEFAULT_JWT_KEY = "netriq_super_secret_jwt_key_32_bytes_min!!"
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", _DEFAULT_JWT_KEY)
+ENVIRONMENT = os.getenv("ENVIRONMENT", os.getenv("ENV", "development")).lower()
+
 if JWT_SECRET_KEY == _DEFAULT_JWT_KEY:
-    logger.warning("SECURITY WARNING: JWT_SECRET_KEY is using the default fallback value. Set JWT_SECRET_KEY in environment variables for production security.")
+    if ENVIRONMENT == "production":
+        raise RuntimeError("FATAL SECURITY ERROR: Default JWT_SECRET_KEY used in production environment. Application startup aborted.")
+    else:
+        logger.warning("SECURITY WARNING: JWT_SECRET_KEY is using default fallback value. Set JWT_SECRET_KEY in environment variables for production security.")
 
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_ACCESS_EXPIRY_MINUTES = int(os.getenv("JWT_ACCESS_EXPIRY_MINUTES", "15"))

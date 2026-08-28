@@ -6,6 +6,7 @@ from backend.ai.contracts import PredictionResult, TrafficType, RiskCategory
 from backend.ai.model_manager import ModelManager
 from backend.ai.feature_encoder import FeatureEncoder
 from backend.ai.risk_engine import RiskEngine
+from backend.ai.anomaly_detector import EXPECTED_FEATURE_NAMES
 from backend.utils.logger import get_logger
 from backend.utils.exceptions import PredictionError
 
@@ -43,13 +44,25 @@ class Predictor:
             # 1. Encode features
             encoded_dict = self.feature_encoder.encode(raw_features)
             
-            # Maintain feature order based on dictionary keys (ideally this should match training exactly)
-            # In production, we'd rely on a fixed feature list from metadata.json
-            feature_names = list(encoded_dict.keys())
-            feature_vector = np.array([list(encoded_dict.values())])
-            
             # 2. Scale features
             scaler = self.model_manager.get_scaler()
+
+            # Enforce canonical feature order matching training contract; fail loudly on schema mismatch
+            if scaler and hasattr(scaler, "feature_names_in_"):
+                feature_names = list(scaler.feature_names_in_)
+                missing = [k for k in feature_names if k not in encoded_dict]
+                if missing:
+                    logger.error(f"[SCHEMA_MISMATCH] Feature vector missing required scaler features: {missing[:5]}")
+                    raise PredictionError(f"[SCHEMA_MISMATCH] Feature vector missing {len(missing)} required features from scaler model contract.")
+                feature_vector = np.array([[float(encoded_dict[k]) for k in feature_names]])
+            elif all(k in encoded_dict for k in EXPECTED_FEATURE_NAMES):
+                feature_names = EXPECTED_FEATURE_NAMES
+                feature_vector = np.array([[float(encoded_dict[k]) for k in EXPECTED_FEATURE_NAMES]])
+            else:
+                missing = [k for k in EXPECTED_FEATURE_NAMES if k not in encoded_dict]
+                logger.error(f"[SCHEMA_MISMATCH] Feature encoding schema mismatch. Missing canonical features: {missing[:5]}")
+                raise PredictionError(f"[SCHEMA_MISMATCH] Incomplete feature payload. Missing {len(missing)} canonical features.")
+            
             if scaler:
                 # Some scalers expect 2D arrays
                 scaled_vector = scaler.transform(feature_vector)

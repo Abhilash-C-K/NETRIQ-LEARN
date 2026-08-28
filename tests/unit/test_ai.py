@@ -7,6 +7,7 @@ from backend.ai.feature_encoder import FeatureEncoder
 from backend.ai.risk_engine import RiskEngine
 from backend.ai.decision_engine import DecisionEngine
 from backend.ai.predictor import Predictor
+from backend.utils.exceptions import PredictionError
 
 class TestFeatureEncoder(unittest.TestCase):
     def test_unseen_category_fallback(self):
@@ -71,7 +72,10 @@ class TestPredictor(unittest.TestCase):
         mock_manager_instance.get_model.return_value = mock_model
         mock_manager_instance.get_model_name.return_value = "MockModel_v1"
         mock_manager_instance.get_encoder.return_value = {}
-        mock_manager_instance.get_scaler.return_value = None
+        mock_scaler = MagicMock()
+        mock_scaler.feature_names_in_ = np.array(["f1", "f2"])
+        mock_scaler.transform.side_effect = lambda x: x
+        mock_manager_instance.get_scaler.return_value = mock_scaler
 
         predictor = Predictor()
         
@@ -86,6 +90,42 @@ class TestPredictor(unittest.TestCase):
         # 90% usually falls into HIGH or CRITICAL depending on defaults
         self.assertIn(result.risk_category, [RiskCategory.HIGH, RiskCategory.CRITICAL])
         self.assertTrue(result.latency_ms > 0)
+
+    @patch('backend.ai.predictor.ModelManager')
+    def test_predictor_schema_mismatch_raises_error(self, MockModelManager):
+        """Verify that supplying an incomplete feature vector matching scaler contract fails loudly."""
+        mock_manager_instance = MockModelManager.return_value
+        mock_scaler = MagicMock()
+        mock_scaler.feature_names_in_ = np.array(["f1", "f2", "f3_missing"])
+        mock_manager_instance.get_scaler.return_value = mock_scaler
+        mock_manager_instance.get_encoder.return_value = {}
+
+        predictor = Predictor()
+
+        # Input only has f1 and f2, missing f3_missing
+        incomplete_features = {"f1": 10, "f2": 20}
+        with self.assertRaises(PredictionError) as ctx:
+            predictor.predict(incomplete_features, TrafficType.NETWORK)
+
+        self.assertIn("[SCHEMA_MISMATCH]", str(ctx.exception))
+
+    @patch('backend.ai.predictor.ModelManager')
+    def test_predictor_same_length_wrong_keys_raises_error(self, MockModelManager):
+        """Verify that supplying a feature dict with matching length but invalid/typo'd key names fails loudly."""
+        mock_manager_instance = MockModelManager.return_value
+        mock_scaler = MagicMock()
+        mock_scaler.feature_names_in_ = np.array(["f1", "f2", "f3"])
+        mock_manager_instance.get_scaler.return_value = mock_scaler
+        mock_manager_instance.get_encoder.return_value = {}
+
+        predictor = Predictor()
+
+        # Input has 3 keys (matching length 3), but "f3_typo" instead of "f3"
+        typo_features = {"f1": 10, "f2": 20, "f3_typo": 30}
+        with self.assertRaises(PredictionError) as ctx:
+            predictor.predict(typo_features, TrafficType.NETWORK)
+
+        self.assertIn("[SCHEMA_MISMATCH]", str(ctx.exception))
 
 if __name__ == '__main__':
     unittest.main()

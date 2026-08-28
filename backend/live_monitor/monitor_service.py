@@ -11,6 +11,14 @@ from backend.live_monitor.flow_builder import FlowBuilder
 from backend.live_monitor.feature_extractor import FeatureExtractor
 from backend.live_monitor.live_predictor import LivePredictor
 
+from typing import Dict, Any
+from backend.live_monitor.heuristic_fallback import HeuristicFallback
+from backend.ai.risk_engine import classify_risk
+from backend.ai.decision_engine import decide
+from backend.ai.contracts import PredictionResult
+from backend.response.response_engine import ResponseEngine
+from backend.utils.validators import is_internal_ip
+
 logger = get_logger(__name__)
 
 
@@ -25,9 +33,70 @@ class MonitorService:
         self.interface = interface
         self._task: asyncio.Task = None
         self._stop_event = asyncio.Event()
-        self.sniffer = PacketSniffer(interface=interface)
+        self._loop: asyncio.AbstractEventLoop = None
+        self.heuristic_fallback = HeuristicFallback()
+        self.response_engine = ResponseEngine()
+        self.sniffer = PacketSniffer(
+            interface=interface,
+            heuristic_callback=self._handle_malformed_heuristic
+        )
         self.flow_builder = FlowBuilder(idle_timeout_sec=3.0)
         self.predictor = LivePredictor(dataset_name=dataset_name)
+
+    def _handle_malformed_heuristic(self, partial_pkt: Dict[str, Any]) -> None:
+        """Callback invoked by PacketSniffer on Case B malformed IP packets."""
+        try:
+            verdict = self.heuristic_fallback.evaluate(partial_pkt)
+            if verdict.escalate:
+                logger.warning(
+                    f"[HEURISTIC_FALLBACK][CASE_B] Malformed packet from {partial_pkt.get('src_ip')} "
+                    f"escalated to confidence_floor={verdict.confidence_floor:.1f}% "
+                    f"via rules: {verdict.matched_rules}"
+                )
+
+                # 1. Classify Risk Category
+                risk_cat = classify_risk(verdict.confidence_floor)
+
+                # 2. Determine Internal vs External Asset Scope
+                src_ip = partial_pkt.get("src_ip", "")
+                dst_ip = partial_pkt.get("dst_ip", "")
+                is_internal = is_internal_ip(src_ip) or is_internal_ip(dst_ip)
+
+                # 3. Formulate Decision (respecting single-rule vs 2-rule Layer 2 ceilings)
+                decision = decide(risk=risk_cat, confidence=verdict.confidence_floor, is_internal=is_internal)
+
+                # 4. Dispatch Enforcement Action via ResponseEngine
+                synthetic_prediction = PredictionResult(
+                    verdict=True,
+                    confidence=verdict.confidence_floor,
+                    model_used="HeuristicFallback_CaseB",
+                    risk_category=risk_cat,
+                    latency_ms=0.0,
+                    explainability_top_features=[]
+                )
+
+                context = {
+                    "src_ip": src_ip,
+                    "dst_ip": dst_ip,
+                    "src_port": partial_pkt.get("src_port", 0),
+                    "dst_port": partial_pkt.get("dst_port", 0),
+                    "protocol": partial_pkt.get("protocol", "MALFORMED"),
+                    "reason": decision.reason,
+                    "matched_rules": verdict.matched_rules
+                }
+
+                # Schedule enforcement asynchronously on the main loop
+                coro = self.response_engine.handle_verdict(synthetic_prediction, decision.action, context)
+                if self._loop and self._loop.is_running():
+                    asyncio.run_coroutine_threadsafe(coro, self._loop)
+                else:
+                    try:
+                        loop = asyncio.get_running_loop()
+                        loop.create_task(coro)
+                    except RuntimeError:
+                        pass
+        except Exception as e:
+            logger.error(f"[MonitorService] Error in malformed packet heuristic handling: {e}", exc_info=True)
 
     async def start(self):
         """Starts the pipeline as a background asyncio task. Idempotent."""

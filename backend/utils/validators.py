@@ -48,3 +48,13 @@ def validate_email(email_str: str) -> bool:
     if not email_str:
         return False
     return bool(re.match(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$", email_str))
+
+def is_internal_ip(ip_str: str) -> bool:
+    """Returns True if ip_str is a private RFC1918 or loopback IP address."""
+    if not validate_ip(ip_str):
+        return False
+    try:
+        ip_obj = ipaddress.ip_address(ip_str)
+        return ip_obj.is_private or ip_obj.is_loopback
+    except ValueError:
+        return False

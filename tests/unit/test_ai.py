@@ -127,5 +127,19 @@ class TestPredictor(unittest.TestCase):
 
         self.assertIn("[SCHEMA_MISMATCH]", str(ctx.exception))
 
+class TestModelManager(unittest.TestCase):
+    @patch.dict('os.environ', {'ENVIRONMENT': 'production'})
+    @patch('os.path.exists', return_value=False)
+    def test_model_manager_production_missing_models_raises_error(self, mock_exists):
+        """Verify ModelManager fails startup loudly with ModelLoadError when models are missing in production."""
+        from backend.ai.model_manager import ModelManager
+        from backend.utils.exceptions import ModelLoadError
+
+        mm = ModelManager()
+        with self.assertRaises(ModelLoadError) as ctx:
+            mm.load_models(force_reload=True)
+
+        self.assertIn("FATAL MODEL LOAD ERROR", str(ctx.exception))
+
 if __name__ == '__main__':
     unittest.main()

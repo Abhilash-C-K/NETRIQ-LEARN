@@ -39,6 +39,7 @@ class ModelManager:
             if self._models and not force_reload:
                 return
             
+            env = os.getenv("ENVIRONMENT", os.getenv("ENV", "development")).lower()
             logger.info(f"Loading models from {self._models_dir}...")
             try:
                 metadata_path = os.path.join(self._models_dir, "metadata.json")
@@ -62,10 +63,15 @@ class ModelManager:
                     self._validate_metadata()
                     logger.info("All models loaded and validated successfully.")
                 else:
-                    # Fallback to Mock Models when binary artifacts are absent (e.g. initial dev/testing)
+                    if env == "production":
+                        logger.error(f"[FATAL_MODEL_LOAD_ERROR] Metadata or joblib models absent at {self._models_dir} in production environment.")
+                        raise ModelLoadError(f"FATAL MODEL LOAD ERROR: Model artifacts absent at {self._models_dir} in production mode.")
                     logger.warning(f"Metadata or joblib models absent at {self._models_dir}. Initializing default mock models.")
                     self._init_fallback_models()
             except Exception as e:
+                if env == "production":
+                    logger.error(f"[FATAL_MODEL_LOAD_ERROR] Could not load binary models in production mode: {e}")
+                    raise ModelLoadError(f"FATAL MODEL LOAD ERROR: Failed to load binary models in production mode: {e}") from e
                 logger.warning(f"Could not load binary models ({str(e)}). Using fallback mock models.")
                 self._init_fallback_models()
 

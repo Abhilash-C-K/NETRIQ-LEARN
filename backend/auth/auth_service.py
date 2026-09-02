@@ -33,16 +33,22 @@ class AuthService:
     Note: Token extraction from HTTP headers is handled separately by middleware/auth.py.
     """
     async def seed_initial_users(self):
-        """Seeds default admin, analyst, and viewer accounts if users collection is empty."""
+        """Seeds default admin, analyst, and viewer accounts if missing."""
         try:
-            existing_res = users_repo.list({}, limit=1)
-            existing = await existing_res if (asyncio.iscoroutine(existing_res) or hasattr(existing_res, "__await__")) else existing_res
-            if not existing:
-                logger.info("[AuthService] Seeding default demo accounts...")
-                await self.register_user("system", "admin@netriq.local", "AdminPassword123!", Role.ADMIN)
-                await self.register_user("system", "analyst@netriq.local", "AnalystPassword123!", Role.ANALYST)
-                await self.register_user("system", "viewer@netriq.local", "ViewerPassword123!", Role.VIEWER)
-                logger.info("[AuthService] Default demo accounts created successfully.")
+            demo_users = [
+                ("admin@netriq.local", "admin", "AdminPassword123!", Role.ADMIN),
+                ("analyst@netriq.local", "analyst", "AnalystPassword123!", Role.ANALYST),
+                ("viewer@netriq.local", "viewer", "ViewerPassword123!", Role.VIEWER),
+            ]
+            for email, uname, pwd, r in demo_users:
+                existing = await users_repo.list({"$or": [{"email": email}, {"username": uname}]}, limit=1)
+                if not existing:
+                    logger.info(f"[AuthService] Seeding default account {uname} ({email})...")
+                    await self.register_user("system", email, pwd, r, username=uname)
+                else:
+                    u_doc = existing[0]
+                    if not u_doc.get("username"):
+                        await users_repo.update(u_doc["id"], {"username": uname})
         except Exception as e:
             logger.warning(f"[AuthService] User seed warning: {e}")
 
@@ -53,8 +59,9 @@ class AuthService:
 
     async def login(self, email: str, password: str) -> Dict[str, str]:
         """Validates credentials, enforces lockout, issues tokens."""
-        # 1. Fetch user by email or username
-        query = {"$or": [{"email": email}, {"username": email}]}
+        # 1. Fetch user by email, username, or local domain alias
+        domain_alias = f"{email}@netriq.local" if "@" not in email else email
+        query = {"$or": [{"email": email}, {"username": email}, {"email": domain_alias}]}
         users_res = users_repo.list(query, limit=1)
         if asyncio.iscoroutine(users_res) or hasattr(users_res, "__await__"):
             users = await users_res
@@ -111,7 +118,7 @@ class AuthService:
             "role": role
         }
 
-    async def register_user(self, admin_user_id: str, email: str, raw_password: str, role: Role) -> str:
+    async def register_user(self, admin_user_id: str, email: str, raw_password: str, role: Role, username: Optional[str] = None) -> str:
         """Admin only endpoint to create users."""
         # Policy validation
         validate_password_policy(raw_password)
@@ -122,8 +129,10 @@ class AuthService:
             from backend.utils.exceptions import DuplicateKeyError
             raise DuplicateKeyError("Email already registered.")
             
+        uname_val = username or email.split("@")[0]
         new_user = {
             "email": email,
+            "username": uname_val,
             "hashed_password": hash_password(raw_password),
             "role": role.value,
             "is_active": True,

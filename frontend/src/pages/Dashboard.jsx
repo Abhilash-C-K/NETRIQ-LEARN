@@ -4,6 +4,9 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { predictionService } from '../services/prediction';
 import { VerdictCard } from '../components/VerdictCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
 import {
   Shield,
   Sparkles,
@@ -13,7 +16,6 @@ import {
   Lock,
   Activity,
   CheckCircle2,
-  AlertTriangle,
 } from 'lucide-react';
 
 const MAX_FEED_ENTRIES = 50;
@@ -29,6 +31,7 @@ export const Dashboard = () => {
   const [error, setError] = useState('');
 
   const hasRawAccess = hasCapability('VIEW_RAW_LOGS');
+  const hasAdminAccess = hasCapability('MANAGE_SETTINGS');
 
   // Initial REST fetch of recent threats
   const loadRecentThreats = useCallback(async () => {
@@ -65,7 +68,7 @@ export const Dashboard = () => {
         protocol: payload.protocol || 'TCP',
         sni: payload.sni || null,
         severity: payload.severity || payload.risk_level || (payload.is_anomaly ? 'HIGH' : 'LOW'),
-        action: payload.action || (payload.is_anomaly ? 'RECOMMEND_BLOCK' : 'PASS'),
+        action: payload.action || (payload.is_anomaly ? 'RECOMMEND_BLOCK' : 'NOTIFY'),
         verdict: payload.verdict || payload.is_anomaly || false,
         confidence: payload.confidence ?? 0.95,
         timestamp: payload.timestamp || new Date().toISOString(),
@@ -99,8 +102,9 @@ export const Dashboard = () => {
     };
   }, [subscribe]);
 
-  // Handle Simulation Trigger
+  // Handle Simulation Trigger (Requires Admin MANAGE_SETTINGS capability)
   const handleSimulateFlow = async () => {
+    if (!hasAdminAccess) return;
     setIsSimulating(true);
     try {
       const { data, predictionId } = await predictionService.runTestPrediction();
@@ -115,7 +119,7 @@ export const Dashboard = () => {
         protocol: 'TCP',
         sni: data.flow_summary?.sni || 'youtube.com',
         severity: data.risk_level?.toUpperCase() || (data.verdict ? 'HIGH' : 'LOW'),
-        action: data.action?.toUpperCase() || (data.verdict ? 'RECOMMEND_BLOCK' : 'PASS'),
+        action: data.action?.toUpperCase() || (data.verdict ? 'RECOMMEND_BLOCK' : 'NOTIFY'),
         verdict: data.verdict,
         confidence: data.confidence || 0.94,
         timestamp: new Date().toISOString(),
@@ -146,26 +150,41 @@ export const Dashboard = () => {
 
         {/* Action Controls & View Mode Toggle */}
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleSimulateFlow}
-            disabled={isSimulating}
-            className="flex items-center gap-2 px-3 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 rounded-lg text-xs font-mono transition-all disabled:opacity-50"
-          >
-            {isSimulating ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Play className="w-3.5 h-3.5 fill-cyan-400" />
-            )}
-            <span>Simulate Flow</span>
-          </button>
+          {/* RBAC Guarded Simulation Button */}
+          {hasAdminAccess ? (
+            <Button
+              onClick={handleSimulateFlow}
+              disabled={isSimulating}
+              variant="default"
+              size="sm"
+            >
+              {isSimulating ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+              ) : (
+                <Play className="w-3.5 h-3.5 fill-cyan-400 mr-1.5" />
+              )}
+              <span>Simulate Flow</span>
+            </Button>
+          ) : (
+            <Button
+              disabled
+              variant="outline"
+              size="sm"
+              title="Simulate Flow requires Admin capability (MANAGE_SETTINGS)"
+            >
+              <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
+              <span>Simulate (Admin)</span>
+            </Button>
+          )}
 
-          <button
+          <Button
             onClick={loadRecentThreats}
             title="Refresh threat feed"
-            className="p-2 text-slate-400 hover:text-slate-100 bg-slate-900 border border-slate-800 rounded-lg transition-colors"
+            variant="outline"
+            size="icon"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+          </Button>
 
           {/* View Mode Segmented Control */}
           <div className="bg-slate-900 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
@@ -198,7 +217,7 @@ export const Dashboard = () => {
         </div>
       </div>
 
-      {/* Feed Status Summary */}
+      {/* Feed Status Summary Card */}
       <div className="flex items-center justify-between text-xs font-mono text-slate-400 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 text-slate-300">
@@ -226,15 +245,17 @@ export const Dashboard = () => {
           <LoadingSpinner size="medium" label="Loading telemetry threat feed..." />
         </div>
       ) : threats.length === 0 ? (
-        <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-xl space-y-3">
-          <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-          <h3 className="text-sm font-semibold font-mono text-slate-200">
-            No Recent Threat Telemetry
-          </h3>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            NIDS engine is actively monitoring network interfaces. Click "Simulate Flow" above to trigger a synthetic threat evaluation.
-          </p>
-        </div>
+        <Card className="p-12 text-center bg-slate-900/40 border-dashed">
+          <CardContent className="space-y-3 p-0">
+            <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+            <h3 className="text-sm font-semibold font-mono text-slate-200">
+              No Recent Threat Telemetry
+            </h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              NIDS engine is actively monitoring network interfaces. Click "Simulate Flow" above to trigger a synthetic threat evaluation.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-3">
           {threats.map((threat) => (

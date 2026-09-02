@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from typing import Dict, Any
-from backend.auth.roles import Capabilities, get_request_role
+from backend.auth.roles import Capabilities, PERMISSION_MATRIX, get_request_role
 from backend.auth.permissions import require_permission
 from backend.services.predict_service import predict_service, ExplanationNotFoundError, ExplanationFailedError
 from backend.ai.contracts import PredictionResult, ExplanationResult
@@ -31,7 +31,7 @@ async def test_prediction(payload: Dict[str, Any], req: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {e}")
 
 
-@router.get("/{prediction_id}/explain", response_model=ExplanationResult, dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))], summary="On-demand SHAP or deviation explainability for a stored prediction")
+@router.get("/{prediction_id}/explain", response_model=ExplanationResult, dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))], summary="On-demand SHAP or deviation explainability for a stored prediction")
 async def explain_prediction(prediction_id: str, req: Request):
     """
     Returns per-feature attribution for a previously stored prediction.
@@ -46,6 +46,18 @@ async def explain_prediction(prediction_id: str, req: Request):
     """
     try:
         result = await predict_service.explain_prediction(prediction_id)
+        
+        # Server-side Data Security: If role lacks VIEW_RAW_LOGS (e.g. Viewer),
+        # sanitize raw exact numeric feature values before emitting over the wire.
+        role = get_request_role(req)
+        if Capabilities.VIEW_RAW_LOGS not in PERMISSION_MATRIX.get(role, []):
+            sanitized_features = []
+            for feat in result.top_features:
+                sanitized_feat = feat.model_copy()
+                sanitized_feat.value = None
+                sanitized_features.append(sanitized_feat)
+            result.top_features = sanitized_features
+
         return result
     except ExplanationNotFoundError as e:
         raise HTTPException(
@@ -58,5 +70,8 @@ async def explain_prediction(prediction_id: str, req: Request):
             detail=str(e),
         )
     except Exception as e:
-        logger.error(f"Explanation failed for prediction {prediction_id}: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Explanation failed")
+        logger.error(f"Explain prediction failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Explanation failed: {e}",
+        )

@@ -127,8 +127,47 @@ export const Login = () => {
           </button>
         </form>
 
+        {/* Quick Demo Fill Credentials */}
+        <div className="mt-6 pt-4 border-t border-slate-800/80">
+          <div className="text-[11px] font-mono text-slate-400 mb-2 text-center uppercase tracking-wider">
+            Quick Fill Demo Accounts
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('admin@netriq.local');
+                setPassword('AdminPassword123!');
+              }}
+              className="py-1.5 px-2 bg-slate-950/80 hover:bg-cyan-500/10 border border-slate-800 hover:border-cyan-500/30 text-cyan-400 rounded text-xs font-mono transition-all text-center"
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('analyst@netriq.local');
+                setPassword('AnalystPassword123!');
+              }}
+              className="py-1.5 px-2 bg-slate-950/80 hover:bg-cyan-500/10 border border-slate-800 hover:border-cyan-500/30 text-cyan-400 rounded text-xs font-mono transition-all text-center"
+            >
+              Analyst
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsername('viewer@netriq.local');
+                setPassword('ViewerPassword123!');
+              }}
+              className="py-1.5 px-2 bg-slate-950/80 hover:bg-cyan-500/10 border border-slate-800 hover:border-cyan-500/30 text-cyan-400 rounded text-xs font-mono transition-all text-center"
+            >
+              Viewer
+            </button>
+          </div>
+        </div>
+
         {/* Footer */}
-        <div className="mt-8 text-center text-[11px] text-slate-400 font-mono">
+        <div className="mt-4 text-center text-[11px] text-slate-400 font-mono">
           Strict Security Control • Authorized Personnel Only
         </div>
       </div>

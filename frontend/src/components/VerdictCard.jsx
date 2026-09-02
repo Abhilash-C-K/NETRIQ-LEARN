@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { SeverityBadge } from './SeverityBadge';
 import { ExplanationPanel } from './ExplanationPanel';
-import { ChevronDown, ChevronUp, Globe, Shield, Terminal, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Globe, Terminal, ArrowRight } from 'lucide-react';
+import { Card } from './ui/card';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 
 export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -16,35 +19,36 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
     protocol = 'TCP',
     sni,
     severity = 'LOW',
-    action = 'PASS',
-    verdict,
+    action = 'NOTIFY',
     confidence = 0,
     timestamp,
     reason,
   } = threat;
 
   const effectivePredictionId = prediction_id || id;
+  const normAction = String(action).toUpperCase();
 
   // Determine plain-language summary line based on verdict and action
   const getSummarySentence = () => {
     if (reason) return reason;
-    if (action === 'QUARANTINE') {
+    if (normAction === 'QUARANTINE') {
       return `Internal host ${src_ip} isolated via Layer 2 SDN quarantine due to anomalous packet activity.`;
     }
-    if (action === 'RECOMMEND_BLOCK') {
+    if (normAction === 'RECOMMEND_BLOCK') {
       return `External source ${src_ip} flagged for Layer 1 firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
     }
     return `Flow from ${src_ip} to ${sni || `${dst_ip}:${dst_port}`} evaluated as benign traffic.`;
   };
 
-  const actionStyles = {
-    QUARANTINE: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-    RECOMMEND_BLOCK: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-    PASS: 'bg-slate-800 text-slate-300 border-slate-700',
+  const actionVariants = {
+    QUARANTINE: 'rose',
+    RECOMMEND_BLOCK: 'amber',
+    NOTIFY: 'cyan',
+    PASS: 'default',
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-lg transition-all hover:border-slate-700">
+    <Card className="overflow-hidden transition-all hover:border-slate-700">
       {/* Primary Card Summary Row */}
       <div className="p-4 flex flex-wrap items-center justify-between gap-4">
         {/* Connection & Target Identifier */}
@@ -78,25 +82,22 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
         <div className="flex items-center gap-3">
           <SeverityBadge severity={severity} size="medium" />
 
-          <span
-            className={`text-xs px-2.5 py-1 rounded-full border font-mono font-semibold uppercase ${
-              actionStyles[action] || actionStyles.PASS
-            }`}
-          >
-            {action}
-          </span>
+          <Badge variant={actionVariants[normAction] || 'default'}>
+            {normAction === 'NOTIFY' ? 'PASS / NOTIFY' : normAction}
+          </Badge>
 
           <span className="text-xs font-mono text-slate-400 font-medium">
             {(confidence * 100).toFixed(0)}% Conf
           </span>
 
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-slate-800 rounded-lg transition-colors border border-slate-800 ml-1"
             title={isExpanded ? 'Collapse AI explanation' : 'Expand AI explanation'}
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -121,6 +122,6 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
           />
         </div>
       )}
-    </div>
+    </Card>
   );
 };

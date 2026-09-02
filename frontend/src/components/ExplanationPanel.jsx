@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { predictionService } from '../services/prediction';
-import { humanizeFeatureName, getFeatureMeta } from '../utils/featureLabels';
-import { Sparkles, ArrowUpRight, ArrowDownRight, Info, Lock, AlertCircle } from 'lucide-react';
+import { getFeatureMeta } from '../utils/featureLabels';
+import { Sparkles, ArrowUpRight, ArrowDownRight, Lock, AlertCircle } from 'lucide-react';
 
 export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAccess = true }) => {
   const [explanation, setExplanation] = useState(null);
@@ -15,13 +15,37 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
       return;
     }
 
+    // RBAC GUARD: If user lacks VIEW_RAW_LOGS and is attempting raw mode, NEVER fire API call
+    if (viewMode === 'raw' && !hasRawAccess) {
+      setLoading(false);
+      return;
+    }
+
     const fetchExplanation = async () => {
       setLoading(true);
       setError('');
       try {
         const data = await predictionService.getExplanation(predictionId);
         if (isMounted) {
-          setExplanation(data);
+          if (!hasRawAccess) {
+            // Sanitize payload in memory for non-raw sessions: sanitize exact values and raw keys
+            const sanitizedFeatures = (data.top_features || []).map((f) => {
+              const meta = getFeatureMeta(f.name);
+              return {
+                label: meta.label,
+                description: meta.description,
+                unit: meta.unit,
+                contribution: f.contribution,
+                direction: f.direction,
+              };
+            });
+            setExplanation({
+              explanation_source: data.explanation_source,
+              top_features: sanitizedFeatures,
+            });
+          } else {
+            setExplanation(data);
+          }
         }
       } catch (err) {
         if (isMounted) {
@@ -42,7 +66,22 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
     return () => {
       isMounted = false;
     };
-  }, [predictionId]);
+  }, [predictionId, viewMode, hasRawAccess]);
+
+  // Strict RBAC Guard View for Raw mode without capability
+  if (viewMode === 'raw' && !hasRawAccess) {
+    return (
+      <div className="p-4 bg-slate-950/80 border border-rose-500/30 rounded-lg text-xs text-slate-300 flex items-center gap-3 font-mono">
+        <Lock className="w-5 h-5 text-rose-400 shrink-0" />
+        <div>
+          <div className="font-semibold text-rose-300 uppercase tracking-wide">Access Restricted</div>
+          <div className="text-[11px] text-slate-400 mt-0.5">
+            Raw model feature metrics require Analyst or Admin role permissions. Network requests blocked.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -74,15 +113,6 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
   const maxContribution = Math.max(...topFeatures.map((f) => Math.abs(f.contribution || 0)), 0.001);
 
   if (viewMode === 'raw') {
-    if (!hasRawAccess) {
-      return (
-        <div className="p-4 bg-slate-950/80 border border-rose-500/20 rounded-lg text-xs text-slate-400 flex items-center gap-2 font-mono">
-          <Lock className="w-4 h-4 text-rose-400 shrink-0" />
-          <span>Raw model feature logs require Analyst or Admin role capabilities.</span>
-        </div>
-      );
-    }
-
     return (
       <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg space-y-4 font-mono text-xs">
         {/* Header Metadata */}
@@ -113,9 +143,9 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
                 const isRiskInc = feat.direction === 'INCREASES_RISK';
                 return (
                   <tr key={idx} className="hover:bg-slate-900/60">
-                    <td className="py-2 px-2 text-slate-200">{feat.name}</td>
+                    <td className="py-2 px-2 text-slate-200">{feat.name || feat.label}</td>
                     <td className="py-2 px-2 text-right text-slate-300">
-                      {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value}
+                      {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value ?? 'N/A'}
                     </td>
                     <td className="py-2 px-2 text-right text-slate-300 font-semibold">
                       {feat.contribution > 0 ? `+${feat.contribution.toFixed(4)}` : feat.contribution?.toFixed(4)}
@@ -157,7 +187,8 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
       {/* Top 3 Humanized Factors */}
       <div className="space-y-3">
         {top3Features.map((feat, idx) => {
-          const meta = getFeatureMeta(feat.name);
+          const meta = hasRawAccess ? getFeatureMeta(feat.name) : feat;
+          const labelStr = feat.label || meta.label || feat.name;
           const isRiskInc = feat.direction === 'INCREASES_RISK';
           const pct = Math.min(Math.round((Math.abs(feat.contribution || 0) / maxContribution) * 100), 100);
 
@@ -165,10 +196,12 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
             <div key={idx} className="space-y-1.5 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800/60">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 font-medium text-slate-200">
-                  <span>{meta.label}</span>
-                  <span className="text-[10px] text-slate-400 font-mono bg-slate-800 px-1.5 py-0.5 rounded">
-                    {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value} {meta.unit}
-                  </span>
+                  <span>{labelStr}</span>
+                  {hasRawAccess && feat.value !== undefined && (
+                    <span className="text-[10px] text-slate-400 font-mono bg-slate-800 px-1.5 py-0.5 rounded">
+                      {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value} {meta.unit}
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-1 font-mono text-[11px]">
                   {isRiskInc ? (
@@ -193,7 +226,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
                 />
               </div>
 
-              <p className="text-[11px] text-slate-400 leading-snug">{meta.description}</p>
+              <p className="text-[11px] text-slate-400 leading-snug">{meta.description || feat.description}</p>
             </div>
           );
         })}

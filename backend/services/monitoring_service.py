@@ -23,13 +23,30 @@ class MonitoringService:
         return self._lock
 
     def get_status(self) -> Dict[str, Any]:
-        """Returns current monitoring status as a plain dict (no private access needed from router)."""
+        """Returns current monitoring status as a dictionary with operational telemetry counters."""
         uptime = (time.time() - self._start_time) if self._is_running else 0.0
+        
+        # Pull live operational metrics from PacketSniffer instance
+        sniffer = getattr(live_monitor, "sniffer", None)
+        queue_drop_count = getattr(sniffer, "queue_drop_count", 0) if sniffer else 0
+        non_ip_count = getattr(sniffer, "non_ip_count", 0) if sniffer else 0
+        malformed_ip_count = getattr(sniffer, "malformed_ip_count", 0) if sniffer else 0
+        
+        interface = getattr(live_monitor, "interface", None)
+        
         return {
             "is_running": self._is_running,
             "mode": "active" if self._is_running else "stopped",
+            "interface": interface or "Default (Auto-select)",
             "uptime_seconds": round(uptime, 2),
-            "packets_processed": 0,  # Future: expose counter from live_monitor
+            "packets_captured": getattr(sniffer, "packets_captured", 0) if hasattr(sniffer, "packets_captured") else 0,
+            "flows_processed": getattr(live_monitor, "flows_processed", 0) if hasattr(live_monitor, "flows_processed") else 0,
+            "active_flows": 0,
+            "operational_metrics": {
+                "queue_drop_count": queue_drop_count,
+                "non_ip_count": non_ip_count,
+                "malformed_ip_count": malformed_ip_count
+            }
         }
 
     async def start(self, role: Role) -> bool:
@@ -45,7 +62,7 @@ class MonitoringService:
                 self._start_time = time.time()
                 logger.info("Live Monitoring Pipeline Started.")
 
-                event = MonitorStatusEvent(payload={"status": "started"})
+                event = MonitorStatusEvent(payload={"status": "started", **self.get_status()})
                 res = broadcaster.publish(event)
                 if asyncio.iscoroutine(res) or hasattr(res, "__await__"):
                     await res
@@ -72,7 +89,7 @@ class MonitoringService:
                 self._start_time = 0.0
                 logger.info("Live Monitoring Pipeline Stopped.")
 
-                event = MonitorStatusEvent(payload={"status": "stopped"})
+                event = MonitorStatusEvent(payload={"status": "stopped", **self.get_status()})
                 res = broadcaster.publish(event)
                 if asyncio.iscoroutine(res) or hasattr(res, "__await__"):
                     await res

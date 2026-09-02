@@ -82,6 +82,12 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
         <div className="flex items-center gap-3">
           <SeverityBadge severity={severity} size="medium" />
 
+          {threat.model_used?.toLowerCase().includes('heuristic') && (
+            <Badge variant="amber" className="font-mono text-[10px] uppercase tracking-wider flex items-center gap-1">
+              Case B Heuristic
+            </Badge>
+          )}
+
           <Badge variant={actionVariants[normAction] || 'default'}>
             {normAction === 'NOTIFY' ? 'PASS / NOTIFY' : normAction}
           </Badge>

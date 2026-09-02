@@ -7,11 +7,7 @@ from backend.database.exceptions import DatabaseConnectionError
 
 logger = get_logger(__name__)
 
-# Fallback config defaults if not using a central config manager
-MONGO_URI = os.getenv("MONGODB_URL", os.getenv("MONGO_URI", "mongodb://localhost:27017"))
-MONGO_DB_NAME = os.getenv("MONGO_DB", "netriq_db")
-MIN_POOL_SIZE = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
-MAX_POOL_SIZE = int(os.getenv("MONGO_MAX_POOL_SIZE", "100"))
+# Config values will be read inside connect_db() to ensure load_dotenv() has executed.
 
 from typing import Optional
 
@@ -31,20 +27,25 @@ class DatabaseManager:
         if cls.client is not None:
             return
 
+        mongo_uri = os.getenv("MONGODB_URL", os.getenv("MONGO_URI", "mongodb://localhost:27017"))
+        mongo_db_name = os.getenv("MONGO_DB", "netriq_db")
+        min_pool_size = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
+        max_pool_size = int(os.getenv("MONGO_MAX_POOL_SIZE", "100"))
+
         delay = 1.0
         for attempt in range(1, retries + 1):
             try:
-                logger.info(f"Attempting MongoDB connection (Attempt {attempt}/{retries})...")
+                logger.info(f"Attempting MongoDB connection to '{mongo_db_name}' (Attempt {attempt}/{retries})...")
                 cls.client = AsyncIOMotorClient(
-                    MONGO_URI,
-                    minPoolSize=MIN_POOL_SIZE,
-                    maxPoolSize=MAX_POOL_SIZE,
+                    mongo_uri,
+                    minPoolSize=min_pool_size,
+                    maxPoolSize=max_pool_size,
                     serverSelectionTimeoutMS=5000  # 5 seconds timeout for selection
                 )
                 # Force a call to verify connection
                 await cls.client.server_info()
-                cls.db = cls.client[MONGO_DB_NAME]
-                logger.info(f"Successfully connected to MongoDB database: {MONGO_DB_NAME}")
+                cls.db = cls.client[mongo_db_name]
+                logger.info(f"Successfully connected to MongoDB database: {mongo_db_name}")
                 await cls._ensure_indexes()
                 return
             except (ConnectionFailure, ServerSelectionTimeoutError) as e:

@@ -61,6 +61,7 @@ class FlowData:
         self.active_times = []
         self.idle_times = []
         self.last_active_start = start_time
+        self.sni = None
 
     def add_packet(self, pkt_len, direction, flags, timestamp, header_len=20):
         iat = (timestamp - self.last_time) * 1e6
@@ -134,6 +135,10 @@ class FlowBuilder:
         header_len = pkt_info.get('header_len', 20)
         pkt_len = pkt_info.get('length', 60)
         
+        # Retain the first non-None SNI seen across packets in the flow
+        if not flow.sni and pkt_info.get('sni'):
+            flow.sni = pkt_info['sni']
+
         flow.add_packet(pkt_len, direction, flags, now, header_len)
         
         # Evict on FIN/RST or timeout

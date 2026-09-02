@@ -32,6 +32,20 @@ class AuthService:
     Owns all business logic for authentication.
     Note: Token extraction from HTTP headers is handled separately by middleware/auth.py.
     """
+    async def seed_initial_users(self):
+        """Seeds default admin, analyst, and viewer accounts if users collection is empty."""
+        try:
+            existing_res = users_repo.list({}, limit=1)
+            existing = await existing_res if (asyncio.iscoroutine(existing_res) or hasattr(existing_res, "__await__")) else existing_res
+            if not existing:
+                logger.info("[AuthService] Seeding default demo accounts...")
+                await self.register_user("system", "admin@netriq.local", "AdminPassword123!", Role.ADMIN)
+                await self.register_user("system", "analyst@netriq.local", "AnalystPassword123!", Role.ANALYST)
+                await self.register_user("system", "viewer@netriq.local", "ViewerPassword123!", Role.VIEWER)
+                logger.info("[AuthService] Default demo accounts created successfully.")
+        except Exception as e:
+            logger.warning(f"[AuthService] User seed warning: {e}")
+
     @staticmethod
     def _hash_token(token: str) -> str:
         """SHA-256 hash a token before storing — never store raw tokens in DB."""
@@ -39,8 +53,9 @@ class AuthService:
 
     async def login(self, email: str, password: str) -> Dict[str, str]:
         """Validates credentials, enforces lockout, issues tokens."""
-        # 1. Fetch user by email
-        users_res = users_repo.list({"email": email}, limit=1)
+        # 1. Fetch user by email or username
+        query = {"$or": [{"email": email}, {"username": email}]}
+        users_res = users_repo.list(query, limit=1)
         if asyncio.iscoroutine(users_res) or hasattr(users_res, "__await__"):
             users = await users_res
         else:

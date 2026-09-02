@@ -27,8 +27,8 @@ async def test_prediction(payload: Dict[str, Any], req: Request):
             response.headers["X-Prediction-Id"] = prediction_id
         return response
     except Exception as e:
-        logger.error(f"Manual inference failed: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Prediction failed")
+        logger.error(f"Manual inference failed: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {e}")
 
 
 @router.get("/{prediction_id}/explain", response_model=ExplanationResult, dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))], summary="On-demand SHAP or deviation explainability for a stored prediction")

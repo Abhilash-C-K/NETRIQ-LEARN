@@ -1,3 +1,4 @@
+import sys
 import time
 import queue
 import threading
@@ -14,8 +15,14 @@ ICMP = None
 sniff = None
 
 try:
-    from scapy.all import sniff, IP, IPv6, TCP, UDP, ICMP
+    from scapy.all import sniff, IP, IPv6, TCP, UDP, ICMP, conf
     SCAPY_AVAILABLE = True
+    if sys.platform == "win32":
+        try:
+            from scapy.arch.windows import L3rawSocket
+            conf.L3socket = L3rawSocket
+        except Exception:
+            pass
 except ImportError:
     SCAPY_AVAILABLE = False
 
@@ -71,6 +78,112 @@ class PacketSniffer:
             )
             self.queue_drop_count = 0
             self.last_drop_log_time = now
+
+    @staticmethod
+    def _parse_tls_sni_payload(payload: bytes) -> Optional[str]:
+        """
+        Parses TLS ClientHello payload to extract Server Name Indication (SNI) extension.
+        Returns hostname string if present and parseable, otherwise None.
+
+        NOTE ON LIMITATIONS:
+        - TLS 1.3 with Encrypted ClientHello (ECH) encrypts the SNI extension; yields None.
+        - Non-ClientHello TLS records (ServerHello, ApplicationData) or fragmented records yield None.
+        - Best-effort metadata for display/context only — not a detection signal.
+        """
+        if not payload or len(payload) < 45:
+            return None
+
+        idx = 0
+        # Optional TLS Record Header (5 bytes: Type 0x16, Version 0x03XX, Length 2B)
+        if payload[0] == 0x16 and payload[1] == 0x03:
+            idx = 5
+
+        # Check Handshake Type 0x01 (ClientHello)
+        if idx + 4 > len(payload) or payload[idx] != 0x01:
+            return None
+
+        # Handshake Type (1B) + Length (3B) + Client Version (2B) + Client Random (32B)
+        idx += 1 + 3 + 2 + 32
+        if idx >= len(payload):
+            return None
+
+        # Session ID
+        session_id_len = payload[idx]
+        idx += 1 + session_id_len
+        if idx + 2 > len(payload):
+            return None
+
+        # Cipher Suites
+        cipher_len = int.from_bytes(payload[idx:idx + 2], "big")
+        idx += 2 + cipher_len
+        if idx + 1 > len(payload):
+            return None
+
+        # Compression Methods
+        comp_len = payload[idx]
+        idx += 1 + comp_len
+        if idx + 2 > len(payload):
+            return None
+
+        # Extensions Length
+        ext_len = int.from_bytes(payload[idx:idx + 2], "big")
+        idx += 2
+        ext_end = min(idx + ext_len, len(payload))
+
+        # Iterate Extensions
+        while idx + 4 <= ext_end:
+            ext_type = int.from_bytes(payload[idx:idx + 2], "big")
+            ext_size = int.from_bytes(payload[idx + 2:idx + 4], "big")
+            idx += 4
+            if idx + ext_size > ext_end:
+                break
+
+            if ext_type == 0x0000:  # Server Name Extension (SNI)
+                sni_idx = idx
+                if sni_idx + 2 > ext_end:
+                    break
+                list_len = int.from_bytes(payload[sni_idx:sni_idx + 2], "big")
+                sni_idx += 2
+                if sni_idx + 3 > ext_end:
+                    break
+                name_type = payload[sni_idx]
+                name_len = int.from_bytes(payload[sni_idx + 1:sni_idx + 3], "big")
+                sni_idx += 3
+                if name_type == 0x00 and sni_idx + name_len <= ext_end:
+                    hostname = payload[sni_idx:sni_idx + name_len].decode("utf-8", errors="ignore")
+                    return hostname.strip()
+                break
+
+            idx += ext_size
+
+        return None
+
+    def _extract_sni(self, pkt: Any) -> Optional[str]:
+        """
+        Safe helper to extract SNI from packet payload.
+        Wrapped in a strict, isolated try/except block returning None on ANY failure.
+        MUST NEVER raise or trigger Case B malformed counters.
+        """
+        try:
+            raw_payload = None
+            if hasattr(pkt, 'haslayer') and TCP is not None and pkt.haslayer(TCP):
+                tcp_layer = pkt[TCP]
+                if hasattr(tcp_layer, 'load') and tcp_layer.load:
+                    raw_payload = bytes(tcp_layer.load)
+                elif hasattr(tcp_layer, 'payload') and tcp_layer.payload:
+                    try:
+                        raw_payload = bytes(tcp_layer.payload)
+                    except Exception:
+                        pass
+            elif isinstance(pkt, dict):
+                raw_payload = pkt.get('raw_payload')
+
+            if raw_payload:
+                return self._parse_tls_sni_payload(raw_payload)
+        except Exception:
+            # Metadata extraction failure MUST degrade gracefully to None
+            pass
+        return None
 
     def _process_packet(self, pkt: Any) -> None:
         """
@@ -149,7 +262,15 @@ class PacketSniffer:
                 'header_len': header_len,
                 'flags': flags,
                 'timestamp': timestamp,
+                'sni': None,
             }
+
+            # Attempt TLS SNI metadata extraction for TCP traffic on monitored HTTPS ports
+            if proto_name == "TCP":
+                import backend.config.config as config
+                monitored_ports = getattr(config, "SNI_MONITORED_PORTS", [443, 8443])
+                if src_port in monitored_ports or dst_port in monitored_ports:
+                    pkt_dict['sni'] = self._extract_sni(pkt)
 
             try:
                 self.packet_queue.put_nowait(pkt_dict)
@@ -205,13 +326,17 @@ class PacketSniffer:
             return
 
         try:
-            sniff(
-                iface=self.interface,
-                filter=self.packet_filter,
-                prn=self._process_packet,
-                store=False,
-                stop_filter=lambda p: not self.is_running,
-            )
+            sniff_kwargs = {
+                "iface": self.interface,
+                "filter": self.packet_filter,
+                "prn": self._process_packet,
+                "store": False,
+                "stop_filter": lambda p: not self.is_running,
+            }
+            if sys.platform == "win32" and getattr(conf, "L3socket", None):
+                sniff_kwargs["L3socket"] = conf.L3socket
+
+            sniff(**sniff_kwargs)
         except Exception as e:
             logger.error(f"[packet_sniffer] Sniff loop error: {e}")
 

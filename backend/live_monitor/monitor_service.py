@@ -15,7 +15,7 @@ from typing import Dict, Any
 from backend.live_monitor.heuristic_fallback import HeuristicFallback
 from backend.ai.risk_engine import classify_risk
 from backend.ai.decision_engine import decide
-from backend.ai.contracts import PredictionResult
+from backend.ai.contracts import PredictionResult, Action
 from backend.response.response_engine import ResponseEngine
 from backend.utils.validators import is_internal_ip
 
@@ -64,6 +64,21 @@ class MonitorService:
 
                 # 3. Formulate Decision (respecting single-rule vs 2-rule Layer 2 ceilings)
                 decision = decide(risk=risk_cat, confidence=verdict.confidence_floor, is_internal=is_internal)
+
+                # 3b. Enforce Escalation Ceiling Guard for Heuristic-only matches:
+                # Heuristic matches CANNOT trigger Layer 2 QUARANTINE unless is_internal=True
+                # AND at least HEURISTIC_MIN_RULES_FOR_QUARANTINE rules matched.
+                if decision.action == Action.QUARANTINE:
+                    import backend.config.config as config
+                    matched_count = len(verdict.matched_rules)
+                    min_rules = getattr(config, "HEURISTIC_MIN_RULES_FOR_QUARANTINE", 2)
+                    if not (is_internal and matched_count >= min_rules):
+                        logger.warning(
+                            f"[MonitorService][HEURISTIC_FALLBACK] QUARANTINE ceiling enforced! "
+                            f"Downgrading decision to RECOMMEND_BLOCK (matched {matched_count}/{min_rules} rules required for internal QUARANTINE)."
+                        )
+                        decision.action = Action.RECOMMEND_BLOCK
+                        decision.reason += " (Heuristic escalation ceiling enforced: capped at RECOMMEND_BLOCK)"
 
                 # 4. Dispatch Enforcement Action via ResponseEngine
                 synthetic_prediction = PredictionResult(
@@ -127,9 +142,16 @@ class MonitorService:
     async def _run_loop(self):
         """
         Core pipeline loop: dequeues packets (non-blocking via asyncio.sleep),
-        builds flows, extracts features, and calls the AI predictor.
+        builds flows, extracts features, calls the AI predictor, and routes results
+        to ResponseEngine, MongoDB, and WebSocket clients.
         """
+        from backend.ai.contracts import RiskCategory, Action
+        from backend.database.collections import threats_repo
+        from backend.websocket.broadcaster import broadcaster
+        from backend.websocket.events import LiveVerdictEvent
+
         loop = asyncio.get_event_loop()
+        self._loop = loop
         logger.info("[MonitorService] Capture loop active.")
 
         while not self._stop_event.is_set():
@@ -145,14 +167,79 @@ class MonitorService:
             for flow in completed_flows:
                 try:
                     features = FeatureExtractor.extract_features(flow)
-                    result = self.predictor.predict(features)
+                    result_dict = self.predictor.predict(features)
+                    
+                    # 1. Scope & Decision Formulation
+                    src_ip = getattr(flow, 'src_ip', '')
+                    dst_ip = getattr(flow, 'dst_ip', '')
+                    is_internal = is_internal_ip(src_ip) or is_internal_ip(dst_ip)
+                    
+                    threat_level_name = result_dict.get("threat_level", "LOW")
+                    risk_cat = getattr(RiskCategory, threat_level_name, RiskCategory.LOW)
+                    confidence = result_dict.get("confidence", 0.0)
+                    is_anomaly = result_dict.get("is_anomaly", False)
+                    
+                    decision = decide(risk=risk_cat, confidence=confidence, is_internal=is_internal)
+                    
                     logger.debug(
-                        f"[MonitorService] Flow {flow.src_ip}:{flow.src_port} -> "
-                        f"{flow.dst_ip}:{flow.dst_port} | "
-                        f"verdict={'ANOMALY' if result['is_anomaly'] else 'BENIGN'} "
-                        f"confidence={result['confidence']}%"
+                        f"[MonitorService] Flow {src_ip}:{flow.src_port} -> "
+                        f"{dst_ip}:{flow.dst_port} | "
+                        f"verdict={'ANOMALY' if is_anomaly else 'BENIGN'} "
+                        f"confidence={confidence}% | action={decision.action.value}"
                     )
-                    # TODO: route result to response_engine and database
+
+                    prediction_obj = PredictionResult(
+                        verdict=is_anomaly,
+                        confidence=confidence,
+                        model_used=self.dataset_name,
+                        risk_category=risk_cat,
+                        latency_ms=0.0,
+                        explainability_top_features=[]
+                    )
+
+                    context = {
+                        "src_ip": src_ip,
+                        "dst_ip": dst_ip,
+                        "src_port": getattr(flow, 'src_port', 0),
+                        "dst_port": getattr(flow, 'dst_port', 0),
+                        "protocol": getattr(flow, 'protocol', 'IP'),
+                        "sni": getattr(flow, 'sni', None),
+                        "reason": decision.reason
+                    }
+
+                    # 2. Dispatch to ResponseEngine if actionable
+                    if decision.action != Action.NOTIFY:
+                        coro = self.response_engine.handle_verdict(prediction_obj, decision.action, context)
+                        try:
+                            loop.create_task(coro)
+                        except RuntimeError:
+                            pass
+
+                    # 3. Persist to MongoDB threats collection
+                    threat_record = {
+                        "timestamp": getattr(flow, 'last_time', 0.0),
+                        "src_ip": src_ip,
+                        "dst_ip": dst_ip,
+                        "src_port": getattr(flow, 'src_port', 0),
+                        "dst_port": getattr(flow, 'dst_port', 0),
+                        "protocol": getattr(flow, 'protocol', 'IP'),
+                        "sni": getattr(flow, 'sni', None),
+                        "prediction": result_dict.get("prediction", "BENIGN"),
+                        "confidence": confidence,
+                        "severity": risk_cat.value,
+                        "action": decision.action.value,
+                        "is_anomaly": is_anomaly,
+                        "is_internal": is_internal,
+                    }
+                    try:
+                        loop.create_task(threats_repo.create(threat_record))
+                    except RuntimeError:
+                        pass
+
+                    # 4. Broadcast live verdict to connected WebSocket clients
+                    event = LiveVerdictEvent(payload=threat_record)
+                    asyncio.create_task(broadcaster.publish(event))
+
                 except Exception as e:
                     logger.error(f"[MonitorService] Error processing flow: {e}", exc_info=True)
 

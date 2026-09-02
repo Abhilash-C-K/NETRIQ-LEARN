@@ -2,7 +2,7 @@ import numpy as np
 
 class FeatureExtractor:
     """
-    Step 3: Extracts exact 77 numerical features matching the trained model feature set (names, units, order).
+    Step 3: Extracts exact 71 numerical features matching the trained model feature set (names, units, order).
     """
     def __init__(self):
         pass

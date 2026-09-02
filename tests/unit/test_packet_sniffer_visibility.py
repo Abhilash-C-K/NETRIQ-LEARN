@@ -177,7 +177,7 @@ class TestPacketSnifferVisibility(unittest.TestCase):
 
         ms._handle_malformed_heuristic(malformed_dict)
 
-        # Assert response engine was invoked with RECOMMEND_BLOCK (external) or QUARANTINE (internal)
+        # Assert response engine was invoked with RECOMMEND_BLOCK (ceiling enforced for 1 matched rule)
         mock_resp_engine_instance.handle_verdict.assert_called_once()
         called_args = mock_resp_engine_instance.handle_verdict.call_args[0]
         prediction = called_args[0]
@@ -186,9 +186,40 @@ class TestPacketSnifferVisibility(unittest.TestCase):
 
         self.assertTrue(prediction.verdict)
         self.assertEqual(prediction.model_used, "HeuristicFallback_CaseB")
-        self.assertIn(action, [Action.RECOMMEND_BLOCK, Action.QUARANTINE])
+        self.assertEqual(action, Action.RECOMMEND_BLOCK)
         self.assertEqual(context["src_ip"], "192.168.1.99")
         self.assertIn("Rule1_SensitivePortMalformedPayload", context["matched_rules"])
+
+    @patch("backend.live_monitor.monitor_service.ResponseEngine")
+    def test_monitor_service_heuristic_quarantine_ceiling_enforcement(self, MockResponseEngine):
+        """Verify that single-rule heuristic match on internal IP is capped at RECOMMEND_BLOCK instead of QUARANTINE."""
+        from backend.live_monitor.monitor_service import MonitorService
+        from backend.ai.contracts import Action
+
+        mock_resp_engine_instance = MockResponseEngine.return_value
+        mock_resp_engine_instance.handle_verdict = MagicMock()
+
+        ms = MonitorService()
+        ms.response_engine = mock_resp_engine_instance
+
+        # Single rule matched for internal IP 192.168.1.50
+        malformed_dict = {
+            "src_ip": "192.168.1.50",
+            "dst_ip": "192.168.1.1",
+            "src_port": 50000,
+            "dst_port": 22,
+            "protocol": "MALFORMED",
+            "length": 50,
+            "raw_len": 50,
+            "is_malformed": True,
+            "parse_error": "Malformed TCP dataofs",
+        }
+
+        ms._handle_malformed_heuristic(malformed_dict)
+
+        mock_resp_engine_instance.handle_verdict.assert_called_once()
+        action = mock_resp_engine_instance.handle_verdict.call_args[0][1]
+        self.assertEqual(action, Action.RECOMMEND_BLOCK, "Single heuristic rule must not trigger internal QUARANTINE.")
 
     def test_heuristic_evaluation_throughput_performance_ceiling(self):
         """Enforce strict latency ceiling for HeuristicFallback evaluation (<15ms for 1000 calls)."""

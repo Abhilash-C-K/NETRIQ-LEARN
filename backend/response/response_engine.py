@@ -8,7 +8,8 @@ from backend.response.firewall import get_firewall_adapter
 from backend.response.quarantine import QuarantineService
 from backend.response.whitelist import WhitelistManager
 from backend.response.response_logger import ResponseLogger
-from backend.services.incident_service import incident_service
+# incident_service imported lazily inside _notify_incident_service to break circular import:
+# response_engine → services → monitoring_service → monitor_service → response_engine
 
 logger = get_logger(__name__)
 
@@ -108,6 +109,7 @@ class ResponseEngine:
     async def _notify_incident_service(self, target_ip: str, prediction: PredictionResult, action: Action, success: bool):
         """Notifies the incident management service of the response action taken."""
         try:
+            from backend.services.incident_service import incident_service  # lazy import
             await incident_service.create_from_response_action(target_ip, prediction, action, success)
         except Exception as e:
             logger.error(f"[ResponseEngine] Failed to create incident record for {target_ip}: {e}")

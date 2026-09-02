@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
-load_dotenv()  # Load .env BEFORE any module-level os.getenv() calls
+from pathlib import Path
+load_dotenv(Path(__file__).parent / ".env")  # Always load backend/.env regardless of CWD
 
 import uvicorn
 from contextlib import asynccontextmanager
@@ -43,6 +44,8 @@ async def lifespan(app: FastAPI):
     logger.info("Starting NETRIQ API...")
     await DatabaseManager.connect_db()
     logger.info("Database connected.")
+    from backend.auth.auth_service import AuthService
+    await AuthService().seed_initial_users()
     app.state.response_engine = ResponseEngine()  # init AFTER DB is ready
     yield
     # --- SHUTDOWN ---
@@ -79,10 +82,10 @@ async def netriq_exception_handler(request: Request, exc: NetriqException):
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled Server Error: {str(exc)}")
+    logger.error(f"Unhandled Server Error: {str(exc)}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"error": "InternalServerError", "message": "An unexpected error occurred.", "detail": {}}
+        content={"error": "InternalServerError", "message": "An unexpected error occurred.", "detail": str(exc)}
     )
 
 # --- Routers ---

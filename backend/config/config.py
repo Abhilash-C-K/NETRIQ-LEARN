@@ -42,4 +42,10 @@ HEURISTIC_SENSITIVE_PORTS = [
 ]
 HEURISTIC_MIN_RULES_FOR_QUARANTINE = int(os.getenv("HEURISTIC_MIN_RULES_FOR_QUARANTINE", "2"))
 
+# TLS SNI Metadata Extraction Configuration
+SNI_MONITORED_PORTS = [
+    int(p.strip()) for p in os.getenv("SNI_MONITORED_PORTS", "443,8443").split(",") if p.strip()
+]
+
+
 

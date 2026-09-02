@@ -58,8 +58,11 @@ export const AuthProvider = ({ children }) => {
   }, [logout]);
 
   const login = async (username, password) => {
-    const { access_token, user: userData } = await authService.login(username, password);
+    const { access_token } = await authService.login(username, password);
     setAccessTokenState(access_token);
+    
+    // Fetch authenticated profile from GET /auth/me
+    const userData = await authService.getCurrentUser();
     setUser(userData);
     const userRole = (userData.role || 'viewer').toLowerCase();
     setRole(userRole);

@@ -2,7 +2,7 @@ import asyncio
 import time
 import os
 import hashlib
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from backend.utils.logger import get_logger
 from backend.auth.exceptions import (

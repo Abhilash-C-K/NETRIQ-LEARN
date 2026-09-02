@@ -3,13 +3,13 @@ import api, { setAccessToken } from './api';
 export const authService = {
   async login(username, password) {
     const response = await api.post('/auth/login', { username, email: username, password });
-    const { access_token, refresh_token, user } = response.data;
+    const { access_token, refresh_token } = response.data;
 
     setAccessToken(access_token);
     if (refresh_token) {
       localStorage.setItem('netriq_refresh_token', refresh_token);
     }
-    return { access_token, refresh_token, user };
+    return { access_token, refresh_token };
   },
 
   async logout() {

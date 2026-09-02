@@ -830,7 +830,7 @@ python scripts/train_anomaly_detector.py  # -> models/network_traffic_IsolationF
 
 1. **Live pipeline persistence incomplete:** `monitor_service._run_loop()` logs predictions but does NOT persist to `threats` collection or dispatch through `ResponseEngine` for normal completed flows (`# TODO` at line 155).
 
-2. **Frontend files are empty:** `vite.config.js`, `package.json`, `App.jsx`, `main.jsx`, `index.css` are all 0-byte. Frontend component and service files exist but the app scaffolding is not committed.
+2. **[RESOLVED 2026-09-02] Frontend files implemented:** Vite 6 + React 18 SPA built with Tailwind CSS, Shadcn UI primitives, React Router v6 protected routes, and single-flight Axios interceptor.
 
 3. **Notification stubs:** Email (SMTP) and SMS (Twilio) in `NotificationService` are unimplemented `pass` stubs.
 
@@ -900,9 +900,9 @@ ResponseEngine.handle_verdict()  <------------ decide()                    |
 
 | Item | Status |
 |---|---|
-| Frontend framework version | UNKNOWN -- package.json is empty |
-| Frontend routing implementation | UNKNOWN -- App.jsx is empty |
-| Frontend state management | UNKNOWN |
+| Frontend framework version | **React 18 + Vite 6 + Tailwind CSS** |
+| Frontend routing implementation | **React Router v6 with Role Capability Guards (`ProtectedRoute`)** |
+| Frontend state management | **React Auth Context + Single-Flight Axios Mutex Interceptor** |
 | Whether `live_monitor/response_engine.py` is an intentional copy | UNKNOWN |
 | Actual training datasets used | Not in repo (gitignored) |
 | Deployment environment | UNKNOWN -- no Dockerfile or infra config found |
@@ -933,3 +933,29 @@ ResponseEngine.handle_verdict()  <------------ decide()                    |
 9. **Change TTL:** Set `THREAT_RETENTION_DAYS` / `PREDICTION_RETENTION_DAYS` in `.env`. Indexes recreated on next startup.
 
 10. **Rotate JWT secret:** Update `JWT_SECRET_KEY` in env. All existing access tokens immediately invalid. Users must re-login. No access token blocklist needed.
+
+---
+
+## 34. Recent System Enhancements & Architecture Updates (2026-09-02)
+
+### 1. Phase 1 — Frontend Scaffold & Single-Flight Auth
+- **Vite 6 + React 18 Setup**: Configured with Tailwind CSS and Shadcn UI primitives (`Card`, `Badge`, `Button`, `cn` helper).
+- **In-Memory JWT Access Tokens**: Tokens held strictly in memory; HTTP-only refresh tokens stored in `localStorage` for session restoration.
+- **Single-Flight Refresh Mutex Interceptor**: In `frontend/src/services/api.js`, a single shared refresh promise queues concurrent 401 requests, preventing parallel refresh calls that trigger server-side token replay revocation. Verified via automated stress test (5 concurrent 401s $\rightarrow$ 1 `/auth/refresh` HTTP call).
+
+### 2. Phase 2 — Smart Summary View & Explainability Isolation
+- **Humanized Feature Lookup**: Created `frontend/src/utils/featureLabels.js` mapping all 71 CICIDS2017 features into human-understandable descriptions. 100% feature coverage verified.
+- **On-Demand SHAP & Deviation Drawer**: Integrated `frontend/src/components/ExplanationPanel.jsx` with dual-mode visualization (Impact Bars for Smart Summary, Data Matrix for Raw Logs).
+- **Capability-Gated Endpoint & Wire Isolation**:
+  - `GET /api/v1/prediction/{id}/explain` permission updated to `Capabilities.VIEW_SMART_SUMMARY` in `backend/api/prediction.py`.
+  - **Server-Side Data Sanitization**: When a user session lacks `VIEW_RAW_LOGS` (Viewer role), `result.top_features[*].value = None` is enforced on the server before JSON serialization, preventing raw packet metrics from existing in browser memory or DevTools network logs.
+
+### 3. Backend Authentication & Account Seeding
+- **Flexible Identity Field**: `AuthService.login()` accepts username or email. MongoDB query evaluates `$or` against `email`, `username`, and domain alias (`username@netriq.local`).
+- **Initial Account Seeder**: Startup seeder `seed_initial_users()` provisions demo accounts (`Admin`, `Analyst`, `Viewer`) with pre-hashed BCrypt passwords.
+
+### 4. Wire-Level TLS SNI Parser
+- Updated `PacketSniffer._process_packet()` to parse TCP port 443 ClientHello TLS extension blocks, extracting domain SNI hostnames (e.g., `youtube.com`). Falls back gracefully to `dst_ip:dst_port` when unencrypted or non-TLS.
+
+### 5. Repository Maintenance & Git Untracking
+- Purged 7,800+ tracked `node_modules` files from Git tracking while preserving local disk dependencies. Updated root and frontend `.gitignore` rules.

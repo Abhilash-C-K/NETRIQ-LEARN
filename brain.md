@@ -828,29 +828,44 @@ python scripts/train_anomaly_detector.py  # -> models/network_traffic_IsolationF
 
 ## 30. Known Limitations & Technical Debt
 
-1. **Live pipeline persistence incomplete:** `monitor_service._run_loop()` logs predictions but does NOT persist to `threats` collection or dispatch through `ResponseEngine` for normal completed flows (`# TODO` at line 155).
+1. **Refresh Token Storage in `localStorage`:**
+   - The frontend stores refresh tokens in `localStorage` rather than `httpOnly` secure cookies.
+   - *Security Tradeoff*: While this simplifies client-side single-flight rotation without requiring dedicated CSRF token exchanges across cross-origin setups, a successful XSS vulnerability could allow an attacker to exfiltrate a 7-day persistent credential (compared to the 15-minute in-memory access token window).
 
-2. **[RESOLVED 2026-09-02] Frontend files implemented:** Vite 6 + React 18 SPA built with Tailwind CSS, Shadcn UI primitives, React Router v6 protected routes, and single-flight Axios interceptor.
+2. **Physical NIC Live Capture & Windows PCAP Provider:**
+   - On Windows environments without Npcap installed, Scapy falls back to non-pcap socket mechanisms (`WARNING: No libpcap provider available! pcap won't be used`).
+   - Sustained multi-gigabit line-rate packet capture on physical NICs has not been benchmarked; currently validated via simulated packet streams, loopback traffic, and synthetic attack replay.
 
-3. **Notification stubs:** Email (SMTP) and SMS (Twilio) in `NotificationService` are unimplemented `pass` stubs.
+3. **Ransomware Network Detection Gap:**
+   - Training datasets (e.g. CIC-IDS2017) lack dedicated network-layer ransomware propagation and command-and-control signatures.
+   - Ransomware attacks are primarily caught via secondary anomalous traffic bursts (high flow volumes, abnormal port activity) or heuristic escalation rather than a dedicated, supervised ransomware classification head.
 
-4. **In-memory rate limiter:** Not suitable for multi-process/multi-instance deployments. State lost on restart. Production needs Redis-backed limiter.
+4. **Incident Description Redaction Scope (FQDN vs IP):**
+   - Read-time server-side redaction for `Role.VIEWER` explicitly scrubs `affected_assets` and scrubs IPv4 and IPv6 addresses via regex fallback (`"Protected Asset"`).
+   - *Limitation*: Bare fully qualified domain names (FQDNs / SNI hostnames) will not be caught by the IP regex fallback if a future description embeds an unlisted domain not present in `affected_assets`.
 
-5. **No CI/CD configuration:** No `.github/`, Dockerfile, docker-compose, or pipeline YAML found.
+5. **No Backend State Machine for Incident Status:**
+   - `PATCH /api/v1/incidents/{id}` accepts any string in the `status` field via `$set`.
+   - The status lifecycle (`ACTIVE` / `OPEN` $\rightarrow$ `INVESTIGATING` $\rightarrow$ `RESOLVED`) is currently enforced as a frontend convention rather than a strict backend-validated deterministic state machine.
 
-6. **Access token revocation:** Access tokens cannot be revoked before expiry (no blocklist/revocation list). Refresh token rotation provides secondary defense only.
+6. **In-Memory Rate Limiting:**
+   - The API rate limiter maintains client IP tracking state in process memory.
+   - *Limitation*: State is lost upon Uvicorn restart and cannot be synchronized across horizontal multi-worker or multi-container deployments. Production requires a Redis-backed token bucket.
 
-7. **Model drift hook unimplemented:** `Predictor._track_model_drift_hook()` is a `pass` TODO.
+7. **Access Token Revocation (No Global Blocklist):**
+   - Access tokens are stateless JWTs. Once issued, an access token cannot be immediately invalidated prior to its 15-minute expiration (no Redis token blacklist). Refresh token invalidation provides secondary session termination only.
 
-8. **Feature count comment mismatch:** `feature_extractor.py` docstring says "77 features" but actual output and `EXPECTED_FEATURE_NAMES` have 71 features.
+8. **Live Pipeline Normal Flow Persistence:**
+   - `monitor_service._run_loop()` logs predictions to console and pushes to WebSockets, but normal/benign completed flows are not written to MongoDB to avoid write exhaustion under heavy traffic (`# TODO` at line 155).
 
-9. **Sandbox integration:** `sandbox.py` exists but is noop-only with no active path.
+9. **Notification Stubs:**
+   - External dispatch channels (SMTP email in `_send_email_alert()` and Twilio SMS in `_send_sms_alert()`) are un-implemented `pass` stubs; notifications currently broadcast strictly via WebSockets.
 
-10. **Duplicate response_engine:** `live_monitor/response_engine.py` appears to be a copy of `response/response_engine.py`. Unclear if intentional.
+10. **Absence of CI/CD and Containerization:**
+    - The repository does not currently include `.github/workflows/`, `Dockerfile`, or `docker-compose.yml` for automated integration testing or reproducible containerized deployment.
 
-11. **Heuristic ceiling divergence:** Escalation ceiling guard in `predict_service.py` is NOT applied in `monitor_service._handle_malformed_heuristic()` — two code paths may diverge in enforcement behavior.
-
-12. **`JWT_ACCESS_EXPIRY_MINUTES` inconsistency:** `.env` sets 5 minutes; `jwt_handler.py` code default is 15 minutes. The env value wins at runtime.
+11. **Sandbox Integration:**
+    - `backend/sandbox/sandbox.py` exists as a safe no-op mock adapter for educational safety; real SDN/firewall drivers require external API credentials and hardware controller access.
 
 ---
 

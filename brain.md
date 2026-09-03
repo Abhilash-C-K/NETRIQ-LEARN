@@ -862,8 +862,9 @@ python scripts/train_anomaly_detector.py  # -> models/network_traffic_IsolationF
 9. **Notification Stubs:**
    - External dispatch channels (SMTP email in `_send_email_alert()` and Twilio SMS in `_send_sms_alert()`) are un-implemented `pass` stubs; notifications currently broadcast strictly via WebSockets.
 
-10. **Absence of CI/CD and Containerization:**
-    - The repository does not currently include `.github/workflows/`, `Dockerfile`, or `docker-compose.yml` for automated integration testing or reproducible containerized deployment.
+10. **[RESOLVED] Multi-Stage Docker Containerization Implemented:**
+    - Full container stack provisioned: `Dockerfile.backend` (FastAPI + libpcap), `Dockerfile.frontend` (multi-stage Node build + Nginx reverse proxy), and `docker-compose.yml` (MongoDB + Backend + Frontend/Nginx with bridged network).
+    - Note: Cloud CI/CD automation (`.github/workflows/`) remains a future continuous-deployment improvement.
 
 11. **Sandbox Integration:**
     - `backend/sandbox/sandbox.py` exists as a safe no-op mock adapter for educational safety; real SDN/firewall drivers require external API credentials and hardware controller access.

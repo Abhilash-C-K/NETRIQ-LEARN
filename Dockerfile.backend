@@ -1,0 +1,31 @@
+# Dockerfile for NETRIQ FastAPI Backend
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+# Install system dependencies for Scapy, libpcap, and compilation
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpcap-dev \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python requirements
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+
+# Copy backend application code
+COPY backend/ /app/backend/
+COPY preprocessing/ /app/preprocessing/
+COPY models/ /app/models/
+
+EXPOSE 8000
+
+# Run Uvicorn ASGI server
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

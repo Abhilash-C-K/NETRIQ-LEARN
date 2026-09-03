@@ -1,0 +1,54 @@
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: netriq-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - netriq-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: netriq-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/netriq_db
+      - JWT_SECRET_KEY=netriq_production_demo_secret_key_32_chars_min!
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_EXPIRY_MINUTES=15
+      - JWT_REFRESH_EXPIRY_DAYS=7
+      - RATE_LIMIT_DEFAULT=120
+      - ANOMALY_DETECTOR_ENABLED=True
+      - ZERO_DAY_WEIGHT=0.8
+      - HIGH_ANOMALY_THRESHOLD=70.0
+    depends_on:
+      - mongodb
+    networks:
+      - netriq-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: netriq-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - netriq-network
+
+networks:
+  netriq-network:
+    driver: bridge
+
+volumes:
+  mongo_data:

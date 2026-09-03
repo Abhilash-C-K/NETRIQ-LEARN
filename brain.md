@@ -862,9 +862,9 @@ python scripts/train_anomaly_detector.py  # -> models/network_traffic_IsolationF
 9. **Notification Stubs:**
    - External dispatch channels (SMTP email in `_send_email_alert()` and Twilio SMS in `_send_sms_alert()`) are un-implemented `pass` stubs; notifications currently broadcast strictly via WebSockets.
 
-10. **[RESOLVED] Multi-Stage Docker Containerization Implemented:**
-    - Full container stack provisioned: `Dockerfile.backend` (FastAPI + libpcap), `Dockerfile.frontend` (multi-stage Node build + Nginx reverse proxy), and `docker-compose.yml` (MongoDB + Backend + Frontend/Nginx with bridged network).
-    - Note: Cloud CI/CD automation (`.github/workflows/`) remains a future continuous-deployment improvement.
+10. **Docker Multi-Stage Packaging Implemented (Pending Host Runtime Verification):**
+    - Full container stack provisioned: `Dockerfile.backend` (FastAPI + libpcap-dev), `Dockerfile.frontend` (multi-stage Node build + Nginx reverse proxy), `docker/nginx.conf`, and `docker-compose.yml` (MongoDB 7.0 + Backend + Frontend/Nginx with bridged network).
+    - *Operational Note*: Docker Desktop is not installed on this Windows development host. The container configuration manifests are complete and linted, but have not yet been executed via `docker-compose up` on this machine. Running this on a Docker-enabled host remains the sole pending operational check before live deployment.
 
 11. **Sandbox Integration:**
     - `backend/sandbox/sandbox.py` exists as a safe no-op mock adapter for educational safety; real SDN/firewall drivers require external API credentials and hardware controller access.

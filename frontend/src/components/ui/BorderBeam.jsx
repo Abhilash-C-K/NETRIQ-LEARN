@@ -1,10 +1,11 @@
 import React from "react";
-import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 
 export function BorderBeam({
   className,
-  duration = 6,
+  size = 200,
+  duration = 12,
+  anchor = 90,
   borderWidth = 1.5,
   colorFrom = "#06b6d4",
   colorTo = "#3b82f6",
@@ -12,23 +13,25 @@ export function BorderBeam({
 }) {
   return (
     <div
+      style={{
+        "--size": size,
+        "--duration": `${duration}s`,
+        "--anchor": `${anchor}%`,
+        "--border-width": `${borderWidth}px`,
+        "--color-from": colorFrom,
+        "--color-to": colorTo,
+        "--delay": `-${delay}s`,
+      }}
       className={cn(
-        "pointer-events-none absolute -inset-[1.5px] rounded-[inherit] overflow-hidden p-[1.5px] z-0",
+        "pointer-events-none absolute inset-0 rounded-[inherit] border-[length:var(--border-width)] border-transparent [mask-clip:padding-box,border-box] [mask-composite:intersect] [mask-image:linear-gradient(transparent,transparent),linear-gradient(#000,#000)]",
         className
       )}
     >
-      {/* 360-degree Rotating Conic Laser Light Beam */}
-      <motion.div
-        className="absolute -inset-[150%] aspect-square origin-center"
+      <div
+        className="absolute aspect-square w-[calc(var(--size)*1px)] animate-border-beam bg-gradient-to-l from-[var(--color-from)] via-[var(--color-to)] to-transparent"
         style={{
-          background: `conic-gradient(from 0deg at 50% 50%, transparent 0deg, ${colorFrom} 40deg, ${colorTo} 90deg, transparent 140deg)`,
-        }}
-        animate={{ rotate: [0, 360] }}
-        transition={{
-          duration,
-          repeat: Infinity,
-          ease: "linear",
-          delay,
+          offsetPath: "rect(0 auto auto 0 round calc(var(--size)*1px))",
+          animationDelay: "var(--delay)",
         }}
       />
     </div>

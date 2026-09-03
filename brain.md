@@ -1038,3 +1038,27 @@ ResponseEngine.handle_verdict()  <------------ decide()                    |
   - Verified in Chrome DevTools under 60 continuous simulated threat evaluations (~6-10 events/sec).
   - 50-entry ring buffer ceiling held strictly in browser state; JS heap remained stable at ~27-35 MB with 0 console errors and 0 DOM leaks.
 
+### 8. Phase 7 — Dual-Tone Day/Night Theme System & Brand Integration
+- **Global Theme Provider (`ThemeContext.jsx`)**:
+  - React Context managing `dark` vs `light` theme state with `localStorage` persistence.
+  - Sun/Moon toggle button integrated into main top navigation bar (`Navbar.jsx`).
+- **Dual-Tone Light Blue Day Mode (`index.css`)**:
+  - dual-tone sky-blue background gradient (`#7dd3fc` $\rightarrow$ `#38bdf8` $\rightarrow$ `#60a5fa`) paired with soft ice-blue card containers (`#f0f9ff` / `#e0f2fe`).
+  - Wildcard CSS attribute selectors (`[class*="bg-slate-950"]`, `[class*="bg-slate-900"]`, `[class*="bg-slate-800"]`, `[class*="bg-black"]`) guaranteeing 100% theme coverage across outer layouts, sub-boxes, tables, form inputs, and modals.
+- **Purged Legacy Violet/Purple Accents**:
+  - Removed all violet/purple fallback colors (`#8b5cf6`, `#7e22ce`, `#a855f7`, `#4f46e5`, `#ec4899`) from `FluidBlobs.jsx`, `GlowEffect.jsx`, `BlobCard.jsx`, `AIPerformance.jsx`, and `index.css`. Replaced with Ocean Cyan (`#0284c7`) and Sky Blue (`#38bdf8`).
+- **Modern UI Component Library Integrations**:
+  - **`GlowHover.jsx`**: Spotlight cursor hover card effect on `OperationalMetrics.jsx`.
+  - **`ScrambleText.jsx`**: Cyber text scramble animation on IP addresses in `VerdictCard.jsx`.
+  - **`ShineText.jsx`**: Metallic shimmer sweep animation on WS telemetry badges in `Navbar.jsx`.
+- **High-Contrast Accessibility Enhancements**:
+  - Updated "Deactivate" button in `Users.jsx` to high-contrast deep crimson red (`#9f1239`) with bold font weight.
+  - Updated "Simulate Flow" buttons in `Dashboard.jsx` and `Monitoring.jsx` to solid cyan (`bg-cyan-600`) with high-contrast white text (`text-white font-bold`).
+- **Official NETRIQ Logo Integration**:
+  - Auto-cropped 31px asymmetric margins from `netriq logo.jpeg` using Python Pillow script (`scratch/crop_and_center_logo.py`), centering graphic on square 1:1 canvas.
+  - Integrated official logo into favicon (`index.html`), login card header (`Login.jsx`), and sidebar header (`Sidebar.jsx`).
+- **Repository Maintenance & IDE Setup**:
+  - Added `netriq logo.jpeg` and `netriq logo*` to `.gitignore`.
+  - Created `.vscode/settings.json` configuring `"css.lint.unknownAtRules": "ignore"` to silence cosmetic Tailwind CSS linter warnings.
+
+

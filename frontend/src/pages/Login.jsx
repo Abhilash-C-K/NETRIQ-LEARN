@@ -73,7 +73,7 @@ export const Login = () => {
         {/* Header with Official NETRIQ Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl overflow-hidden border border-cyan-500/50 mx-auto mb-4 shadow-[0_0_20px_rgba(6,182,212,0.5)] p-0.5 bg-slate-950 flex items-center justify-center">
-            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-xl" />
+            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-xl block" />
           </div>
           <h1 className="text-2xl font-bold font-mono tracking-wider text-slate-100">
             NETRIQ <span className="text-cyan-400 font-sans font-light">SOC</span>

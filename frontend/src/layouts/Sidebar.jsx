@@ -38,7 +38,7 @@ export const Sidebar = () => {
       <Sidebar001Header>
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl overflow-hidden border border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.4)] shrink-0 bg-slate-950 flex items-center justify-center p-0.5">
-            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-lg" />
+            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-lg block" />
           </div>
           <div>
             <h1 className="font-mono font-bold text-sm tracking-wider text-slate-100 flex items-center gap-1.5">

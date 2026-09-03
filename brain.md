@@ -871,6 +871,42 @@ python scripts/train_anomaly_detector.py  # -> models/network_traffic_IsolationF
 
 ---
 
+## 30B. Not Yet Wire-Tested
+
+The following surfaces were built and pass a clean production build, but have not
+been through the direct wire-level verification standard applied elsewhere in this
+project (real HTTP calls, real role tokens, confirmed end-state — not just "request
+accepted"). Listed here explicitly rather than left ambiguous:
+
+1. **Report generation completion** — `POST /reports/generate` confirmed to return
+   200 and a report ID with status "generating". Never confirmed a report actually
+   reaches a completed state or produces a valid, openable file (PDF/Excel/CSV).
+
+2. **History CSV export** — feature exists in `History.jsx`, never wire-tested for
+   a real, correctly-formatted file download.
+
+3. **IPv6 description redaction** — regex added to `_redact_description()` in
+   `incident_service.py`, never tested against a real IPv6 address (only the IPv4
+   path has been proven via wire-payload diff).
+
+4. **EmailStr → str validator loosening** — fixed a crash on `.local` demo domains,
+   but the looser `str` type was never re-tested to confirm it doesn't allow
+   genuinely malformed/unusable email values on user creation.
+
+5. **Live packet capture on a physical NIC** — the entire packet-capture and SNI
+   extraction pipeline has only been validated via wire-format-accurate synthetic
+   bytes and loopback/simulation. Never run against a live network interface with
+   Npcap installed. This is the single largest untested surface in the project,
+   since it's the core function the product is built around. Recommended: test
+   this once, deliberately, immediately before any live demo — not as a standalone
+   audit task.
+
+None of the above are known to be broken. They are simply outside the scope of
+what has been empirically proven in this session, and are listed here so that
+distinction is never lost or implied away.
+
+---
+
 ## 31. Data Flow Overview
 
 ```

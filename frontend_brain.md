@@ -159,7 +159,8 @@ $$\text{delay} = \min(3000 \times 1.5^{\text{attempts}}, 30000) \text{ ms}$$
 
 2. **Incident Records & Threat Management (`GET /api/v1/incidents`)**:
    - For `Viewer`, technical internal fields (`affected_assets`, `response_action`, `response_success`, `notes`, `updated_at`) are set to `None` on the server.
-   - Any raw IP addresses appearing in `description` are dynamically redacted at read time to `"Protected Asset"` (e.g. `QUARANTINE executed against Protected Asset`), eliminating information leakage via free-text fields.
+   - Any raw target IP addresses appearing in `description` are dynamically redacted at read time to `"Protected Asset"` (e.g. `QUARANTINE executed against Protected Asset`), eliminating information leakage via free-text fields.
+   - *Redaction Scope*: Supports explicit asset matching from `affected_assets`, backed by defense-in-depth regex for IPv4 and IPv6 patterns. Note: Fully qualified domain names (SNI / hostnames) must be present in `affected_assets` to trigger redaction if future description formats introduce them without bare IPs.
 
 ---
 

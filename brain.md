@@ -855,8 +855,9 @@ python scripts/train_anomaly_detector.py  # -> models/network_traffic_IsolationF
 7. **Access Token Revocation (No Global Blocklist):**
    - Access tokens are stateless JWTs. Once issued, an access token cannot be immediately invalidated prior to its 15-minute expiration (no Redis token blacklist). Refresh token invalidation provides secondary session termination only.
 
-8. **Live Pipeline Normal Flow Persistence:**
-   - `monitor_service._run_loop()` logs predictions to console and pushes to WebSockets, but normal/benign completed flows are not written to MongoDB to avoid write exhaustion under heavy traffic (`# TODO` at line 155).
+8. **[RESOLVED] Live Pipeline Flow Persistence & Action Gating:**
+   - Completed flows (both benign and anomalous) are fully persisted to MongoDB `threats_repo` (`monitor_service.py:235`) with automated 7-day TTL index expiry.
+   - Enforcement dispatch (`ResponseEngine.handle_verdict()`) is intentionally gated to non-`NOTIFY` actions (`Action.BLOCK` / `Action.QUARANTINE`) so benign flows do not create spurious firewall entries or incident tickets.
 
 9. **Notification Stubs:**
    - External dispatch channels (SMTP email in `_send_email_alert()` and Twilio SMS in `_send_sms_alert()`) are un-implemented `pass` stubs; notifications currently broadcast strictly via WebSockets.

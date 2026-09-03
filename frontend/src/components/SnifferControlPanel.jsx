@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -10,8 +10,26 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
   const isAdmin = role === 'admin' || hasCapability('MANAGE_SETTINGS');
   const isRunning = status?.is_running ?? false;
 
+  const [localUptime, setLocalUptime] = useState(status?.uptime_seconds || 0);
+
+  // Sync with incoming status prop
+  useEffect(() => {
+    setLocalUptime(status?.uptime_seconds || 0);
+  }, [status?.uptime_seconds]);
+
+  // Client-side 1-second interval ticker for smooth uptime counter rendering
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const interval = setInterval(() => {
+      setLocalUptime((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
   const formatUptime = (seconds) => {
-    if (!seconds) return '00:00:00';
+    if (!seconds || seconds <= 0) return '00:00:00';
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = Math.floor(seconds % 60);
@@ -85,7 +103,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
             ENGINE UPTIME
           </div>
           <div className="font-mono font-semibold text-sm text-amber-300">
-            {formatUptime(status?.uptime_seconds)}
+            {formatUptime(localUptime)}
           </div>
         </div>
 

@@ -17,6 +17,7 @@ async def websocket_endpoint(websocket: WebSocket):
     Client must send: {"type": "auth", "token": "<access_token>"} within 5 seconds.
     This prevents token leakage in URLs/logs and protects against socket exhaustion DoS.
     """
+    await websocket.accept()
     # Wait for auth handshake message with a strict 5.0-second timeout
     try:
         auth_msg = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
@@ -36,8 +37,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         payload = verify_token(auth_msg["token"], expected_type="access")
-    except (TokenExpiredError, InvalidTokenError):
-        logger.warning("WebSocket auth failed: Invalid or expired token")
+    except (TokenExpiredError, InvalidTokenError) as e:
+        logger.warning(f"WebSocket auth failed: Invalid or expired token ({e})")
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 

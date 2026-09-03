@@ -1,24 +1,22 @@
 """
 backend/live_monitor/heuristic_fallback.py
 
-Deterministic Heuristic Fallback Tier for NETRIQ threat monitoring.
-
-Evaluated when FeatureExtractor or AI model inference raises an [EXCEPTION] (e.g. malformed or
-adversarially crafted packet data). Operates on raw packet headers/metadata rather than ML feature vectors.
-
-Design rules:
-- Bulletproof: evaluate() never throws, returning a non-escalated HeuristicVerdict on garbage input.
-- Config-tunable: Sensitive ports, packet rate thresholds, and confidence floors are env-overridable.
-- Capped escalation: Provides a deterministic confidence floor (75.0%) without pretending to be ML.
+Deterministic Heuristic Fallback Tier for NETRIQ's Dual-Layer NIDS architecture.
+Evaluates raw packet metadata when the primary ML feature extraction or inference pipeline fails/times out.
 """
 
 import time
-from typing import Any, Dict, List, Optional
-import backend.config.config as config
+from typing import Any, Dict, List, Optional, Set
+from pydantic import BaseModel, Field
+
+from backend.config import config
 from backend.ai.contracts import HeuristicVerdict
 from backend.utils.logger import get_logger
 
 logger = get_logger(__name__)
+
+_SENSITIVE_PORTS: Set[int] = set(getattr(config, "HEURISTIC_SENSITIVE_PORTS", [22, 88, 3389, 3306, 5432, 5985]))
+_CONFIDENCE_FLOOR: float = float(getattr(config, "HEURISTIC_CONFIDENCE_FLOOR", 75.0))
 
 
 class HeuristicFallback:
@@ -30,33 +28,13 @@ class HeuristicFallback:
     def __init__(self):
         pass
 
-    def evaluate(self, raw_data: Dict[str, Any]) -> HeuristicVerdict:
-        """
-        Evaluates all heuristic rules against raw_data.
-
-        Args:
-            raw_data: Dictionary containing raw packet metadata, e.g.:
-                      {
-                          'src_ip': str, 'dst_ip': str,
-                          'src_port': int, 'dst_port': int,
-                          'protocol': str | int,
-                          'raw_len': int, 'cap_len': int, 'ip_len': int,
-                          'tcp_flags': int | Dict[str, bool],
-                          'pkt_rate': float,
-                          'is_malformed': bool,
-                          ...
-                      }
-
-        Returns:
-            HeuristicVerdict with matched_rules, escalate bool, confidence_floor, and reason.
-            Guaranteed never to raise an exception.
-        """
-        now = time.time()
+    def evaluate(self, raw_data: Dict[str, Any], timestamp: Optional[float] = None) -> HeuristicVerdict:
+        now = timestamp if timestamp is not None else time.time()
         matched_rules: List[str] = []
 
         if not isinstance(raw_data, dict):
             logger.warning("[HeuristicFallback] Non-dict raw_data passed. Failing safely to no-escalation verdict.")
-            return HeuristicVerdict(
+            return HeuristicVerdict.model_construct(
                 matched_rules=[],
                 escalate=False,
                 confidence_floor=0.0,
@@ -82,10 +60,11 @@ class HeuristicFallback:
                 logger.debug(f"[HeuristicFallback] Rule evaluation error in {rule.__name__}: {e}")
 
         if matched_rules:
-            floor = getattr(config, "HEURISTIC_CONFIDENCE_FLOOR", 75.0)
+            floor = _CONFIDENCE_FLOOR
             reason = f"Heuristic escalation triggered by rule(s): {', '.join(matched_rules)}"
-            logger.warning(f"[HEURISTIC_FALLBACK] {reason} (confidence_floor={floor:.1f}%)")
-            return HeuristicVerdict(
+            if logger.isEnabledFor(30):
+                logger.warning(f"[HEURISTIC_FALLBACK] {reason} (confidence_floor={floor:.1f}%)")
+            return HeuristicVerdict.model_construct(
                 matched_rules=matched_rules,
                 escalate=True,
                 confidence_floor=floor,
@@ -93,7 +72,7 @@ class HeuristicFallback:
                 timestamp=now,
             )
 
-        return HeuristicVerdict(
+        return HeuristicVerdict.model_construct(
             matched_rules=[],
             escalate=False,
             confidence_floor=0.0,
@@ -117,19 +96,20 @@ class HeuristicFallback:
         except (ValueError, TypeError):
             return None
 
-        sensitive_ports = getattr(config, "HEURISTIC_SENSITIVE_PORTS", [22, 88, 3389, 3306, 5432, 5985])
-        if dst_port in sensitive_ports:
-            is_malformed = bool(raw_data.get("is_malformed", False))
-            payload_len = raw_data.get("payload_len")
-            raw_len = raw_data.get("raw_len", 0)
+        if dst_port not in _SENSITIVE_PORTS:
+            return None
 
-            # Malformed payload flag set or raw length is non-zero but payload_len is corrupted/negative
-            if is_malformed or (payload_len is not None and int(payload_len) < 0):
-                return "Rule1_SensitivePortMalformedPayload"
-            
-            # Additional check: payload larger than raw packet frame length
-            if payload_len is not None and raw_len > 0 and int(payload_len) > int(raw_len):
-                return "Rule1_SensitivePortMalformedPayload"
+        is_malformed = bool(raw_data.get("is_malformed", False))
+        payload_len = raw_data.get("payload_len")
+        raw_len = raw_data.get("raw_len", 0)
+
+        # Malformed payload flag set or raw length is non-zero but payload_len is corrupted/negative
+        if is_malformed or (payload_len is not None and int(payload_len) < 0):
+            return "Rule1_SensitivePortMalformedPayload"
+
+        # Additional check: payload larger than raw packet frame length
+        if payload_len is not None and raw_len > 0 and int(payload_len) > int(raw_len):
+            return "Rule1_SensitivePortMalformedPayload"
 
         return None
 
@@ -173,7 +153,6 @@ class HeuristicFallback:
         """
         protocol = str(raw_data.get("protocol", "")).upper()
         if protocol not in ("TCP", "6", "6.0"):
-            # Check if tcp_flags field is present anyway
             if "tcp_flags" not in raw_data:
                 return None
 
@@ -181,7 +160,6 @@ class HeuristicFallback:
         if flags is None:
             return None
 
-        # Handle numeric flag byte or dict of booleans
         if isinstance(flags, dict):
             syn = bool(flags.get("SYN"))
             fin = bool(flags.get("FIN"))
@@ -220,11 +198,7 @@ class HeuristicFallback:
     def _check_raw_packet_rate_spike(self, raw_data: Dict[str, Any]) -> Optional[str]:
         """
         Rule 4: Packet rate from single IP exceeds HEURISTIC_PACKET_RATE_THRESHOLD (default 1000 pps).
-        Includes bulk file transfer protection:
-        - If average packet size is >= 800 bytes (standard TCP MSS bulk payload), requires rate spike
-          to be sustained for >= HEURISTIC_SUSTAINED_DURATION_SEC (default 2.0s). Short bursts of large
-          packets (e.g. 50ms window burst during file transfer) are NOT flagged.
-        - If average packet size is < 800 bytes (typical flood/fuzzing payload) OR sustained, rule triggers.
+        Includes bulk file transfer protection.
         """
         pkt_rate = raw_data.get("pkt_rate") or raw_data.get("flow_pkts_per_sec") or raw_data.get("packets_per_sec")
         if pkt_rate is None:
@@ -232,9 +206,8 @@ class HeuristicFallback:
 
         try:
             rate = float(pkt_rate)
-            threshold = getattr(config, "HEURISTIC_PACKET_RATE_THRESHOLD", 1000.0)
+            threshold = getattr(config, "HEURISTIC_PACKET_RATE_THRESHOLD", getattr(config, "HEURISTIC_RATE_SPIKE_THRESHOLD", 1000.0))
             if rate >= threshold:
-                # Check packet size and duration to distinguish file transfers from floods
                 avg_pkt_size = raw_data.get("avg_pkt_size") or raw_data.get("pkt_len") or raw_data.get("Average Packet Size", 0.0)
                 duration = raw_data.get("flow_duration_sec") or raw_data.get("duration_sec") or (float(raw_data.get("Flow Duration", 0.0)) / 1e6)
                 sustained_req = getattr(config, "HEURISTIC_SUSTAINED_DURATION_SEC", 2.0)
@@ -242,7 +215,6 @@ class HeuristicFallback:
                 try:
                     size = float(avg_pkt_size)
                     dur = float(duration)
-                    # Large packet bulk transfer protection: if payload size is large (>= 800 bytes) and short (< 2.0s), ignore
                     if size >= 800.0 and dur > 0.0 and dur < sustained_req:
                         logger.debug(f"[HeuristicFallback] Suppressing Rule 4 false positive: bursty bulk transfer (size={size:.0f}B, dur={dur:.2f}s)")
                         return None
@@ -255,31 +227,32 @@ class HeuristicFallback:
 
         return None
 
-
     # ------------------------------------------------------------------
-    # Rule 5: Suspicious Small Packet Burst
+    # Rule 5: Suspicious Micro-Packet Control Burst
     # ------------------------------------------------------------------
     def _check_suspicious_small_packet_burst(self, raw_data: Dict[str, Any]) -> Optional[str]:
         """
-        Rule 5: High rate (>100 pps) of micro-packets (<64 bytes) with control flags (SYN/RST/FIN).
+        Rule 5: High burst count of tiny packets (<64 bytes) without payload.
         """
-        pkt_len = raw_data.get("pkt_len") or raw_data.get("raw_len") or raw_data.get("min_pkt_len")
-        pkt_rate = raw_data.get("pkt_rate") or raw_data.get("flow_pkts_per_sec")
-
-        if pkt_len is None or pkt_rate is None:
+        pkt_len = raw_data.get("pkt_len") or raw_data.get("raw_len") or raw_data.get("length")
+        if pkt_len is None:
             return None
 
         try:
-            length = float(pkt_len)
-            rate = float(pkt_rate)
-            micro_threshold = getattr(config, "HEURISTIC_MICRO_PACKET_RATE_THRESHOLD", 100.0)
-
-            if length < 64 and rate >= micro_threshold:
-                flags = raw_data.get("tcp_flags")
-                # Check for control flags if present or if flagged as control packet
-                if flags or raw_data.get("is_control_pkt"):
-                    return "Rule5_SuspiciousSmallPacketBurst"
+            length = int(pkt_len)
         except (ValueError, TypeError):
-            pass
+            return None
+
+        burst_count = raw_data.get("small_pkt_burst_count", 0)
+        pkt_rate = raw_data.get("pkt_rate", 0)
+
+        # Micro-packet burst trigger criteria: packet length <64 AND (burst count > 50 or packet rate > 100 pps with TCP SYN/RST)
+        if length < 64:
+            if burst_count > 50:
+                return "Rule5_SuspiciousSmallPacketBurst"
+            if pkt_rate > 100:
+                flags = raw_data.get("tcp_flags")
+                if flags is not None:
+                    return "Rule5_SuspiciousSmallPacketBurst"
 
         return None

@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Globe, Terminal, ArrowRight } from 'lucide-reac
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { BorderBeam } from './ui/BorderBeam';
 
 export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -47,8 +48,18 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
     PASS: 'default',
   };
 
+  const isHighRisk = severity === 'HIGH' || severity === 'CRITICAL' || normAction === 'QUARANTINE' || normAction === 'RECOMMEND_BLOCK';
+
   return (
-    <Card className="overflow-hidden transition-all hover:border-slate-700">
+    <Card className="relative overflow-hidden transition-all hover:border-slate-700">
+      {isHighRisk && (
+        <BorderBeam
+          size={200}
+          duration={8}
+          colorFrom={normAction === 'QUARANTINE' ? '#f43f5e' : '#f59e0b'}
+          colorTo="#06b6d4"
+        />
+      )}
       {/* Primary Card Summary Row */}
       <div className="p-4 flex flex-wrap items-center justify-between gap-4">
         {/* Connection & Target Identifier */}

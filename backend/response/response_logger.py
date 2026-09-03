@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from backend.utils.logger import get_logger
 from backend.database.collections import responses_repo
 from backend.ai.contracts import Action
@@ -11,7 +11,7 @@ class ResponseLogger:
     Audit trail for every response action taken.
     Feeds the database/collections.py 'responses' collection and the Smart Summary View.
     """
-    async def log_action(self, action: Action, target_ip: str, outcome: str, success: bool, context: Dict[str, Any] = None) -> str:
+    async def log_action(self, action: Action, target_ip: str, outcome: str, success: bool, context: Optional[Dict[str, Any]] = None) -> str:
         """
         Writes a structured audit entry to the database.
         Returns the ID of the created response record.
@@ -35,7 +35,7 @@ class ResponseLogger:
             logger.error(f"CRITICAL: Failed to write response audit log for {target_ip}: {e}")
             return ""
 
-    async def get_response_history(self, filters: Dict[str, Any] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    async def get_response_history(self, filters: Optional[Dict[str, Any]] = None, limit: int = 50) -> List[Dict[str, Any]]:
         """
         Retrieves historical response actions, primarily used by the API layer.
         """

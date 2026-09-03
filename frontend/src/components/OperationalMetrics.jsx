@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from './ui/card';
 import { AlertOctagon, Filter, Cpu } from 'lucide-react';
+import { NumberTicker } from './ui/NumberTicker';
 
 export const OperationalMetrics = ({ metrics }) => {
   const queueDrops = metrics?.queue_drop_count || 0;
@@ -15,7 +16,7 @@ export const OperationalMetrics = ({ metrics }) => {
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Queue Overflow Drops</p>
             <p className={`text-2xl font-mono font-bold mt-1 ${queueDrops > 0 ? 'text-rose-400 animate-pulse' : 'text-slate-100'}`}>
-              {queueDrops.toLocaleString()}
+              <NumberTicker value={queueDrops} />
             </p>
             <p className="text-[11px] text-slate-400 mt-1">Packets dropped when consumer queue limit (10k) was hit</p>
           </div>
@@ -31,7 +32,7 @@ export const OperationalMetrics = ({ metrics }) => {
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Non-IP Filtered (Case A)</p>
             <p className="text-2xl font-mono font-bold text-sky-400 mt-1">
-              {nonIpCount.toLocaleString()}
+              <NumberTicker value={nonIpCount} />
             </p>
             <p className="text-[11px] text-slate-400 mt-1">Non-IPv4/v6 frames filtered out (ARP, LLDP, STP)</p>
           </div>
@@ -47,7 +48,7 @@ export const OperationalMetrics = ({ metrics }) => {
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Malformed Traffic (Case B)</p>
             <p className="text-2xl font-mono font-bold text-amber-400 mt-1">
-              {malformedCount.toLocaleString()}
+              <NumberTicker value={malformedCount} />
             </p>
             <p className="text-[11px] text-slate-400 mt-1">Corrupted packets evaluated via HeuristicFallback engine</p>
           </div>

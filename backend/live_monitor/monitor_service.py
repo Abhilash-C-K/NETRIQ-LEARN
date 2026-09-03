@@ -11,7 +11,7 @@ from backend.live_monitor.flow_builder import FlowBuilder
 from backend.live_monitor.feature_extractor import FeatureExtractor
 from backend.live_monitor.live_predictor import LivePredictor
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from backend.live_monitor.heuristic_fallback import HeuristicFallback
 from backend.ai.risk_engine import classify_risk
 from backend.ai.decision_engine import decide
@@ -28,12 +28,12 @@ class MonitorService:
     start() launches an asyncio background task; stop() signals it to shut down.
     """
 
-    def __init__(self, dataset_name: str = "cicids2017", interface: str = None):
+    def __init__(self, dataset_name: str = "cicids2017", interface: Optional[str] = None):
         self.dataset_name = dataset_name
         self.interface = interface
-        self._task: asyncio.Task = None
+        self._task: Optional[asyncio.Task] = None
         self._stop_event = asyncio.Event()
-        self._loop: asyncio.AbstractEventLoop = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
         self.heuristic_fallback = HeuristicFallback()
         self.response_engine = ResponseEngine()
         self.sniffer = PacketSniffer(

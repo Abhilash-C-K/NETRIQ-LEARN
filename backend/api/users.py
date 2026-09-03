@@ -27,7 +27,7 @@ async def list_users():
 async def update_user(user_id: str, req: UserUpdateReq):
     """Partially updates a user's profile fields. Admin only."""
     try:
-        updated = await user_service.update_user(user_id, req.dict(exclude_unset=True))
+        updated = await user_service.update_user(user_id, req.model_dump(exclude_unset=True))
         return UserPublic(**updated)
     except DocumentNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

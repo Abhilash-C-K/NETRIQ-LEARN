@@ -239,8 +239,8 @@ class ExplainabilityEngine:
             for feat_name in EXPECTED_FEATURE_NAMES:
                 obs_val = float(raw_features.get(feat_name, 0.0))
                 stats = self._feature_stats.get(feat_name, {})
-                mean = float(stats.get("mean", 0.0))
-                std = float(stats.get("std", 1.0))
+                mean = stats.get("mean", 0.0)
+                std = stats.get("std", 1.0)
 
                 # Protect against zero-std features (constant features in training set)
                 if std < 1e-9:
@@ -253,7 +253,7 @@ class ExplainabilityEngine:
             scored.sort(key=lambda x: abs(x[2]), reverse=True)
 
             # Base value: mean effective confidence of BENIGN flows (0.0 if not stored)
-            base_value = float(self._feature_stats.get("_base_confidence", {}).get("mean", 0.0))
+            base_value = self._feature_stats.get("_base_confidence", {}).get("mean", 0.0)
 
             top_features = [
                 FeatureContribution(

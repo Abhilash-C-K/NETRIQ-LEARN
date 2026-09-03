@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }) => {
 
       try {
         const token = await authService.refresh();
+        setAccessToken(token);
         setAccessTokenState(token);
         const userData = await authService.getCurrentUser();
         setUser(userData);
@@ -59,6 +60,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     const { access_token } = await authService.login(username, password);
+    setAccessToken(access_token);
     setAccessTokenState(access_token);
     
     // Fetch authenticated profile from GET /auth/me

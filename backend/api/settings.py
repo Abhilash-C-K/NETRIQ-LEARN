@@ -37,7 +37,7 @@ async def get_settings():
 async def update_settings(updates: SettingsUpdateReq, req: Request):
     try:
         # Convert to dict, dropping keys the admin left unset
-        updates_dict = {k: v for k, v in updates.dict(exclude_unset=True).items() if v is not None}
+        updates_dict = {k: v for k, v in updates.model_dump(exclude_unset=True).items() if v is not None}
         return await settings_service.update_settings(get_request_role(req), updates_dict)
     except Exception as e:
         logger.error(f"Failed to update settings: {e}")

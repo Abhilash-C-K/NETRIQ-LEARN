@@ -82,7 +82,7 @@ class BaseRepository:
             raise DocumentNotFoundError(f"Document with ID {doc_id} not found in {self.collection_name}")
         return True
 
-    async def list(self, filter_query: dict = None, limit: int = 50, skip: int = 0, sort_by: list = None) -> List[dict]:
+    async def list(self, filter_query: Optional[dict] = None, limit: int = 50, skip: int = 0, sort_by: Optional[list] = None) -> List[dict]:
         """Lists documents matching the filter."""
         query = filter_query or {}
         cursor = self.collection.find(query).skip(skip).limit(limit)
@@ -98,12 +98,12 @@ class ThreatRepository(BaseRepository):
     def __init__(self):
         super().__init__("threats")
 
-    async def get_dashboard_stats(self, time_range_start: float, time_range_end: float, severity: str = None) -> List[dict]:
+    async def get_dashboard_stats(self, time_range_start: float, time_range_end: float, severity: Optional[str] = None) -> List[dict]:
         """
         Specialized method leveraging the compound index for the dashboard.
         Query matches order: timestamp -> severity -> src_ip (implied).
         """
-        query = {
+        query: Dict[str, Any] = {
             "timestamp": {"$gte": time_range_start, "$lte": time_range_end}
         }
         if severity:

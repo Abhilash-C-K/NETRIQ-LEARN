@@ -1,11 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { LogOut, User, Wifi, WifiOff, Shield } from 'lucide-react';
+import { LogOut, User, Wifi, WifiOff, Bell } from 'lucide-react';
+import { NotificationBadge } from '../components/ui/NotificationBadge';
+import { SmoothButton } from '../components/ui/SmoothButton';
 
 export const Navbar = () => {
   const { user, role, logout } = useAuth();
-  const { connectionStatus } = useWebSocket();
+  const { connectionStatus, subscribe } = useWebSocket();
+  const navigate = useNavigate();
+  const [alertCount, setAlertCount] = useState(3);
+
+  useEffect(() => {
+    const handleNewThreat = (payload) => {
+      if (payload?.verdict || payload?.is_anomaly || payload?.action === 'RECOMMEND_BLOCK' || payload?.action === 'QUARANTINE') {
+        setAlertCount((prev) => prev + 1);
+      }
+    };
+
+    const unsubscribeVerdict = subscribe('live_verdict', handleNewThreat);
+    const unsubscribeAlert = subscribe('threat_alert', handleNewThreat);
+    return () => {
+      unsubscribeVerdict();
+      unsubscribeAlert();
+    };
+  }, [subscribe]);
 
   const roleBadges = {
     admin: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
@@ -38,6 +58,22 @@ export const Navbar = () => {
 
       {/* User Actions */}
       <div className="flex items-center gap-4">
+        {/* Notification Icon with Animated Spring Count Badge */}
+        <NotificationBadge count={alertCount} variant="count" ping={alertCount > 0}>
+          <SmoothButton
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              navigate('/incidents');
+              setAlertCount(0);
+            }}
+            title="View Live Incidents"
+            className="rounded-xl border-slate-800 bg-slate-950/70 hover:bg-slate-800"
+          >
+            <Bell className="w-4 h-4 text-amber-400" />
+          </SmoothButton>
+        </NotificationBadge>
+
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
             <User className="w-4 h-4" />
@@ -57,13 +93,15 @@ export const Navbar = () => {
           </div>
         </div>
 
-        <button
+        <SmoothButton
           onClick={logout}
+          variant="ghost"
+          size="icon-sm"
           title="Logout of session"
-          className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors border border-transparent hover:border-rose-500/30"
+          className="text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
         >
           <LogOut className="w-4 h-4" />
-        </button>
+        </SmoothButton>
       </div>
     </header>
   );

@@ -241,8 +241,9 @@ class TestPacketSnifferVisibility(unittest.TestCase):
         logging.disable(logging.CRITICAL)
         try:
             start = time.perf_counter()
+            now = time.time()
             for _ in range(iterations):
-                hf.evaluate(sample_payload)
+                hf.evaluate(sample_payload, now)
             elapsed_ms = (time.perf_counter() - start) * 1000.0
         finally:
             logging.disable(logging.NOTSET)

@@ -51,10 +51,30 @@ def validate_email(email_str: str) -> bool:
 
 def is_internal_ip(ip_str: str) -> bool:
     """Returns True if ip_str is a private RFC1918 or loopback IP address."""
+    if not ip_str or not isinstance(ip_str, str):
+        return False
+    # Ultra-fast nanosecond string fast-path for standard RFC1918 IPv4
+    if ip_str.startswith("10.") or ip_str.startswith("127.") or ip_str.startswith("192.168."):
+        return True
+    if ip_str.startswith("172."):
+        parts = ip_str.split(".", 2)
+        if len(parts) >= 2 and parts[1].isdigit():
+            second = int(parts[1])
+            if 16 <= second <= 31:
+                return True
+
     if not validate_ip(ip_str):
         return False
     try:
         ip_obj = ipaddress.ip_address(ip_str)
+        if ip_obj.version == 4:
+            ip_int = int(ip_obj)
+            return (
+                (ip_int & 0xFF000000 == 0x0A000000) or
+                (ip_int & 0xFF000000 == 0x7F000000) or
+                (ip_int & 0xFFF00000 == 0xAC100000) or
+                (ip_int & 0xFFFF0000 == 0xC0A80000)
+            )
         return ip_obj.is_private or ip_obj.is_loopback
     except ValueError:
         return False

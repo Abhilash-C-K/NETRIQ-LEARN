@@ -51,7 +51,7 @@ class ConnectionManager:
             
         for ws in websockets:
             try:
-                await ws.send_json(event.dict())
+                await ws.send_json(event.model_dump(mode="json"))
             except Exception as e:
                 logger.error(f"Error sending to user {user_id}: {e}")
                 # We do not disconnect here; let the receive loop catch the disconnect

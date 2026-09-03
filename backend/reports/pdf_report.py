@@ -1,5 +1,5 @@
 import io
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from backend.auth.roles import Role
 from backend.reports.templates import get_template
 from backend.reports.charts import generate_bar_chart
@@ -13,7 +13,7 @@ except ImportError:
     letter = None
     ImageReader = None
 
-async def generate_pdf_report(role: Role, data: List[Dict[str, Any]], chart_data: List[Dict[str, Any]] = None) -> io.BytesIO:
+async def generate_pdf_report(role: Role, data: List[Dict[str, Any]], chart_data: Optional[List[Dict[str, Any]]] = None) -> io.BytesIO:
     """
     Generates a PDF report using reportlab.
     Embeds charts generated via matplotlib.

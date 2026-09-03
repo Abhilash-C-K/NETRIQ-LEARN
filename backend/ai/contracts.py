@@ -57,7 +57,7 @@ class Decision(BaseModel):
 class FeatureContribution(BaseModel):
     """Single feature's signed contribution to a threat verdict."""
     name: str = Field(description="Feature name (from EXPECTED_FEATURE_NAMES)")
-    value: float = Field(description="Raw observed feature value")
+    value: Optional[float] = Field(default=None, description="Raw observed feature value")
     contribution: float = Field(description="Signed SHAP value or signed z-score deviation")
     direction: Literal["increases_risk", "decreases_risk"] = Field(
         description="Risk direction: positive contribution increases risk, negative decreases it"

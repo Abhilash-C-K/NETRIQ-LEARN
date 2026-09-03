@@ -22,7 +22,7 @@ async def list_incidents(req: Request):
 @router.patch("/{incident_id}", response_model=IncidentItem, dependencies=[Depends(require_permission(Capabilities.REVERSE_RESPONSE_ACTION))])
 async def update_incident(incident_id: str, req: IncidentUpdateReq):
     try:
-        updates = req.dict(exclude_unset=True)
+        updates = req.model_dump(exclude_unset=True)
         updated = await incident_service.update(incident_id, updates)
         return IncidentItem(**updated)
     except Exception as e:

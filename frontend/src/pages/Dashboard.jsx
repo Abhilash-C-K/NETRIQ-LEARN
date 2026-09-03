@@ -4,9 +4,11 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { predictionService } from '../services/prediction';
 import { VerdictCard } from '../components/VerdictCard';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { CyberTerminal } from '../components/ui/CyberTerminal';
+import { AnimatedGridPattern } from '../components/ui/AnimatedGridPattern';
 import {
   Shield,
   Sparkles,
@@ -76,13 +78,10 @@ export const Dashboard = () => {
       };
 
       setThreats((prev) => {
-        // Deduplicate by ID
         const exists = prev.some(
           (t) => (t.id && t.id === newThreat.id) || (t.prediction_id && t.prediction_id === newThreat.prediction_id)
         );
         if (exists) return prev;
-
-        // Bounded list: prepend new threat and slice to max entries
         return [newThreat, ...prev].slice(0, MAX_FEED_ENTRIES);
       });
     };
@@ -102,7 +101,7 @@ export const Dashboard = () => {
     };
   }, [subscribe]);
 
-  // Handle Simulation Trigger (Requires Admin MANAGE_SETTINGS capability)
+  // Handle Simulation Trigger
   const handleSimulateFlow = async () => {
     if (!hasAdminAccess) return;
     setIsSimulating(true);
@@ -134,85 +133,94 @@ export const Dashboard = () => {
     }
   };
 
+  const terminalLogs = threats.map(
+    (t) =>
+      `[${new Date(t.timestamp).toLocaleTimeString()}] ${t.src_ip}:${t.src_port} -> ${t.sni || `${t.dst_ip}:${t.dst_port}`} | Action: ${t.action} | Confidence: ${(t.confidence * 100).toFixed(0)}%`
+  );
+
   return (
     <div className="space-y-6">
       {/* Top Bar / View Mode Toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <div>
-          <h1 className="text-xl font-bold font-mono text-slate-100 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-cyan-400" />
-            Smart Summary Dashboard
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-time AI threat telemetry translated into plain-language explanations
-          </p>
-        </div>
+      <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md">
+        <AnimatedGridPattern className="opacity-30" numSquares={20} />
+        
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold font-mono text-slate-100 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-cyan-400" />
+              Smart Summary Dashboard
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Real-time AI threat telemetry translated into plain-language explanations
+            </p>
+          </div>
 
-        {/* Action Controls & View Mode Toggle */}
-        <div className="flex items-center gap-3">
-          {/* RBAC Guarded Simulation Button */}
-          {hasAdminAccess ? (
+          {/* Action Controls & View Mode Toggle */}
+          <div className="flex items-center gap-3">
+            {hasAdminAccess ? (
+              <Button
+                onClick={handleSimulateFlow}
+                disabled={isSimulating}
+                variant="default"
+                size="sm"
+                className="bg-cyan-600 hover:bg-cyan-500 font-mono text-xs"
+              >
+                {isSimulating ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 fill-white mr-1.5" />
+                )}
+                <span>Simulate Flow</span>
+              </Button>
+            ) : (
+              <Button
+                disabled
+                variant="outline"
+                size="sm"
+                title="Simulate Flow requires Admin capability (MANAGE_SETTINGS)"
+              >
+                <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
+                <span>Simulate (Admin)</span>
+              </Button>
+            )}
+
             <Button
-              onClick={handleSimulateFlow}
-              disabled={isSimulating}
-              variant="default"
-              size="sm"
-            >
-              {isSimulating ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
-              ) : (
-                <Play className="w-3.5 h-3.5 fill-cyan-400 mr-1.5" />
-              )}
-              <span>Simulate Flow</span>
-            </Button>
-          ) : (
-            <Button
-              disabled
+              onClick={loadRecentThreats}
+              title="Refresh threat feed"
               variant="outline"
-              size="sm"
-              title="Simulate Flow requires Admin capability (MANAGE_SETTINGS)"
+              size="icon"
             >
-              <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
-              <span>Simulate (Admin)</span>
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             </Button>
-          )}
 
-          <Button
-            onClick={loadRecentThreats}
-            title="Refresh threat feed"
-            variant="outline"
-            size="icon"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+            {/* View Mode Segmented Control */}
+            <div className="bg-slate-950/80 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
+              <button
+                onClick={() => setViewMode('smart')}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
+                  viewMode === 'smart'
+                    ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Smart Summary</span>
+              </button>
 
-          {/* View Mode Segmented Control */}
-          <div className="bg-slate-900 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
-            <button
-              onClick={() => setViewMode('smart')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
-                viewMode === 'smart'
-                  ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Smart Summary</span>
-            </button>
-
-            <button
-              onClick={() => hasRawAccess && setViewMode('raw')}
-              disabled={!hasRawAccess}
-              title={!hasRawAccess ? 'Raw technical log view requires Analyst capability' : ''}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
-                viewMode === 'raw'
-                  ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed'
-              }`}
-            >
-              {!hasRawAccess ? <Lock className="w-3 h-3 text-rose-400" /> : <Terminal className="w-3.5 h-3.5" />}
-              <span>Raw Logs</span>
-            </button>
+              <button
+                onClick={() => hasRawAccess && setViewMode('raw')}
+                disabled={!hasRawAccess}
+                title={!hasRawAccess ? 'Raw technical log view requires Analyst capability' : ''}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
+                  viewMode === 'raw'
+                    ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
+                    : 'text-slate-400 hover:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed'
+                }`}
+              >
+                {!hasRawAccess ? <Lock className="w-3 h-3 text-rose-400" /> : <Terminal className="w-3.5 h-3.5" />}
+                <span>Raw Logs</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -238,6 +246,14 @@ export const Dashboard = () => {
           Showing latest {threats.length} evaluated flows
         </span>
       </div>
+
+      {/* View Mode: Raw Logs Terminal view */}
+      {viewMode === 'raw' && (
+        <CyberTerminal
+          title="NETRIQ Raw Packet Stream"
+          lines={terminalLogs.length > 0 ? terminalLogs : ["No active threat telemetry captured."]}
+        />
+      )}
 
       {/* Primary Threat Feed List */}
       {loading && threats.length === 0 ? (

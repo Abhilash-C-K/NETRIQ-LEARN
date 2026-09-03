@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Flame, Lock, User, AlertCircle, ArrowRight } from 'lucide-react';
+import { FlickeringGrid } from '../components/ui/FlickeringGrid';
+import { BorderBeam } from '../components/ui/BorderBeam';
+import { RippleButton } from '../components/ui/RippleButton';
 
 export const Login = () => {
   const [username, setUsername] = useState('');
@@ -42,11 +45,23 @@ export const Login = () => {
 
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden">
+      {/* Magic UI Flickering Grid Background */}
+      <FlickeringGrid
+        squareSize={4}
+        gridGap={6}
+        flickerChance={0.25}
+        color="rgb(6, 182, 212)"
+        maxOpacity={0.25}
+      />
+
       {/* Background SOC Ambient Glows */}
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative z-10">
+      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative z-10 overflow-hidden">
+        {/* Border Beam Perimeter Glow */}
+        <BorderBeam size={220} duration={10} colorFrom="#06b6d4" colorTo="#3b82f6" />
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mx-auto mb-4 shadow-glow-cyan">
@@ -108,9 +123,10 @@ export const Login = () => {
             </div>
           </div>
 
-          <button
+          <RippleButton
             type="submit"
             disabled={isSubmitting}
+            rippleColor="rgba(6, 182, 212, 0.4)"
             className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-medium text-sm rounded-lg shadow-glow-cyan transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group mt-2"
           >
             {isSubmitting ? (
@@ -124,7 +140,7 @@ export const Login = () => {
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </>
             )}
-          </button>
+          </RippleButton>
         </form>
 
         {/* Quick Demo Fill Credentials */}

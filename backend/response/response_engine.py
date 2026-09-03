@@ -1,6 +1,6 @@
 import asyncio
 import ipaddress
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from backend.ai.contracts import Action, PredictionResult
 from backend.utils.logger import get_logger
@@ -114,7 +114,7 @@ class ResponseEngine:
         except Exception as e:
             logger.error(f"[ResponseEngine] Failed to create incident record for {target_ip}: {e}")
 
-    async def reverse_action(self, action: Action, target_ip: str, target_mac: str = None) -> bool:
+    async def reverse_action(self, action: Action, target_ip: str, target_mac: Optional[str] = None) -> bool:
         """
         Reverses a specific response action (e.g. unblock IP, release quarantine).
         Typically triggered by a human analyst via API.

@@ -55,10 +55,10 @@ class Predictor:
                 if missing:
                     logger.error(f"[SCHEMA_MISMATCH] Feature vector missing required scaler features: {missing[:5]}")
                     raise PredictionError(f"[SCHEMA_MISMATCH] Feature vector missing {len(missing)} required features from scaler model contract.")
-                feature_vector = np.array([[float(encoded_dict[k]) for k in feature_names]])
+                feature_vector = np.array([[encoded_dict[k] for k in feature_names]])
             elif all(k in encoded_dict for k in EXPECTED_FEATURE_NAMES):
                 feature_names = EXPECTED_FEATURE_NAMES
-                feature_vector = np.array([[float(encoded_dict[k]) for k in EXPECTED_FEATURE_NAMES]])
+                feature_vector = np.array([[encoded_dict[k] for k in EXPECTED_FEATURE_NAMES]])
             else:
                 missing = [k for k in EXPECTED_FEATURE_NAMES if k not in encoded_dict]
                 logger.error(f"[SCHEMA_MISMATCH] Feature encoding schema mismatch. Missing canonical features: {missing[:5]}")

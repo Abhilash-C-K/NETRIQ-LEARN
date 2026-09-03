@@ -2,8 +2,10 @@ import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Activity, ShieldAlert, BarChart3 } from 'lucide-react';
 
-export const FlowRateChart = ({ entries }) => {
+export const FlowRateChart = ({ entries = [], feed = [] }) => {
   const chartData = useMemo(() => {
+    const dataList = Array.isArray(entries) && entries.length > 0 ? entries : (Array.isArray(feed) ? feed : []);
+
     // Generate 12 5-second interval buckets over the last 60 seconds
     const buckets = Array.from({ length: 12 }, (_, i) => ({
       index: i,
@@ -17,14 +19,14 @@ export const FlowRateChart = ({ entries }) => {
 
     const now = Date.now() / 1000;
 
-    entries.forEach((item) => {
-      const itemTime = item.timestamp || now;
+    dataList.forEach((item) => {
+      const itemTime = item.timestamp ? new Date(item.timestamp).getTime() / 1000 : now;
       const diffSec = now - itemTime;
       if (diffSec >= 0 && diffSec < 60) {
         const bucketIndex = 11 - Math.floor(diffSec / 5);
         if (bucketIndex >= 0 && bucketIndex < 12) {
           buckets[bucketIndex].count += 1;
-          const sev = (item.risk_category || item.verdict?.risk_category || 'low').toLowerCase();
+          const sev = (item.severity || item.risk_category || item.verdict?.risk_category || 'low').toLowerCase();
           if (sev === 'critical') buckets[bucketIndex].critical += 1;
           else if (sev === 'high') buckets[bucketIndex].high += 1;
           else if (sev === 'medium') buckets[bucketIndex].medium += 1;
@@ -35,7 +37,7 @@ export const FlowRateChart = ({ entries }) => {
 
     const maxCount = Math.max(...buckets.map((b) => b.count), 5);
     return { buckets, maxCount };
-  }, [entries]);
+  }, [entries, feed]);
 
   return (
     <Card className="bg-slate-900/90 border-slate-800 text-slate-100 shadow-xl backdrop-blur-md">

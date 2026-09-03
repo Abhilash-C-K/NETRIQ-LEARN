@@ -940,7 +940,7 @@ ResponseEngine.handle_verdict()  <------------ decide()                    |
 
 ### 1. Phase 1 — Frontend Scaffold & Single-Flight Auth
 - **Vite 6 + React 18 Setup**: Configured with Tailwind CSS and Shadcn UI primitives (`Card`, `Badge`, `Button`, `cn` helper).
-- **In-Memory JWT Access Tokens**: Tokens held strictly in memory; HTTP-only refresh tokens stored in `localStorage` for session restoration.
+- **In-Memory JWT Access Tokens**: Access tokens held strictly in memory (`api.js`); refresh tokens returned in JSON response and stored in `localStorage` for session restoration across tab reloads (with future hardening to server-set `httpOnly` cookies recommended).
 - **Single-Flight Refresh Mutex Interceptor**: In `frontend/src/services/api.js`, a single shared refresh promise queues concurrent 401 requests, preventing parallel refresh calls that trigger server-side token replay revocation. Verified via automated stress test (5 concurrent 401s $\rightarrow$ 1 `/auth/refresh` HTTP call).
 
 ### 2. Phase 2 — Smart Summary View & Explainability Isolation

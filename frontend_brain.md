@@ -182,5 +182,31 @@ To guarantee 60 FPS rendering under sustained traffic loads:
 - [x] **Phase 4 — Incidents & Threat Management Surface** (`Incidents.jsx`, `IncidentDetailDrawer.jsx`, `ResponseActionDialog.jsx`)
 - [x] **Phase 5 — Traffic History & Threat Intelligence Reports** (`History.jsx`, `Analytics.jsx`, `Reports.jsx`)
 - [x] **Phase 6 — Administrative Controls & Settings** (`Users.jsx`, `Settings.jsx`)
+- [x] **Phase 7 — Dual-Tone Day/Night Theme System & Brand Asset Integration** (`ThemeContext.jsx`, `index.css`, `Sidebar.jsx`, `Login.jsx`)
+
+---
+
+## 10. Day/Night Theme System & Brand Integration
+
+### Dual-Tone Day Mode Architecture
+- **Theme Provider (`ThemeContext.jsx`)**: Context provider exposing `theme` state (`dark` | `light`) and `toggleTheme()` function. Synced with HTML root class (`<html class="light">` vs `<html class="dark">`) and `localStorage`.
+- **Sky-Blue Page Gradient**: Soft background gradient (`#7dd3fc` $\rightarrow$ `#38bdf8` $\rightarrow$ `#60a5fa`) with fixed attachment.
+- **Ice-Blue Card Surfaces**: Main card containers render `#f0f9ff` / `#e0f2fe` with soft cyan shadows (`rgba(2, 132, 199, 0.15)`).
+- **Sub-Box Wildcard Attribute Selectors**: In `index.css`, CSS attribute wildcard selectors (`[class*="bg-slate-950"]`, `[class*="bg-slate-900"]`, `[class*="bg-slate-800"]`, `[class*="bg-black"]`) guarantee zero pitch-black sub-boxes across all routes.
+- **Purged Purple/Violet Palette**: Legacy violet and purple fallbacks (`#8b5cf6`, `#7e22ce`, `#a855f7`) purged from `FluidBlobs.jsx`, `GlowEffect.jsx`, `BlobCard.jsx`, `AIPerformance.jsx`, and `index.css`. Replaced with Ocean Cyan (`#0284c7`) and Sky Blue (`#38bdf8`).
+
+### Modern Animation Library Components
+- **`GlowHover.jsx`**: Radial cursor spotlight hover effect wrapper applied to stat cards in `OperationalMetrics.jsx`.
+- **`ScrambleText.jsx`**: Decrypting cyber text scramble animation integrated into IP addresses in `VerdictCard.jsx`.
+- **`ShineText.jsx`**: Metallic shimmer text sweep animation integrated into WS telemetry status badges in `Navbar.jsx`.
+
+### Official Logo Integration & Asset Processing
+- **Image Processing**: Auto-cropped asymmetric right-side margins from `netriq logo.jpeg` using Python Pillow bounding-box script (`scratch/crop_and_center_logo.py`), creating a centered 1:1 square canvas (`812px` x `812px`).
+- **Asset Distribution**: Saved to `frontend/public/logo.jpeg` and `frontend/src/assets/logo.jpeg`.
+- **UI Placements**:
+  - `index.html`: Browser favicon (`<link rel="icon" type="image/jpeg" href="/logo.jpeg" />`).
+  - `Sidebar.jsx`: Top-left sidebar brand header container (`w-10 h-10 rounded-xl`).
+  - `Login.jsx`: Login terminal card header container (`w-16 h-16 rounded-2xl`).
+
 
 

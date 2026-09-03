@@ -43,7 +43,9 @@ frontend/.env
 .system_generated/
 scratch/
 
-# Logs and System Files
+# Logs, Media & Custom Raw Files
+netriq logo.jpeg
+netriq logo*
 logs/
 *.log
 .DS_Store

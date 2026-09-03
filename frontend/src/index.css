@@ -4,8 +4,116 @@
 
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+    @apply bg-slate-950 text-slate-100 font-sans antialiased transition-colors duration-300;
   }
+}
+
+/* --- Day Mode (Pleasant Dual-Tone Sky & Ice Blue Theme - All Components Matched) --- */
+
+/* 1. Page Body Background */
+html.light body {
+  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 40%, #60a5fa 100%) !important;
+  background-attachment: fixed !important;
+  color: #0f172a !important;
+}
+
+/* 2. Main Outer Cards / Containers */
+html.light .bg-slate-900,
+html.light .bg-slate-900\/90,
+html.light .bg-slate-900\/80,
+html.light .bg-slate-900\/60,
+html.light .bg-slate-900\/40 {
+  background-color: #f0f9ff !important;
+  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15) !important;
+  color: #0f172a !important;
+}
+
+/* 3. Inner Sub-Boxes & Nested Metric Cards (AIPerformance, FlowRateChart, Tables) */
+html.light .bg-slate-950,
+html.light .bg-slate-950\/80,
+html.light .bg-slate-950\/60,
+html.light .bg-slate-950\/50,
+html.light .bg-slate-950\/40,
+html.light .bg-slate-950\/30,
+html.light .bg-slate-950\/20,
+html.light .bg-slate-800\/80,
+html.light .bg-slate-800\/50,
+html.light .bg-slate-800\/40,
+html.light .bg-black {
+  background-color: #e0f2fe !important;
+  color: #0f172a !important;
+  border-color: #7dd3fc !important;
+}
+
+/* 4. Navigation Header & Sidebar */
+html.light header {
+  background-color: #bae6fd !important;
+  border-color: #7dd3fc !important;
+}
+
+html.light aside {
+  background-color: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+}
+
+/* 5. Borders & Dividers */
+html.light .border-slate-800,
+html.light .border-slate-800\/80,
+html.light .border-slate-800\/50 {
+  border-color: #7dd3fc !important;
+}
+
+html.light .border-slate-700,
+html.light .border-slate-700\/80 {
+  border-color: #38bdf8 !important;
+}
+
+/* 6. Typography Contrast */
+html.light .text-slate-100,
+html.light .text-slate-200 {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400 {
+  color: #1e293b !important;
+}
+
+html.light .text-slate-500 {
+  color: #334155 !important;
+}
+
+/* 7. Accent Color Adjustments for Light Blue Theme */
+html.light .text-cyan-400,
+html.light .text-cyan-300 {
+  color: #0284c7 !important;
+}
+
+html.light .text-purple-400 {
+  color: #7e22ce !important;
+}
+
+html.light .text-emerald-400 {
+  color: #047857 !important;
+}
+
+html.light .text-amber-400 {
+  color: #b45309 !important;
+}
+
+html.light .text-rose-400 {
+  color: #be123c !important;
+}
+
+/* 8. Form Inputs & Control Buttons */
+html.light input {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #0284c7 !important;
+}
+
+html.light input::placeholder {
+  color: #64748b !important;
 }
 
 /* Magic UI & Custom Animation Keyframes */
@@ -23,6 +131,7 @@
   0% {
     transform: translate(-50%, -50%) rotate(0deg);
   }
+
   100% {
     transform: translate(-50%, -50%) rotate(360deg);
   }
@@ -37,6 +146,7 @@
     opacity: 1;
     transform: scale(0);
   }
+
   100% {
     opacity: 0;
     transform: scale(2.5);
@@ -51,6 +161,7 @@
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(60px);
   }
@@ -61,9 +172,12 @@
 }
 
 @keyframes ripple {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.05);
   }
@@ -73,14 +187,27 @@
   animation: ripple 4s ease-in-out infinite;
 }
 
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
 /* Hide scrollbar for IE, Edge and Firefox */
 .no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 /* Custom scrollbar for SOC dashboard tables and feeds */
@@ -88,13 +215,16 @@
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: #050810;
+  background: #05081035;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #1a2436;
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #0891a3;
 }

@@ -138,12 +138,12 @@ export const Monitoring = () => {
           {isAdmin && (
             <Button
               onClick={handleSimulateThreat}
-              variant="outline"
+              variant="default"
               size="sm"
-              className="border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/10 font-mono text-xs flex items-center gap-1.5"
+              className="bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-bold px-3 py-1.5 rounded-lg border border-cyan-400/40 shadow-sm flex items-center gap-1.5"
             >
-              <Zap className="w-3.5 h-3.5" />
-              Simulate Threat Flow
+              <Zap className="w-3.5 h-3.5 fill-white text-white" />
+              <span className="text-white font-bold">Simulate Threat Flow</span>
             </Button>
           )}
 

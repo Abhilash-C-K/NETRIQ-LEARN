@@ -2,8 +2,10 @@ import * as React from "react";
 import { motion } from "motion/react";
 import { cn } from "../../lib/utils";
 
+const OCEAN_GLOW_COLORS = ["#06b6d4", "#0284c7", "#38bdf8", "#0891b2", "#06b6d4"];
+
 export function GlowEffect({
-  colors = ["#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4"],
+  colors = OCEAN_GLOW_COLORS,
   mode = "rotate",
   blur = "strongest",
   duration = 5,

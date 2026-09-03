@@ -23,3 +23,6 @@ export { RippleButton } from "../ui/RippleButton";
 export { RetroGrid } from "../ui/RetroGrid";
 export { FlickeringGrid } from "../ui/FlickeringGrid";
 export { RippleBackground } from "../ui/RippleBackground";
+export { GlowHover } from "../ui/GlowHover";
+export { ScrambleText } from "../ui/ScrambleText";
+export { ShineText } from "../ui/ShineText";

@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { LogOut, User, Wifi, WifiOff, Bell } from 'lucide-react';
+import { LogOut, User, Wifi, WifiOff, Bell, Sun, Moon } from 'lucide-react';
 import { NotificationBadge } from '../components/ui/NotificationBadge';
 import { SmoothButton } from '../components/ui/SmoothButton';
+import { ShineText } from '../components/ui/ShineText';
 
 export const Navbar = () => {
   const { user, role, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const { connectionStatus, subscribe } = useWebSocket();
   const navigate = useNavigate();
   const [alertCount, setAlertCount] = useState(3);
@@ -41,7 +44,7 @@ export const Navbar = () => {
           {connectionStatus === 'connected' ? (
             <>
               <Wifi className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              <span className="text-slate-300">Live WS Telemetry</span>
+              <ShineText text="Live WS Telemetry" className="text-slate-300 font-semibold" />
               <span className="text-[10px] text-emerald-400 font-semibold uppercase">Connected</span>
             </>
           ) : (
@@ -56,8 +59,19 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* User Actions */}
-      <div className="flex items-center gap-4">
+      {/* User Actions & Day/Night Toggle */}
+      <div className="flex items-center gap-3">
+        {/* Day / Night Theme Toggle */}
+        <SmoothButton
+          onClick={toggleTheme}
+          variant="outline"
+          size="icon"
+          title={isDark ? "Switch to Day Mode (Light)" : "Switch to Night Mode (Dark)"}
+          className="rounded-xl border-slate-800 bg-slate-950/70 hover:bg-slate-800 text-amber-400 hover:text-amber-300"
+        >
+          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-cyan-400" />}
+        </SmoothButton>
+
         {/* Notification Icon with Animated Spring Count Badge */}
         <NotificationBadge count={alertCount} variant="count" ping={alertCount > 0}>
           <SmoothButton

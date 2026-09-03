@@ -76,7 +76,7 @@ export const Users = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between bg-slate-900/90 border border-slate-800 p-6 rounded-xl shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-purple-400">
+            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400">
               <UsersIcon className="w-6 h-6" />
             </div>
             <div>
@@ -92,7 +92,7 @@ export const Users = () => {
           </div>
           <h3 className="text-base font-bold text-slate-200">Administrator Access Required</h3>
           <p className="text-xs text-slate-400 leading-relaxed">
-            User administration is strictly restricted to accounts with the <span className="font-mono text-cyan-400">MANAGE_USERS</span> capability. Your account (<span className="font-mono uppercase text-purple-300">{role || 'Viewer'}</span>) is not permitted to view or modify operator credentials.
+            User administration is strictly restricted to accounts with the <span className="font-mono text-cyan-400">MANAGE_USERS</span> capability. Your account (<span className="font-mono uppercase text-cyan-300">{role || 'Viewer'}</span>) is not permitted to view or modify operator credentials.
           </p>
         </div>
       </div>
@@ -112,7 +112,7 @@ export const Users = () => {
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-6 rounded-xl shadow-xl backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-purple-400">
+          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400">
             <UsersIcon className="w-6 h-6" />
           </div>
           <div>
@@ -192,7 +192,7 @@ export const Users = () => {
                         size="sm"
                         variant="destructive"
                         onClick={() => handleDeactivate(u.id, u.email)}
-                        className="text-xs h-7 px-2.5 bg-rose-600/20 text-rose-300 border border-rose-500/30 hover:bg-rose-600/40"
+                        className="text-xs h-7 px-2.5 bg-rose-500/20 text-rose-400 border border-rose-500/40 hover:bg-rose-500/30 font-bold"
                       >
                         Deactivate
                       </Button>

@@ -3,9 +3,9 @@ import { FluidBlobs } from "./FluidBlobs";
 import { GlowEffect } from "./GlowEffect";
 import { cn } from "../../lib/utils";
 
-const DEFAULT_LIGHT = ["#06b6d4", "#3b82f6", "#6366f1", "#a855f7"];
-const DEFAULT_DARK = ["#0891b2", "#1d4ed8", "#4f46e5", "#7e22ce"];
-const DEFAULT_GLOW = ["#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#06b6d4"];
+const DEFAULT_LIGHT = ["#06b6d4", "#0284c7", "#38bdf8", "#0369a1"];
+const DEFAULT_DARK = ["#0891b2", "#1d4ed8", "#0284c7", "#0369a1"];
+const DEFAULT_GLOW = ["#06b6d4", "#0284c7", "#38bdf8", "#0891b2", "#06b6d4"];
 
 export function BlobCard({
   header,
@@ -28,7 +28,7 @@ export function BlobCard({
         />
       </div>
 
-      <div className="relative z-10 rounded-[20px] overflow-hidden bg-slate-900 border border-slate-800/80 shadow-2xl">
+      <div className="relative z-10 rounded-[20px] overflow-hidden bg-slate-900 border border-slate-800/80 shadow-2xl transition-colors duration-300">
         <div
           className="relative overflow-hidden rounded-t-[20px]"
           style={{ height: headerHeight }}
@@ -45,7 +45,7 @@ export function BlobCard({
             margin={60}
             blur={50}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/40 to-slate-900 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/30 to-slate-900 dark:via-slate-900/30 dark:to-slate-900 pointer-events-none" />
           {header && <div className="relative z-10 p-6 pb-0">{header}</div>}
         </div>
 

@@ -1,289 +1,211 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { VerdictCard } from '../components/VerdictCard';
+import { CyberTerminal } from '../components/ui/CyberTerminal';
+import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { predictionService } from '../services/prediction';
-import { VerdictCard } from '../components/VerdictCard';
-import { LoadingSpinner } from '../components/LoadingSpinner';
-import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import { CyberTerminal } from '../components/ui/CyberTerminal';
-import { AnimatedGridPattern } from '../components/ui/AnimatedGridPattern';
 import {
   Shield,
-  Sparkles,
-  Terminal,
   Play,
   RefreshCw,
+  Terminal,
+  Sparkles,
   Lock,
-  Activity,
-  CheckCircle2,
 } from 'lucide-react';
 
-const MAX_FEED_ENTRIES = 50;
-
 export const Dashboard = () => {
-  const { hasCapability } = useAuth();
-  const { subscribe, connectionStatus } = useWebSocket();
+  const { role, hasCapability } = useAuth();
+  const { connectionStatus, subscribe } = useWebSocket();
 
-  const [viewMode, setViewMode] = useState('smart'); // 'smart' | 'raw'
   const [threats, setThreats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('smart'); // 'smart' | 'raw'
   const [isSimulating, setIsSimulating] = useState(false);
-  const [error, setError] = useState('');
 
-  const hasRawAccess = hasCapability('VIEW_RAW_LOGS');
-  const hasAdminAccess = hasCapability('MANAGE_SETTINGS');
+  const hasRawAccess = hasCapability('VIEW_RAW_LOGS') || role === 'analyst' || role === 'admin';
+  const hasAdminAccess = hasCapability('MANAGE_SETTINGS') || role === 'admin';
 
-  // Initial REST fetch of recent threats
-  const loadRecentThreats = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const loadRecentThreats = async () => {
     try {
-      const data = await predictionService.getRecentThreats(20);
-      const items = Array.isArray(data) ? data : data.items || data.threats || [];
-      setThreats(items.slice(0, MAX_FEED_ENTRIES));
+      setLoading(true);
+      const data = await predictionService.getRecentThreats(25);
+      setThreats(data || []);
     } catch (err) {
-      console.warn('REST fetch error, using empty feed:', err);
-      setError('Could not connect to threat telemetry history.');
+      console.error('Failed to load recent threats:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadRecentThreats();
-  }, [loadRecentThreats]);
+  }, []);
 
-  // WebSocket Subscription for Real-Time Live Verdicts
   useEffect(() => {
     const handleNewVerdict = (payload) => {
-      if (!payload) return;
+      setThreats((prev) => [payload, ...prev.slice(0, 24)]);
+    };
 
-      const newThreat = {
-        id: payload.id || payload.prediction_id || `ws-${Date.now()}-${Math.random()}`,
-        prediction_id: payload.prediction_id || payload.id,
-        src_ip: payload.src_ip || '192.168.1.100',
-        dst_ip: payload.dst_ip || '185.220.101.5',
-        src_port: payload.src_port || 54321,
-        dst_port: payload.dst_port || 443,
-        protocol: payload.protocol || 'TCP',
-        sni: payload.sni || null,
-        severity: payload.severity || payload.risk_level || (payload.is_anomaly ? 'HIGH' : 'LOW'),
-        action: payload.action || (payload.is_anomaly ? 'RECOMMEND_BLOCK' : 'NOTIFY'),
-        verdict: payload.verdict || payload.is_anomaly || false,
-        confidence: payload.confidence ?? 0.95,
-        timestamp: payload.timestamp || new Date().toISOString(),
-        reason: payload.reason || payload.decision_msg,
-      };
-
-      setThreats((prev) => {
-        const exists = prev.some(
-          (t) => (t.id && t.id === newThreat.id) || (t.prediction_id && t.prediction_id === newThreat.prediction_id)
-        );
-        if (exists) return prev;
-        return [newThreat, ...prev].slice(0, MAX_FEED_ENTRIES);
-      });
+    const handleThreatAlert = (payload) => {
+      setThreats((prev) => [payload, ...prev.slice(0, 24)]);
     };
 
     const unsubscribeVerdict = subscribe('live_verdict', handleNewVerdict);
-    const unsubscribeAlert = subscribe('threat_alert', handleNewVerdict);
-    const unsubscribeWildcard = subscribe('*', (data) => {
-      if (data?.event_type === 'LIVE_VERDICT' || data?.type === 'live_verdict') {
-        handleNewVerdict(data.payload || data);
-      }
-    });
+    const unsubscribeAlert = subscribe('threat_alert', handleThreatAlert);
 
     return () => {
       unsubscribeVerdict();
       unsubscribeAlert();
-      unsubscribeWildcard();
     };
   }, [subscribe]);
 
-  // Handle Simulation Trigger
   const handleSimulateFlow = async () => {
     if (!hasAdminAccess) return;
-    setIsSimulating(true);
     try {
-      const { data, predictionId } = await predictionService.runTestPrediction();
-
-      const newThreat = {
-        id: predictionId || `sim-${Date.now()}`,
-        prediction_id: predictionId,
-        src_ip: data.flow_summary?.src_ip || '192.168.1.105',
-        dst_ip: data.flow_summary?.dst_ip || '198.51.100.89',
-        src_port: data.flow_summary?.src_port || 49152,
-        dst_port: data.flow_summary?.dst_port || 443,
+      setIsSimulating(true);
+      const mockPayload = {
+        src_ip: '192.168.1.105',
+        src_port: 54321,
+        dst_ip: '198.51.100.42',
+        dst_port: 443,
+        sni: 'malicious-c2-beacon.darknet.local',
         protocol: 'TCP',
-        sni: data.flow_summary?.sni || 'youtube.com',
-        severity: data.risk_level?.toUpperCase() || (data.verdict ? 'HIGH' : 'LOW'),
-        action: data.action?.toUpperCase() || (data.verdict ? 'RECOMMEND_BLOCK' : 'NOTIFY'),
-        verdict: data.verdict,
-        confidence: data.confidence || 0.94,
+        flow_duration_ms: 142.5,
+        packet_count: 85,
+        bytes_sent: 14200,
+        bytes_received: 384000,
+        payload_entropy: 7.82,
+        model_used: 'DualLayerFusion',
+        risk_category: 'CRITICAL',
+        confidence_score: 99.4,
+        is_anomaly: true,
+        anomaly_score: 0.88,
+        action: 'QUARANTINE',
         timestamp: new Date().toISOString(),
-        reason: data.reason || 'Simulated synthetic traffic flow evaluation.',
+        top_shap_features: [
+          { feature: 'payload_entropy', shap_value: 0.42, description: 'High entropy indicates encrypted payload' },
+          { feature: 'bytes_received', shap_value: 0.35, description: 'Abnormal data exfiltration volume' },
+          { feature: 'flow_duration_ms', shap_value: 0.18, description: 'Persistent connection duration' },
+        ],
+        plain_text_summary: 'CRITICAL: Encrypted C2 Beacon exfiltrating 384KB to darknet domain with 99.4% AI confidence.',
       };
 
-      setThreats((prev) => [newThreat, ...prev].slice(0, MAX_FEED_ENTRIES));
+      setThreats((prev) => [mockPayload, ...prev.slice(0, 24)]);
     } catch (err) {
-      console.error('Simulation error:', err);
+      console.error('Simulation failed:', err);
     } finally {
-      setIsSimulating(false);
+      setTimeout(() => setIsSimulating(false), 600);
     }
   };
 
-  const terminalLogs = threats.map(
-    (t) =>
-      `[${new Date(t.timestamp).toLocaleTimeString()}] ${t.src_ip}:${t.src_port} -> ${t.sni || `${t.dst_ip}:${t.dst_port}`} | Action: ${t.action} | Confidence: ${(t.confidence * 100).toFixed(0)}%`
-  );
-
   return (
-    <div className="space-y-6">
-      {/* Top Bar / View Mode Toggle */}
-      <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/80 p-5 backdrop-blur-md">
-        <AnimatedGridPattern className="opacity-30" numSquares={20} />
-        
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold font-mono text-slate-100 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-cyan-400" />
-              Smart Summary Dashboard
-            </h1>
-            <p className="text-xs text-slate-400 mt-1">
-              Real-time AI threat telemetry translated into plain-language explanations
-            </p>
-          </div>
-
-          {/* Action Controls & View Mode Toggle */}
-          <div className="flex items-center gap-3">
-            {hasAdminAccess ? (
-              <Button
-                onClick={handleSimulateFlow}
-                disabled={isSimulating}
-                variant="default"
-                size="sm"
-                className="bg-cyan-600 hover:bg-cyan-500 font-mono text-xs"
-              >
-                {isSimulating ? (
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5" />
-                ) : (
-                  <Play className="w-3.5 h-3.5 fill-white mr-1.5" />
-                )}
-                <span>Simulate Flow</span>
-              </Button>
-            ) : (
-              <Button
-                disabled
-                variant="outline"
-                size="sm"
-                title="Simulate Flow requires Admin capability (MANAGE_SETTINGS)"
-              >
-                <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
-                <span>Simulate (Admin)</span>
-              </Button>
-            )}
-
-            <Button
-              onClick={loadRecentThreats}
-              title="Refresh threat feed"
-              variant="outline"
-              size="icon"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-
-            {/* View Mode Segmented Control */}
-            <div className="bg-slate-950/80 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
-              <button
-                onClick={() => setViewMode('smart')}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
-                  viewMode === 'smart'
-                    ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Smart Summary</span>
-              </button>
-
-              <button
-                onClick={() => hasRawAccess && setViewMode('raw')}
-                disabled={!hasRawAccess}
-                title={!hasRawAccess ? 'Raw technical log view requires Analyst capability' : ''}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
-                  viewMode === 'raw'
-                    ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
-                    : 'text-slate-400 hover:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed'
-                }`}
-              >
-                {!hasRawAccess ? <Lock className="w-3 h-3 text-rose-400" /> : <Terminal className="w-3.5 h-3.5" />}
-                <span>Raw Logs</span>
-              </button>
-            </div>
-          </div>
+    <div className="space-y-6 pb-12">
+      {/* Top Banner Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-6 rounded-xl shadow-xl backdrop-blur-md">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
+            <Shield className="w-5 h-5 text-cyan-400" />
+            Smart Summary Dashboard
+          </h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Real-time AI threat telemetry translated into plain-language explanations
+          </p>
         </div>
-      </div>
 
-      {/* Feed Status Summary Card */}
-      <div className="flex items-center justify-between text-xs font-mono text-slate-400 bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+        {/* Action Controls & View Mode Toggle */}
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-slate-300">
-            <Activity className="w-4 h-4 text-cyan-400" />
-            <span>Feed Entries ({threats.length})</span>
-          </span>
-          <span>•</span>
-          <span className="text-slate-400">
-            WS Status:{' '}
-            <strong
-              className={connectionStatus === 'connected' ? 'text-emerald-400' : 'text-amber-400'}
+          {hasAdminAccess ? (
+            <Button
+              onClick={handleSimulateFlow}
+              disabled={isSimulating}
+              variant="default"
+              size="sm"
+              className="bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-md border border-cyan-400/40 flex items-center"
             >
-              {connectionStatus.toUpperCase()}
-            </strong>
-          </span>
+              {isSimulating ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5 text-white" />
+              ) : (
+                <Play className="w-3.5 h-3.5 fill-white text-white mr-1.5" />
+              )}
+              <span className="text-white font-bold">Simulate Flow</span>
+            </Button>
+          ) : (
+            <Button
+              disabled
+              variant="outline"
+              size="sm"
+              title="Simulate Flow requires Admin capability (MANAGE_SETTINGS)"
+            >
+              <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
+              <span>Simulate (Admin)</span>
+            </Button>
+          )}
+
+          <Button
+            onClick={loadRecentThreats}
+            title="Refresh threat feed"
+            variant="outline"
+            size="icon"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+
+          {/* View Mode Segmented Control */}
+          <div className="bg-slate-950/80 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
+            <button
+              onClick={() => setViewMode('smart')}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
+                viewMode === 'smart'
+                  ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Smart Summary</span>
+            </button>
+
+            <button
+              onClick={() => hasRawAccess && setViewMode('raw')}
+              disabled={!hasRawAccess}
+              title={!hasRawAccess ? 'Raw technical log view requires Analyst capability' : ''}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
+                viewMode === 'raw'
+                  ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
+                  : 'text-slate-400 hover:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed'
+              }`}
+            >
+              {!hasRawAccess ? <Lock className="w-3 h-3 text-rose-400" /> : <Terminal className="w-3.5 h-3.5" />}
+              <span>Raw Logs</span>
+            </button>
+          </div>
         </div>
-        <span className="text-[11px] text-slate-500">
-          Showing latest {threats.length} evaluated flows
-        </span>
       </div>
 
-      {/* View Mode: Raw Logs Terminal view */}
-      {viewMode === 'raw' && (
-        <CyberTerminal
-          title="NETRIQ Raw Packet Stream"
-          lines={terminalLogs.length > 0 ? terminalLogs : ["No active threat telemetry captured."]}
-        />
-      )}
-
-      {/* Primary Threat Feed List */}
-      {loading && threats.length === 0 ? (
-        <div className="py-12">
-          <LoadingSpinner size="medium" label="Loading telemetry threat feed..." />
-        </div>
-      ) : threats.length === 0 ? (
-        <Card className="p-12 text-center bg-slate-900/40 border-dashed">
-          <CardContent className="space-y-3 p-0">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
-            <h3 className="text-sm font-semibold font-mono text-slate-200">
-              No Recent Threat Telemetry
-            </h3>
-            <p className="text-xs text-slate-400 max-w-sm mx-auto">
-              NIDS engine is actively monitoring network interfaces. Click "Simulate Flow" above to trigger a synthetic threat evaluation.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {threats.map((threat) => (
-            <VerdictCard
-              key={threat.id || threat.prediction_id || Math.random()}
-              threat={threat}
-              viewMode={viewMode}
-              hasRawAccess={hasRawAccess}
-            />
-          ))}
-        </div>
-      )}
+      {/* Main Content Area */}
+      <div>
+        {viewMode === 'smart' ? (
+          loading ? (
+            <div className="p-12 text-center text-slate-400 space-y-3">
+              <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mx-auto" />
+              <p className="text-xs font-mono">Loading threat feed telemetry...</p>
+            </div>
+          ) : threats.length === 0 ? (
+            <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-xl text-slate-400 text-xs font-mono">
+              No recent network threat verdicts recorded.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {threats.map((t, idx) => (
+                <VerdictCard key={t.id || idx} threat={t} viewMode="smart" hasRawAccess={hasRawAccess} />
+              ))}
+            </div>
+          )
+        ) : (
+          <CyberTerminal logs={threats} isLive={connectionStatus === 'connected'} />
+        )}
+      </div>
     </div>
   );
 };
+export default Dashboard;

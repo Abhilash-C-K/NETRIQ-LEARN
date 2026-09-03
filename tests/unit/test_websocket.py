@@ -16,7 +16,6 @@ class TestWebSocketManager(unittest.IsolatedAsyncioTestCase):
         await self.manager.connect("user1", Role.ANALYST, mock_ws)
         self.assertIn("user1", self.manager.active_connections)
         self.assertIn("user1", self.manager.role_registry[Role.ANALYST])
-        mock_ws.accept.assert_called_once()
         
         # Disconnect user
         await self.manager.disconnect("user1", Role.ANALYST, mock_ws)

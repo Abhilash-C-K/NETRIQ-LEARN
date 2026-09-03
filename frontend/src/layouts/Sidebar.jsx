@@ -20,7 +20,6 @@ import {
   Cpu,
   Users,
   Settings,
-  Flame,
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -35,11 +34,11 @@ export const Sidebar = () => {
 
   return (
     <Sidebar001 defaultWidth={250} minWidth={200} maxWidth={320}>
-      {/* Brand Header */}
+      {/* Brand Header with Official NETRIQ Logo */}
       <Sidebar001Header>
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_12px_rgba(6,182,212,0.4)]">
-            <Flame className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 rounded-xl overflow-hidden border border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.4)] shrink-0 bg-slate-950 flex items-center justify-center p-0.5">
+            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-lg" />
           </div>
           <div>
             <h1 className="font-mono font-bold text-sm tracking-wider text-slate-100 flex items-center gap-1.5">

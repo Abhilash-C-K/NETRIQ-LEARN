@@ -6,6 +6,7 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { BorderBeam } from './ui/BorderBeam';
+import { ScrambleText } from './ui/ScrambleText';
 
 export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -69,7 +70,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
           </div>
           <div>
             <div className="flex items-center gap-2 font-mono text-sm font-semibold text-slate-100">
-              <span>{src_ip}</span>
+              <ScrambleText text={src_ip} />
               <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <span className="text-cyan-300">{sni ? sni : `${dst_ip}:${dst_port}`}</span>
             </div>

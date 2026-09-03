@@ -23,7 +23,7 @@ export function RippleBackground({
         return (
           <div
             key={i}
-            className="absolute rounded-full border border-cyan-400/30 bg-cyan-500/5 shadow-lg animate-ripple"
+            className="absolute rounded-full border border-teal-400/25 bg-teal-500/5 shadow-glow-teal animate-ripple"
             style={{
               width: `${size}px`,
               height: `${size}px`,

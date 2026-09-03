@@ -11,7 +11,7 @@ export function RetroGrid({ className, angle = 65 }) {
       style={{ "--grid-angle": `${angle}deg` }}
     >
       <div className="absolute inset-0 [transform:rotateX(var(--grid-angle))]">
-        <div className="animate-grid [background-repeat:repeat] [background-size:60px_60px] [height:300vh] [inset:0%_0px] [margin-left:-50%] [transform-origin:100%_0_0] [width:200vw] [background-image:linear-gradient(to_right,rgba(6,182,212,0.25)_1px,transparent_0),linear-gradient(to_bottom,rgba(6,182,212,0.25)_1px,transparent_0)]" />
+        <div className="animate-grid [background-repeat:repeat] [background-size:60px_60px] [height:300vh] [inset:0%_0px] [margin-left:-50%] [transform-origin:100%_0_0] [width:200vw] [background-image:linear-gradient(to_right,rgba(20,184,196,0.22)_1px,transparent_0),linear-gradient(to_bottom,rgba(20,184,196,0.22)_1px,transparent_0)]" />
       </div>
       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent" />
     </div>

@@ -7,8 +7,8 @@ export function BorderBeam({
   duration = 12,
   anchor = 90,
   borderWidth = 1.5,
-  colorFrom = "#06b6d4",
-  colorTo = "#3b82f6",
+  colorFrom = "#14b8c4",
+  colorTo = "#0891a3",
   delay = 0,
 }) {
   return (

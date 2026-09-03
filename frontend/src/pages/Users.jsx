@@ -45,13 +45,13 @@ export const Users = () => {
   }, [isAdmin]);
 
   const handleDeactivate = async (userId, email) => {
-    if (!confirm(`Are you sure you want to deactivate ${email}? All active sessions will be terminated.`)) {
+    if (!confirm(`Are you sure you want to deactivate ${email}? Refresh token will be revoked immediately; active access tokens expire naturally within 15 minutes.`)) {
       return;
     }
     try {
       await userService.deactivateUser(userId);
-      setActionSuccess(`User ${email} deactivated.`);
-      setTimeout(() => setActionSuccess(null), 4000);
+      setActionSuccess(`User ${email} deactivated. Refresh revoked; active access tokens expire within ≤15m.`);
+      setTimeout(() => setActionSuccess(null), 5000);
       fetchUsers();
     } catch (err) {
       console.error('Failed to deactivate user:', err);

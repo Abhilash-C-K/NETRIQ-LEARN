@@ -10,18 +10,20 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/settings", tags=["settings"])
 
 
+from pydantic import BaseModel, Field
+
 class SettingsUpdateReq(BaseModel):
     """Typed allowlist for system settings. Only these keys can be updated via the API."""
     firewall_adapter_type: Optional[str] = None
     quarantine_mode: Optional[str] = None
     sandbox_mode: Optional[str] = None
-    threat_retention_days: Optional[int] = None
-    login_max_attempts: Optional[int] = None
-    login_lockout_minutes: Optional[int] = None
+    threat_retention_days: Optional[int] = Field(None, ge=1, le=365)
+    login_max_attempts: Optional[int] = Field(None, ge=1, le=20)
+    login_lockout_minutes: Optional[int] = Field(None, ge=1, le=1440)
     anomaly_detector_enabled: Optional[bool] = None
-    high_anomaly_threshold: Optional[float] = None
-    zero_day_weight: Optional[float] = None
-    heuristic_min_rules_for_quarantine: Optional[int] = None
+    high_anomaly_threshold: Optional[float] = Field(None, ge=0.0, le=100.0)
+    zero_day_weight: Optional[float] = Field(None, ge=0.0, le=1.0)
+    heuristic_min_rules_for_quarantine: Optional[int] = Field(None, ge=1, le=10)
 
 
 @router.get("", response_model=Dict[str, Any], dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))])

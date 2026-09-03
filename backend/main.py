@@ -44,6 +44,8 @@ async def lifespan(app: FastAPI):
     logger.info("Starting NETRIQ API...")
     await DatabaseManager.connect_db()
     logger.info("Database connected.")
+    from backend.services.settings_service import settings_service
+    await settings_service.load_persisted_settings()
     from backend.auth.auth_service import AuthService
     await AuthService().seed_initial_users()
     app.state.response_engine = ResponseEngine()  # init AFTER DB is ready

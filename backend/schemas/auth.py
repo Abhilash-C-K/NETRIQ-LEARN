@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from backend.auth.roles import Role
 
 from typing import Optional

@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from backend.utils.logger import get_logger
 from backend.auth.roles import Role
 from backend.database.collections import threats_repo
@@ -12,13 +12,15 @@ class AnalyticsService:
         self._cache = {}
         self._cache_ttl = 300
         
-    async def get_trends(self, role: Role, start_time: float, end_time: float) -> Dict[str, Any]:
+    async def get_trends(self, role: Role, start_time: Optional[float] = None, end_time: Optional[float] = None) -> Dict[str, Any]:
         """
         Aggregates threat trends.
         Uses in-memory cache to prevent expensive DB queries on every dashboard load.
         """
-        cache_key = f"trends_{int(start_time)}_{int(end_time)}"
         now = time.time()
+        start = start_time if start_time is not None else (now - 86400.0)
+        end = end_time if end_time is not None else now
+        cache_key = f"trends_{int(start)}_{int(end)}"
         
         # Check cache
         if cache_key in self._cache:

@@ -152,10 +152,14 @@ $$\text{delay} = \min(3000 \times 1.5^{\text{attempts}}, 30000) \text{ ms}$$
 - **Raw Log Mode (Admin / Analyst)**: Displays raw numeric measurements, z-scores, and raw dataset feature names.
 
 ### Server-Side Data Isolation
-When a `Viewer` session requests `GET /api/v1/prediction/{id}/explain`:
-- The backend zeros out raw measurements: `result.top_features[*].value = None`.
-- `direction` (`increases_risk` / `decreases_risk`) and `contribution` survive intact so the frontend renders impact bars and risk indicators.
-- Sensitive internal network metrics never reach Viewer browser memory or DevTools network payloads.
+1. **Prediction Explanations (`GET /api/v1/prediction/{id}/explain`)**:
+   - The backend zeros out raw measurements: `result.top_features[*].value = None` for Viewer.
+   - `direction` (`increases_risk` / `decreases_risk`) and `contribution` survive intact so the frontend renders impact bars and risk indicators.
+   - Sensitive internal network metrics never reach Viewer browser memory or DevTools network payloads.
+
+2. **Incident Records & Threat Management (`GET /api/v1/incidents`)**:
+   - For `Viewer`, technical internal fields (`affected_assets`, `response_action`, `response_success`, `notes`, `updated_at`) are set to `None` on the server.
+   - Any raw IP addresses appearing in `description` are dynamically redacted at read time to `"Protected Asset"` (e.g. `QUARANTINE executed against Protected Asset`), eliminating information leakage via free-text fields.
 
 ---
 

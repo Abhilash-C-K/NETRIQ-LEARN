@@ -1,5 +1,6 @@
+import re
 import time
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from backend.utils.logger import get_logger
 from backend.database.collections import incidents_repo
 from backend.services.notification_service import notification_service
@@ -8,19 +9,37 @@ from backend.ai.contracts import PredictionResult, Action
 
 logger = get_logger(__name__)
 
+IP_REGEX = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+
 class IncidentService:
+    @staticmethod
+    def _redact_description(description: str, affected_assets: Optional[List[str]] = None) -> str:
+        if not description:
+            return ""
+        redacted = description
+        if affected_assets:
+            for ip in affected_assets:
+                if ip and isinstance(ip, str):
+                    redacted = redacted.replace(ip, "Protected Asset")
+        return IP_REGEX.sub("Protected Asset", redacted)
+
     async def list(self, role: Role, limit: int = 100) -> List[Dict[str, Any]]:
-        """Returns incidents. Viewers receive a simplified summary; Analysts/Admins get full records."""
+        """Returns incidents. Viewers receive a simplified summary with redacted IPs; Analysts/Admins get full records."""
         results = await incidents_repo.list(limit=limit)
         if role == Role.VIEWER:
-            # Strip internal technical fields from viewer scope
+            # Strip internal technical fields and redact IP addresses from description
             return [
                 {
                     "id": item.get("id"),
                     "status": item.get("status"),
                     "severity": item.get("severity"),
-                    "description": item.get("description"),
+                    "description": self._redact_description(item.get("description", ""), item.get("affected_assets")),
                     "created_at": item.get("created_at"),
+                    "updated_at": None,
+                    "affected_assets": None,
+                    "response_action": None,
+                    "response_success": None,
+                    "notes": None,
                 }
                 for item in results
             ]

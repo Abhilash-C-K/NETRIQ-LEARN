@@ -959,3 +959,29 @@ ResponseEngine.handle_verdict()  <------------ decide()                    |
 
 ### 5. Repository Maintenance & Git Untracking
 - Purged 7,800+ tracked `node_modules` files from Git tracking while preserving local disk dependencies. Updated root and frontend `.gitignore` rules.
+
+### 6. Phase 3 — Live Monitoring & Packet Stream Architecture
+- **Sniffer Control Panel (`SnifferControlPanel.jsx`)**: Admin-gated Start/Stop engine toggle (`Capabilities.MANAGE_SETTINGS`), interface auto-detect display, live uptime interval ticker (`00:00:00`), and packet/flow counters.
+- **Operational Telemetry Stat Cards (`OperationalMetrics.jsx`)**: Live visualization of sniffer health counters:
+  - `queue_drop_count`: Overflow drops when consumer queue (10k) is exceeded.
+  - `non_ip_count`: Case A filtered frames (ARP, LLDP, STP).
+  - `malformed_ip_count`: Case B malformed packets evaluated via `HeuristicFallback`.
+- **Dense Tabular Connection Feed (`ConnectionTable.jsx`)**:
+  - Live flow table capped at 50 entries ring buffer.
+  - Displays formatted timestamps, source IP:Port, SNI hostname or destination IP:Port, protocol, model engine with dedicated `Case B Heuristic` badge, severity badges, and mitigation action.
+  - Severity filter pills (`ALL`, `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`).
+- **Flow Throughput Chart (`FlowRateChart.jsx`)**:
+  - 12-bucket 5-second interval histogram covering a rolling 60-second window.
+  - Color-coded stacked bar distribution (Critical/High, Medium, Low/Pass).
+
+### 7. Phase 3 Verification & Reliability Hardening
+- **Direct Wire API RBAC 403 Enforcement**:
+  - Direct HTTP wire testing verified `POST /api/v1/monitoring/start` and `POST /api/v1/monitoring/stop` return `403 Forbidden` for `Analyst` and `Viewer` tokens, while returning `200 OK` for `Admin`. `GET /api/v1/monitoring/status` returns `200 OK` across all roles.
+- **ASGI WebSocket Double-Accept Bug Resolution**:
+  - Identified and removed redundant `await websocket.accept()` inside `ConnectionManager.connect()` which was causing Starlette `RuntimeError: Expected ASGI message "websocket.send" or "websocket.close", but got 'websocket.accept'`.
+- **Capped Exponential Reconnection Backoff**:
+  - Enhanced `useWebSocket.js` with capped exponential retry backoff: $delay = \min(3000 \times 1.5^{\text{attempt}}, 30000)$ ms. Prevents hammering on extended server downtime while ensuring auto-reconnect upon server restart.
+- **Browser Performance Under Sustained Flow Load**:
+  - Verified in Chrome DevTools under 60 continuous simulated threat evaluations (~6-10 events/sec).
+  - 50-entry ring buffer ceiling held strictly in browser state; JS heap remained stable at ~27-35 MB with 0 console errors and 0 DOM leaks.
+

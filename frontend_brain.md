@@ -180,6 +180,7 @@ To guarantee 60 FPS rendering under sustained traffic loads:
 - [x] **Phase 2 — Smart Summary View & Explainability Wire Isolation**
 - [x] **Phase 3 — Live Monitoring & Real-Time Telemetry Stream**
 - [x] **Phase 4 — Incidents & Threat Management Surface** (`Incidents.jsx`, `IncidentDetailDrawer.jsx`, `ResponseActionDialog.jsx`)
-- [ ] **Phase 5 — Traffic History & Threat Intelligence Reports** (`History.jsx`, `Analytics.jsx`, `Reports.jsx`)
-- [ ] **Phase 6 — Administrative Controls & Settings** (`Users.jsx`, `Settings.jsx`)
+- [x] **Phase 5 — Traffic History & Threat Intelligence Reports** (`History.jsx`, `Analytics.jsx`, `Reports.jsx`)
+- [x] **Phase 6 — Administrative Controls & Settings** (`Users.jsx`, `Settings.jsx`)
+
 

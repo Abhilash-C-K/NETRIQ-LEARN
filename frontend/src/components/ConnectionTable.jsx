@@ -12,6 +12,16 @@ export const ConnectionTable = ({ entries }) => {
     return itemSeverity === filterSeverity;
   });
 
+  const formatTime = (ts) => {
+    if (!ts) return new Date().toLocaleTimeString();
+    if (typeof ts === 'number') {
+      const ms = ts < 1e11 ? ts * 1000 : ts;
+      return new Date(ms).toLocaleTimeString();
+    }
+    const d = new Date(ts);
+    return isNaN(d.getTime()) ? new Date().toLocaleTimeString() : d.toLocaleTimeString();
+  };
+
   return (
     <Card className="bg-slate-900/90 border-slate-800 text-slate-100 shadow-xl backdrop-blur-md">
       <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-slate-800">
@@ -62,9 +72,7 @@ export const ConnectionTable = ({ entries }) => {
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredEntries.map((item, idx) => {
-                  const timestamp = item.timestamp
-                    ? new Date(item.timestamp * 1000).toLocaleTimeString()
-                    : new Date().toLocaleTimeString();
+                  const timestamp = formatTime(item.timestamp);
 
                   const srcIp = item.src_ip || item.flow_data?.src_ip || '192.168.1.100';
                   const srcPort = item.src_port || item.flow_data?.src_port || '49152';

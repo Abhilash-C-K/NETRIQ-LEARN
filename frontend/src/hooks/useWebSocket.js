@@ -8,6 +8,7 @@ export const useWebSocket = (customPath = '/ws') => {
   const wsRef = useRef(null);
   const listenersRef = useRef(new Map());
   const reconnectTimerRef = useRef(null);
+  const reconnectAttemptsRef = useRef(0);
 
   const subscribe = useCallback((eventType, callback) => {
     if (!listenersRef.current.has(eventType)) {
@@ -48,6 +49,7 @@ export const useWebSocket = (customPath = '/ws') => {
       ws.onopen = () => {
         if (!isMounted) return;
         console.log('[WebSocket] Connected. Sending auth handshake frame...');
+        reconnectAttemptsRef.current = 0; // Reset backoff on successful connect
         ws.send(
           JSON.stringify({
             type: 'auth',
@@ -88,16 +90,20 @@ export const useWebSocket = (customPath = '/ws') => {
 
       ws.onclose = (event) => {
         if (!isMounted) return;
-        console.log('[WebSocket] Disconnected. Will retry reconnection in 3s...');
         setConnectionStatus('disconnected');
 
-        // Schedule auto-reconnect retry after 3 seconds
+        // Capped exponential backoff: 3s -> 4.5s -> 6.75s ... max 30s
+        const attempt = reconnectAttemptsRef.current;
+        reconnectAttemptsRef.current += 1;
+        const delayMs = Math.min(3000 * Math.pow(1.5, attempt), 30000);
+        console.log(`[WebSocket] Disconnected. Reconnecting in ${Math.round(delayMs / 1000)}s (attempt ${reconnectAttemptsRef.current})...`);
+
         if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = setTimeout(() => {
           if (isMounted && isAuthenticated && accessToken) {
             connect();
           }
-        }, 3000);
+        }, delayMs);
       };
     };
 

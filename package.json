@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend"
+  },
   "devDependencies": {
     "shadcn": "^4.19.1"
   }

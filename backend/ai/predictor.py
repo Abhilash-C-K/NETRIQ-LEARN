@@ -10,13 +10,6 @@ from backend.ai.anomaly_detector import EXPECTED_FEATURE_NAMES
 from backend.utils.logger import get_logger
 from backend.utils.exceptions import PredictionError
 
-shap = None
-try:
-    import shap
-    SHAP_AVAILABLE = True
-except ImportError:
-    SHAP_AVAILABLE = False
-
 logger = get_logger(__name__)
 
 class Predictor:

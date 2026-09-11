@@ -107,6 +107,7 @@ app.include_router(response_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
+app.include_router(health_router)  # Also expose root /health for docker/lb health checks
 app.include_router(websocket_router)  # WebSockets sit at root /ws
 
 if __name__ == "__main__":

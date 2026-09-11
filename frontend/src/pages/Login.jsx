@@ -43,10 +43,10 @@ export const Login = () => {
       setPassword('AdminPassword123!');
     } else if (userType === 'analyst') {
       setUsername('analyst@netriq.local');
-      setPassword('AnalystPass123!');
+      setPassword('AnalystPassword123!');
     } else if (userType === 'viewer') {
       setUsername('viewer@netriq.local');
-      setPassword('ViewerPass123!');
+      setPassword('ViewerPassword123!');
     }
   };
 

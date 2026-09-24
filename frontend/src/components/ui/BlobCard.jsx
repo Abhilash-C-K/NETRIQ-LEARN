@@ -3,9 +3,9 @@ import { FluidBlobs } from "./FluidBlobs";
 import { GlowEffect } from "./GlowEffect";
 import { cn } from "../../lib/utils";
 
-const DEFAULT_LIGHT = ["#06b6d4", "#0284c7", "#38bdf8", "#0369a1"];
-const DEFAULT_DARK = ["#0891b2", "#1d4ed8", "#0284c7", "#0369a1"];
-const DEFAULT_GLOW = ["#06b6d4", "#0284c7", "#38bdf8", "#0891b2", "#06b6d4"];
+const DEFAULT_LIGHT = ["#5eead4", "#14b8c4", "#0891a3", "#2dd4bf"];
+const DEFAULT_DARK = ["#0891a3", "#0e7490", "#155e75", "#042f2e"];
+const DEFAULT_GLOW = ["#14b8c4", "#0891a3", "#0e7490", "#5eead4", "#14b8c4"];
 
 export function BlobCard({
   header,

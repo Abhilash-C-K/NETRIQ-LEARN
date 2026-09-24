@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { SeverityBadge } from './SeverityBadge';
 import { Network, Globe, ArrowRight, ShieldCheck, ShieldAlert, Cpu } from 'lucide-react';
 
-export const ConnectionTable = ({ entries }) => {
+export const ConnectionTable = ({ entries, onSelectDevice }) => {
   const [filterSeverity, setFilterSeverity] = useState('ALL');
 
   const filteredEntries = entries.filter((item) => {
@@ -89,8 +89,22 @@ export const ConnectionTable = ({ entries }) => {
                   return (
                     <tr key={item.id || idx} className="hover:bg-slate-800/40 transition-colors">
                       <td className="py-2.5 px-4 text-slate-400">{timestamp}</td>
-                      <td className="py-2.5 px-4 font-semibold text-slate-200">
-                        {srcIp}:{srcPort}
+                      <td className="py-2.5 px-4 font-semibold text-slate-200 font-mono">
+                        {onSelectDevice ? (
+                          <button
+                            type="button"
+                            onClick={() => onSelectDevice(srcIp)}
+                            className="text-left font-mono hover:text-cyan-400 hover:underline transition-colors focus:outline-none flex items-center gap-1 group cursor-pointer"
+                            title={`View activity trail for ${srcIp}`}
+                          >
+                            <span className="group-hover:text-cyan-300 font-semibold">{srcIp}</span>
+                            <span className="text-slate-500 text-xs font-normal">:{srcPort}</span>
+                          </button>
+                        ) : (
+                          <span>
+                            {srcIp}:{srcPort}
+                          </span>
+                        )}
                       </td>
                       <td className="py-2.5 px-4">
                         {sni ? (

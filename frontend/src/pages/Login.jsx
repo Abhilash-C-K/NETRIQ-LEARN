@@ -58,17 +58,17 @@ export const Login = () => {
         squareSize={4}
         gridGap={6}
         flickerChance={0.25}
-        color="rgb(6, 182, 212)"
+        color="rgb(20, 184, 196)"
         maxOpacity={0.25}
       />
 
       {/* Background SOC Ambient Glows */}
-      <div className="absolute -top-40 -left-40 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-teal-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-2xl backdrop-blur-xl relative z-10 overflow-hidden">
         {/* Border Beam Perimeter Glow */}
-        <BorderBeam size={220} duration={10} colorFrom="#06b6d4" colorTo="#3b82f6" />
+        <BorderBeam size={220} duration={10} colorFrom="#14b8c4" colorTo="#0891a3" />
 
         {/* Header with Official NETRIQ Logo */}
         <div className="text-center mb-8">
@@ -128,7 +128,7 @@ export const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-mono font-bold text-xs rounded-lg shadow-lg hover:shadow-cyan-500/20 transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
+            className="w-full mt-2 py-3 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-white font-mono font-bold text-xs rounded-lg shadow-lg hover:shadow-glow-teal transition-all flex items-center justify-center gap-2 group disabled:opacity-50"
           >
             {loading ? (
               <span>Authenticating...</span>

@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { BorderBeam } from './ui/BorderBeam';
 import { ScrambleText } from './ui/ScrambleText';
 
-export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true }) => {
+export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, onSelectDevice }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const {
@@ -58,7 +58,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
           size={200}
           duration={8}
           colorFrom={normAction === 'QUARANTINE' ? '#f43f5e' : '#f59e0b'}
-          colorTo="#06b6d4"
+          colorTo="#0891a3"
         />
       )}
       {/* Primary Card Summary Row */}
@@ -70,7 +70,18 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true })
           </div>
           <div>
             <div className="flex items-center gap-2 font-mono text-sm font-semibold text-slate-100">
-              <ScrambleText text={src_ip} />
+              {onSelectDevice ? (
+                <button
+                  type="button"
+                  onClick={() => onSelectDevice(src_ip)}
+                  className="hover:text-cyan-400 hover:underline transition-colors cursor-pointer text-left focus:outline-none"
+                  title={`View activity trail for ${src_ip}`}
+                >
+                  <ScrambleText text={src_ip} />
+                </button>
+              ) : (
+                <ScrambleText text={src_ip} />
+              )}
               <ArrowRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
               <span className="text-cyan-300">{sni ? sni : `${dst_ip}:${dst_port}`}</span>
             </div>

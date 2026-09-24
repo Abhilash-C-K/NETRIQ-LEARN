@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { SeverityBadge } from '../components/SeverityBadge';
+import { DeviceActivityDrawer } from '../components/DeviceActivityDrawer';
 import { historyService } from '../services/history';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -24,6 +25,7 @@ export const History = () => {
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedDeviceIp, setSelectedDeviceIp] = useState(null);
 
   // Filters & Pagination
   const [severity, setSeverity] = useState('ALL');
@@ -237,8 +239,20 @@ export const History = () => {
               {logs.map((log, idx) => (
                 <tr key={log.id || idx} className="hover:bg-slate-800/40 transition-colors">
                   <td className="py-3 px-4 text-slate-400">{formatTime(log.timestamp)}</td>
-                  <td className="py-3 px-4 font-semibold text-slate-200">
-                    {log.src_ip || 'N/A'}:{log.src_port || 0}
+                  <td className="py-3 px-4 font-semibold text-slate-200 font-mono">
+                    {log.src_ip ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedDeviceIp(log.src_ip)}
+                        className="text-left font-mono hover:text-cyan-400 hover:underline transition-colors focus:outline-none flex items-center gap-1 group cursor-pointer"
+                        title={`View device activity trail for ${log.src_ip}`}
+                      >
+                        <span className="group-hover:text-cyan-300 font-semibold">{log.src_ip}</span>
+                        <span className="text-slate-500 text-xs font-normal">:{log.src_port || 0}</span>
+                      </button>
+                    ) : (
+                      <span>N/A</span>
+                    )}
                   </td>
                   <td className="py-3 px-4">
                     <span className="text-cyan-400 font-semibold">{log.dst_ip || 'N/A'}</span>
@@ -264,6 +278,13 @@ export const History = () => {
           </table>
         </div>
       )}
+
+      {/* Device Activity Trail Drawer */}
+      <DeviceActivityDrawer
+        isOpen={!!selectedDeviceIp}
+        onClose={() => setSelectedDeviceIp(null)}
+        srcIp={selectedDeviceIp}
+      />
     </div>
   );
 };

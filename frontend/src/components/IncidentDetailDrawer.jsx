@@ -26,6 +26,7 @@ export const IncidentDetailDrawer = ({
   onUpdateStatus,
   onOpenResponseDialog,
   isUpdating = false,
+  onSelectDevice,
 }) => {
   const { hasCapability, role } = useAuth();
   const canModify = hasCapability('REVERSE_RESPONSE_ACTION') || role === 'admin' || role === 'analyst';
@@ -107,9 +108,26 @@ export const IncidentDetailDrawer = ({
 
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-900 text-xs font-mono">
               <div>
-                <span className="text-slate-500 block mb-0.5">AFFECTED ASSET</span>
+                <span className="text-slate-500 block mb-1">AFFECTED ASSET</span>
                 {incident.affected_assets && incident.affected_assets.length > 0 ? (
-                  <span className="text-cyan-300 font-semibold">{incident.affected_assets.join(', ')}</span>
+                  <div className="flex flex-wrap gap-1.5 mt-0.5">
+                    {incident.affected_assets.map((asset, i) =>
+                      onSelectDevice ? (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => onSelectDevice(asset)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/60 text-cyan-300 hover:text-cyan-100 hover:border-cyan-500 hover:bg-cyan-900/60 transition-colors font-mono text-xs font-semibold cursor-pointer"
+                          title={`View device activity trail for ${asset}`}
+                        >
+                          <span>{asset}</span>
+                          <ExternalLink className="w-3 h-3 text-cyan-400" />
+                        </button>
+                      ) : (
+                        <span key={i} className="text-cyan-300 font-semibold">{asset}</span>
+                      )
+                    )}
+                  </div>
                 ) : (
                   <span className="text-slate-400 italic flex items-center gap-1">
                     <Lock className="w-3 h-3 text-slate-500" />

@@ -4,6 +4,7 @@ import { OperationalMetrics } from '../components/OperationalMetrics';
 import { FlowRateChart } from '../components/FlowRateChart';
 import { ConnectionTable } from '../components/ConnectionTable';
 import { VerdictCard } from '../components/VerdictCard';
+import { DeviceActivityDrawer } from '../components/DeviceActivityDrawer';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../context/AuthContext';
 import { monitoringService } from '../services/monitoring';
@@ -23,6 +24,7 @@ export const Monitoring = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards' | 'terminal'
+  const [selectedDeviceIp, setSelectedDeviceIp] = useState(null);
 
   // Fetch initial sniffer status
   const fetchStatus = useCallback(async () => {
@@ -225,7 +227,7 @@ export const Monitoring = () => {
           </CardContent>
         </Card>
       ) : viewMode === 'table' ? (
-        <ConnectionTable entries={feed} />
+        <ConnectionTable entries={feed} onSelectDevice={setSelectedDeviceIp} />
       ) : viewMode === 'terminal' ? (
         <CyberTerminal
           title="NETRIQ Live Packet Sniffer Kernel Feed"
@@ -243,10 +245,18 @@ export const Monitoring = () => {
               threat={threat}
               viewMode="smart"
               hasRawAccess={role === 'admin' || role === 'analyst'}
+              onSelectDevice={setSelectedDeviceIp}
             />
           ))}
         </div>
       )}
+
+      {/* Device Activity Trail Drawer */}
+      <DeviceActivityDrawer
+        isOpen={!!selectedDeviceIp}
+        onClose={() => setSelectedDeviceIp(null)}
+        srcIp={selectedDeviceIp}
+      />
     </div>
   );
 };

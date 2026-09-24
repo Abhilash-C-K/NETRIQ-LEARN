@@ -6,7 +6,7 @@ import { SeverityBadge } from './SeverityBadge';
 import { ShieldAlert, Server, ArrowRight, Lock, Clock, Undo2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog }) => {
+export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelectDevice }) => {
   const { hasCapability, role } = useAuth();
   const canModify = hasCapability('REVERSE_RESPONSE_ACTION') || role === 'admin' || role === 'analyst';
 
@@ -58,7 +58,23 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog }) => {
               <span className="flex items-center gap-1">
                 <Server className="w-3 h-3 text-cyan-400" />
                 {assetDisplay ? (
-                  <span className="text-cyan-300 font-semibold">{assetDisplay}</span>
+                  onSelectDevice ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // If multiple assets, take the first one or pass assetDisplay
+                        const firstIp = incident.affected_assets?.[0] || assetDisplay;
+                        onSelectDevice(firstIp);
+                      }}
+                      className="text-cyan-300 hover:text-cyan-100 hover:underline font-semibold cursor-pointer focus:outline-none"
+                      title={`View device activity trail for ${incident.affected_assets?.[0] || assetDisplay}`}
+                    >
+                      {assetDisplay}
+                    </button>
+                  ) : (
+                    <span className="text-cyan-300 font-semibold">{assetDisplay}</span>
+                  )
                 ) : (
                   <span className="text-slate-400 italic flex items-center gap-1">
                     <Lock className="w-2.5 h-2.5" /> Restricted (Viewer)

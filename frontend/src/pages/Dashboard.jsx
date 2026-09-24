@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { VerdictCard } from '../components/VerdictCard';
+import { DeviceActivityDrawer } from '../components/DeviceActivityDrawer';
 import { CyberTerminal } from '../components/ui/CyberTerminal';
 import { Button } from '../components/ui/button';
 import { useAuth } from '../context/AuthContext';
@@ -22,6 +23,7 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('smart'); // 'smart' | 'raw'
   const [isSimulating, setIsSimulating] = useState(false);
+  const [selectedDeviceIp, setSelectedDeviceIp] = useState(null);
 
   const hasRawAccess = hasCapability('VIEW_RAW_LOGS') || role === 'analyst' || role === 'admin';
   const hasAdminAccess = hasCapability('MANAGE_SETTINGS') || role === 'admin';
@@ -197,7 +199,13 @@ export const Dashboard = () => {
           ) : (
             <div className="space-y-4">
               {threats.map((t, idx) => (
-                <VerdictCard key={t.id || idx} threat={t} viewMode="smart" hasRawAccess={hasRawAccess} />
+                <VerdictCard
+                  key={t.id || idx}
+                  threat={t}
+                  viewMode="smart"
+                  hasRawAccess={hasRawAccess}
+                  onSelectDevice={setSelectedDeviceIp}
+                />
               ))}
             </div>
           )
@@ -205,6 +213,13 @@ export const Dashboard = () => {
           <CyberTerminal logs={threats} isLive={connectionStatus === 'connected'} />
         )}
       </div>
+
+      {/* Device Activity Trail Drawer */}
+      <DeviceActivityDrawer
+        isOpen={!!selectedDeviceIp}
+        onClose={() => setSelectedDeviceIp(null)}
+        srcIp={selectedDeviceIp}
+      />
     </div>
   );
 };

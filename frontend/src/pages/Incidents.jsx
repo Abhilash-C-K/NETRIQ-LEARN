@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { IncidentCard } from '../components/IncidentCard';
 import { IncidentDetailDrawer } from '../components/IncidentDetailDrawer';
+import { DeviceActivityDrawer } from '../components/DeviceActivityDrawer';
 import { ResponseActionDialog } from '../components/ResponseActionDialog';
 import { incidentService } from '../services/incidents';
 import { responseService } from '../services/response';
@@ -37,6 +38,7 @@ export const Incidents = () => {
   // Drawer & Dialog State
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedDeviceIp, setSelectedDeviceIp] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [dialogState, setDialogState] = useState({
@@ -338,12 +340,13 @@ export const Incidents = () => {
               incident={incident}
               onSelect={openDrawer}
               onOpenResponseDialog={openResponseDialog}
+              onSelectDevice={setSelectedDeviceIp}
             />
           ))}
         </div>
       )}
 
-      {/* Drawer */}
+      {/* Incident Detail Drawer */}
       <IncidentDetailDrawer
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
@@ -351,6 +354,14 @@ export const Incidents = () => {
         onUpdateStatus={handleUpdateStatus}
         onOpenResponseDialog={openResponseDialog}
         isUpdating={isUpdating}
+        onSelectDevice={setSelectedDeviceIp}
+      />
+
+      {/* Device Activity Trail Drawer */}
+      <DeviceActivityDrawer
+        isOpen={!!selectedDeviceIp}
+        onClose={() => setSelectedDeviceIp(null)}
+        srcIp={selectedDeviceIp}
       />
 
       {/* Enforcement Confirmation Dialog */}

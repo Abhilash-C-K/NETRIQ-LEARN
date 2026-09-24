@@ -15,7 +15,7 @@ const smoothButtonVariants = cva(
     variants: {
       color: {
         accent:
-          "[--btn-fg:#fff] [--btn-hover:#0284c7] [--btn:#06b6d4]",
+          "[--btn-fg:#fff] [--btn-hover:#0891a3] [--btn:#14b8c4]",
         amber:
           "[--btn-fg:#fff] [--btn-hover:#d97706] [--btn:#f59e0b]",
         blue: "[--btn-fg:#fff] [--btn-hover:#1d4ed8] [--btn:#3b82f6]",
@@ -42,21 +42,21 @@ const smoothButtonVariants = cva(
       },
       variant: {
         candy:
-          "border-[0.5px] border-white/25 bg-gradient-to-b from-[var(--btn,#06b6d4)] to-[var(--btn-hover,#0284c7)] text-[var(--btn-fg,#fff)] shadow-md hover:brightness-110 [&_svg]:drop-shadow-sm",
+          "border-[0.5px] border-white/25 bg-gradient-to-b from-[var(--btn,#14b8c4)] to-[var(--btn-hover,#0891a3)] text-[var(--btn-fg,#fff)] shadow-md hover:brightness-110 [&_svg]:drop-shadow-sm",
         default:
           "bg-slate-800 text-slate-100 border border-slate-700 shadow-sm hover:bg-slate-700 hover:text-white",
         destructive:
           "bg-gradient-to-b from-rose-500 to-rose-600 text-white shadow-sm hover:from-rose-600 hover:to-rose-700",
         ghost:
-          "text-[var(--btn,#94a3b8)] hover:bg-slate-800/60 hover:text-slate-100",
-        link: "text-[var(--btn,#38bdf8)] underline-offset-4 hover:underline",
+          "border border-transparent hover:bg-white/5 hover:border-white/10 text-slate-400 hover:text-slate-100",
+        link: "text-slate-400 underline-offset-4 hover:underline hover:text-slate-100",
         outline:
-          "border border-slate-700 bg-slate-900 text-slate-200 shadow-sm hover:bg-slate-800 hover:text-white",
+          "border border-slate-800 bg-slate-900/60 text-slate-300 hover:bg-slate-800 hover:text-slate-100 hover:border-slate-700",
         secondary:
-          "bg-slate-800 text-slate-200 border border-slate-700/60 shadow-xs hover:bg-slate-700/80",
-        soft: "bg-[var(--btn,#06b6d4)]/15 text-[var(--btn,#38bdf8)] border border-[var(--btn,#06b6d4)]/30 hover:bg-[var(--btn,#06b6d4)]/25",
+          "border border-slate-800 bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-slate-100",
+        soft: "bg-[var(--btn,#14b8c4)]/15 text-[var(--btn,#5eead4)] border border-[var(--btn,#14b8c4)]/30 hover:bg-[var(--btn,#14b8c4)]/25",
         solid:
-          "bg-[var(--btn,#06b6d4)] text-[var(--btn-fg,#fff)] shadow-xs hover:bg-[var(--btn-hover,#0284c7)]",
+          "bg-[var(--btn,#14b8c4)] text-[var(--btn-fg,#fff)] shadow-xs hover:bg-[var(--btn-hover,#0891a3)]",
       },
     },
   }

@@ -27,12 +27,12 @@ export const AIPerformance = () => {
         </div>
       </div>
 
-      {/* Featured Fluid Blob Card - Pure Ocean Cyan & Electric Blue Gradient */}
+      {/* Featured Fluid Blob Card - Unified Teal/Cyan Cyber Gradient */}
       <BlobCard
         headerHeight={180}
-        glowColors={["#06b6d4", "#3b82f6", "#0284c7", "#38bdf8", "#06b6d4"]}
-        darkColors={["#0891b2", "#1d4ed8", "#0284c7", "#0369a1"]}
-        lightColors={["#38bdf8", "#0284c7", "#0369a1", "#7dd3fc"]}
+        glowColors={["#14b8c4", "#0891a3", "#0e7490", "#5eead4", "#14b8c4"]}
+        darkColors={["#0891a3", "#0e7490", "#155e75", "#042f2e"]}
+        lightColors={["#5eead4", "#14b8c4", "#0891a3", "#2dd4bf"]}
         header={
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="space-y-1">

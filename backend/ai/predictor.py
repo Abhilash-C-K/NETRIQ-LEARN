@@ -12,6 +12,10 @@ from backend.utils.exceptions import PredictionError
 
 logger = get_logger(__name__)
 
+# Lazy SHAP reference — imported on-demand to avoid 25s startup freeze during app boot
+shap: Any = None
+SHAP_AVAILABLE: bool = False
+
 class Predictor:
     def __init__(self):
         self.model_manager = ModelManager()
@@ -110,8 +114,17 @@ class Predictor:
         Generates SHAP values or falls back to feature importance mapping.
         Returns top 3 contributing features.
         """
+        global shap, SHAP_AVAILABLE
         top_features = []
         try:
+            if not SHAP_AVAILABLE and shap is None:
+                try:
+                    import shap as _shap
+                    shap = _shap
+                    SHAP_AVAILABLE = True
+                except Exception:
+                    SHAP_AVAILABLE = False
+
             if SHAP_AVAILABLE and shap is not None and hasattr(model, "predict_proba"):
                 # Warning: TreeExplainer can be slow for real-time. 
                 explainer = shap.TreeExplainer(model)

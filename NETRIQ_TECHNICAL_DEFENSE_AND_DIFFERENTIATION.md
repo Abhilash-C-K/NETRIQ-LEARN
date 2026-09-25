@@ -160,6 +160,10 @@ In contrast to commercial marketing claims, NETRIQ transparently documents known
    - Client IP request limits are tracked in process memory and reset on Uvicorn reload. Production multi-instance deployments require a Redis-backed token bucket.
 7. **Educational Mock Adapters**:
    - Local environments use `backend/sandbox/sandbox.py` (safe no-op execution) to prevent accidental interference with the host machine's actual default gateway or physical network adapters.
+8. **Device Activity Trail Drill-Down Architecture**:
+   - Seamless drill-down from any IP in Connection Table, Verdict Cards, History, or Incident Context into a chronological device timeline.
+   - Reuses existing MongoDB `threats` collection compound index `{ timestamp: -1, src_ip: 1 }` without requiring new ingestion tables.
+   - Viewers querying a specific host receive sanitized connection metadata (timestamps, domains, protocols, actions) while bulk raw log dumps remain strictly restricted.
 
 ---
 
@@ -170,10 +174,14 @@ In contrast to commercial marketing claims, NETRIQ transparently documents known
 | **JWT Single-Flight Refresh** | Automated Node.js concurrency script | 10 concurrent requests with expired access token | **Passed**: Exactly 1 refresh call executed; 10/10 requests succeeded. |
 | **Explainability Isolation** | Python REST API payload comparison | Real DB prediction queried as Analyst vs. Viewer | **Passed**: Viewer payload had all sensitive measurements set to `null`. |
 | **Response RBAC Gating** | Real Python requests with live JWTs | `POST /response/quarantine`, `POST /response/reverse` | **Passed**: Viewer strictly received `403 Forbidden`. |
-| **Description IP Redaction** | Wire-level regex and payload comparison | Incident created from autonomous decision engine | **Passed**: Target IP `10.0.0.42` replaced with `"Protected Asset"` for Viewer. |
+| **Description IP Redaction** | RFC-compliant `ipaddress` parsing | Standard IPv4, full IPv6, and compressed IPv6 (`::1`, `fe80::1`) | **Passed**: All IP formats replaced with `"Protected Asset"` for Viewer. |
+| **Device Activity Trail RBAC** | Live REST query with Admin vs. Viewer tokens | `GET /api/v1/history/logs?src_ip=192.168.1.105` | **Passed**: Admin receives full raw telemetry; Viewer receives sanitized metadata (`raw_data=None`). Bulk query returns `[]`. |
+| **Report Generation & Lifecycle** | End-to-end API lifecycle test | `POST /reports/generate` $\rightarrow$ `GET /reports/{id}` | **Passed**: Report transitions cleanly to `status: completed` with valid `download_url`. |
+| **RFC 4180 CSV Export** | Frontend data URL generation & escape audit | Connection logs with special characters and commas | **Passed**: All fields strictly quoted and escaped; zero column misalignment. |
+| **EmailStr Schema Enforcement** | Pydantic model validation unit tests | Invalid emails vs. valid RFC 5322 addresses | **Passed**: Invalid emails raise `ValidationError`; valid emails pass cleanly. |
 | **High-Stakes Dialog Safety** | Chrome DevTools DOM inspection | Reverse action trigger in Drawer | **Passed**: Button disabled until confirmation checkbox toggled; mutex locks on click. |
 | **WebSocket Reconnect** | Live backend process termination & restart | ASGI Uvicorn server killed and re-spawned | **Passed**: Handshake auto-recovered via capped backoff without page reload. |
-| **End-to-End Role Rehearsal** | Chrome browser automated test | Admin flow $\rightarrow$ Quarantine $\rightarrow$ Reverse $\rightarrow$ Viewer audit | **Passed**: Zero console errors; status saved to MongoDB; full cycle audited. |
+| **End-to-End Role Rehearsal** | Automated REST & UI verification | Admin flow $\rightarrow$ Quarantine $\rightarrow$ Reverse $\rightarrow$ Viewer audit | **Passed**: Zero console errors; status saved to MongoDB; full cycle audited. |
 
 ---
 

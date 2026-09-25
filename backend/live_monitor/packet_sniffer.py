@@ -46,22 +46,24 @@ class PacketSniffer:
     """
 
     QUEUE_DROP_LOG_INTERVAL_SEC: float = 5.0
+    DEFAULT_FILTER: str = "ip and not (port 27017 or port 8000 or port 5173)"
 
     def __init__(
         self,
         interface: Optional[str] = None,
-        packet_filter: str = "ip",
+        packet_filter: Optional[str] = None,
         max_queue_size: int = 10000,
         heuristic_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
     ):
         self.interface = interface
-        self.packet_filter = packet_filter
+        self.packet_filter = packet_filter if packet_filter is not None else self.DEFAULT_FILTER
         self.packet_queue = queue.Queue(maxsize=max_queue_size)
         self.heuristic_callback = heuristic_callback
         self.is_running = False
         self.sniffer_thread: Optional[threading.Thread] = None
 
         # Visibility metrics & rate-limiting state
+        self.packets_captured: int = 0
         self.queue_drop_count: int = 0
         self.non_ip_count: int = 0
         self.malformed_ip_count: int = 0
@@ -274,6 +276,7 @@ class PacketSniffer:
 
             try:
                 self.packet_queue.put_nowait(pkt_dict)
+                self.packets_captured += 1
             except queue.Full:
                 self.queue_drop_count += 1
                 self._check_emit_queue_drop_summary()
@@ -333,7 +336,9 @@ class PacketSniffer:
                 "store": False,
                 "stop_filter": lambda p: not self.is_running,
             }
-            if sys.platform == "win32" and getattr(conf, "L3socket", None):
+            # On Windows with Npcap installed, Scapy automatically uses L2pcapListenSocket.
+            # Passing L3socket as a kwarg causes L2pcapListenSocket to raise unexpected keyword argument.
+            if sys.platform == "win32" and not getattr(conf, "use_pcap", True) and getattr(conf, "L3socket", None):
                 sniff_kwargs["L3socket"] = conf.L3socket
 
             sniff(**sniff_kwargs)

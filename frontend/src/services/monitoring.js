@@ -15,4 +15,9 @@ export const monitoringService = {
     const response = await api.post('/monitoring/stop');
     return response.data;
   },
+
+  async getNetworkTelemetry() {
+    const response = await api.get('/monitoring/telemetry');
+    return response.data;
+  },
 };

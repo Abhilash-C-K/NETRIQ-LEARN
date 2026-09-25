@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from backend.auth.roles import Role
 
 from typing import Optional
@@ -16,7 +16,7 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 class RegisterRequest(BaseModel):
-    email: str
+    email: EmailStr
     password: str
     role: Role
 

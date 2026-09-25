@@ -49,9 +49,25 @@ async def lifespan(app: FastAPI):
     from backend.auth.auth_service import AuthService
     await AuthService().seed_initial_users()
     app.state.response_engine = ResponseEngine()  # init AFTER DB is ready
+
+    # Auto-engage live hardware packet monitoring on Npcap physical NIC
+    try:
+        from backend.services.monitoring_service import monitoring_service
+        from backend.auth.roles import Role
+        await monitoring_service.start(Role.ADMIN)
+        logger.info("[Startup] Live hardware packet monitoring pipeline engaged on physical NIC.")
+    except Exception as e:
+        logger.warning(f"[Startup] Could not auto-engage live monitor: {e}")
+
     yield
     # --- SHUTDOWN ---
     logger.info("Shutting down NETRIQ API...")
+    try:
+        from backend.services.monitoring_service import monitoring_service
+        from backend.auth.roles import Role
+        await monitoring_service.stop(Role.ADMIN)
+    except Exception:
+        pass
     await DatabaseManager.close_db()
     await app.state.response_engine.close()
     logger.info("Cleanup complete.")

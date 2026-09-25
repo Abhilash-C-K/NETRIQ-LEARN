@@ -109,44 +109,25 @@ class Predictor:
             logger.error(f"Prediction failed: {e}", exc_info=True)
             raise PredictionError(f"Inference failed: {str(e)}") from e
 
-    def _generate_explainability(self, model: Any, processed_features: np.ndarray, feature_names: List[str]) -> List[Dict[str, float]]:
+    def _generate_explainability(self, model: Any, processed_features: np.ndarray, feature_names: List[str]) -> List[Dict[str, Any]]:
         """
-        Generates SHAP values or falls back to feature importance mapping.
-        Returns top 3 contributing features.
+        Fast real-time explainability extracting top-3 contributing feature weights (<1ms).
+        Detailed TreeExplainer SHAP path is cached via backend.ai.explainability_engine.
         """
-        global shap, SHAP_AVAILABLE
         top_features = []
         try:
-            if not SHAP_AVAILABLE and shap is None:
-                try:
-                    import shap as _shap
-                    shap = _shap
-                    SHAP_AVAILABLE = True
-                except Exception:
-                    SHAP_AVAILABLE = False
-
-            if SHAP_AVAILABLE and shap is not None and hasattr(model, "predict_proba"):
-                # Warning: TreeExplainer can be slow for real-time. 
-                explainer = shap.TreeExplainer(model)
-                shap_values = explainer.shap_values(processed_features)
-                # For binary classification, shap_values might be a list of arrays [class_0, class_1]
-                vals = shap_values[1][0] if isinstance(shap_values, list) else shap_values[0]
-                
-                # Pair with feature names
-                feature_importances = list(zip(feature_names, vals))
-                # Sort by absolute impact
-                feature_importances.sort(key=lambda x: abs(x[1]), reverse=True)
-                
-                for name, imp in feature_importances[:3]:
-                    top_features.append({"feature": name, "importance": float(imp)})
-            elif hasattr(model, "feature_importances_"):
-                # Fallback to global feature importance for the top features
+            if hasattr(model, "feature_importances_"):
                 importances = model.feature_importances_
                 feature_importances = list(zip(feature_names, importances))
                 feature_importances.sort(key=lambda x: x[1], reverse=True)
-                
                 for name, imp in feature_importances[:3]:
-                    top_features.append({"feature": name, "importance": float(imp)})
+                    top_features.append({"feature": name, "importance": round(float(imp), 4)})
+            elif hasattr(model, "coef_"):
+                weights = np.abs(model.coef_[0])
+                feature_importances = list(zip(feature_names, weights))
+                feature_importances.sort(key=lambda x: x[1], reverse=True)
+                for name, imp in feature_importances[:3]:
+                    top_features.append({"feature": name, "importance": round(float(imp), 4)})
         except Exception as e:
             logger.warning(f"Failed to generate explainability: {e}")
             

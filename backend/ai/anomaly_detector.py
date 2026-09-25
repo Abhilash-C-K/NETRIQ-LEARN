@@ -29,6 +29,23 @@ EXPECTED_FEATURE_NAMES = [
     'Idle Std', 'Idle Max', 'Idle Min'
 ]
 
+class StatisticalAnomalyDetector:
+    """
+    Statistical Unsupervised Anomaly Detector.
+    Implements decision_function(X) interface for anomaly scoring.
+    Computes standardized distance against baseline benign flow centroid.
+    Inliers yield higher values, outliers yield lower negative values.
+    """
+    def __init__(self, means: np.ndarray, stds: np.ndarray):
+        self.means = np.array(means, dtype=np.float64)
+        self.stds = np.where(np.array(stds, dtype=np.float64) == 0, 1.0, np.array(stds, dtype=np.float64))
+        self.n_features_in_ = len(self.means)
+
+    def decision_function(self, X: np.ndarray) -> np.ndarray:
+        z = (X - self.means) / self.stds
+        dist = np.sqrt(np.mean(z ** 2, axis=1))
+        return -dist
+
 class AnomalyDetector:
     """
     Inference-only Unsupervised Anomaly Detector using Isolation Forest.

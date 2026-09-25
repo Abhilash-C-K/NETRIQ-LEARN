@@ -56,3 +56,18 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# GSD (Get Shit Done) Framework & Workflow Files
+.gsd/
+.agent/
+.agents/
+.gemini/
+adapters/
+GSD-STYLE.md
+PROJECT_RULES.md
+model_capabilities.yaml
+VERSION
+scripts/validate-*
+scripts/search_repo.*
+scripts/setup_search.*
+

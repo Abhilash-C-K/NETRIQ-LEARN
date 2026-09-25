@@ -3,7 +3,7 @@ import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { StatusBadge } from './StatusBadge';
 import { SeverityBadge } from './SeverityBadge';
-import { ShieldAlert, Server, ArrowRight, Lock, Clock, Undo2 } from 'lucide-react';
+import { ShieldAlert, Server, ArrowRight, Lock, Clock, Undo2, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelectDevice }) => {
@@ -22,11 +22,14 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
       : null;
 
   return (
-    <Card className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md hover:border-slate-700 transition-all">
+    <Card
+      onClick={() => onSelect && onSelect(incident)}
+      className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md hover:border-[#00d1b2]/40 hover:shadow-cyan-950/20 cursor-pointer transition-all duration-200"
+    >
       <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left Info */}
         <div className="flex items-start gap-3.5">
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-indigo-400 mt-0.5 shrink-0">
+          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[#00d1b2] mt-0.5 shrink-0">
             <ShieldAlert className="w-5 h-5" />
           </div>
 
@@ -63,7 +66,6 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // If multiple assets, take the first one or pass assetDisplay
                         const firstIp = incident.affected_assets?.[0] || assetDisplay;
                         onSelectDevice(firstIp);
                       }}
@@ -91,13 +93,14 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
             <Button
               size="sm"
               variant="outline"
-              onClick={() =>
+              onClick={(e) => {
+                e.stopPropagation();
                 onOpenResponseDialog({
                   actionType: 'reverse',
                   targetIp: incident.affected_assets?.[0] || '',
                   initialAction: incident.response_action,
-                })
-              }
+                });
+              }}
               className="text-xs border-amber-500/30 text-amber-300 hover:bg-amber-500/10 flex items-center gap-1 h-8"
             >
               <Undo2 className="w-3.5 h-3.5" />
@@ -107,10 +110,15 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
 
           <Button
             size="sm"
-            onClick={() => onSelect(incident)}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1 h-8"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(incident);
+            }}
+            className="text-xs font-mono font-bold uppercase bg-teal-950/80 hover:bg-teal-900 border border-[#00d1b2]/40 text-[#00d1b2] hover:text-white flex items-center gap-1.5 h-8 shadow-sm transition-all"
+            title="Inspect in Network Monitor"
           >
-            <span>Details</span>
+            <Activity className="w-3.5 h-3.5 nm-pulse" />
+            <span>Network Traffic</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Button>
         </div>

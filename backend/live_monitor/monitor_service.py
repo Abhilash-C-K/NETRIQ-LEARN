@@ -42,6 +42,7 @@ class MonitorService:
         )
         self.flow_builder = FlowBuilder(idle_timeout_sec=3.0)
         self.predictor = LivePredictor(dataset_name=dataset_name)
+        self.flows_processed: int = 0
 
     def _handle_malformed_heuristic(self, partial_pkt: Dict[str, Any]) -> None:
         """Callback invoked by PacketSniffer on Case B malformed IP packets."""
@@ -165,6 +166,7 @@ class MonitorService:
 
             completed_flows = self.flow_builder.process_packet(pkt)
             for flow in completed_flows:
+                self.flows_processed += 1
                 try:
                     features = FeatureExtractor.extract_features(flow)
                     result_dict = self.predictor.predict(features)

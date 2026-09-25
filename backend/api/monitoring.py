@@ -36,3 +36,13 @@ async def get_status():
     except Exception as e:
         logger.error(f"Failed to get monitoring status: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to get monitoring status")
+
+
+@router.get("/telemetry", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
+async def get_network_telemetry():
+    try:
+        from backend.services.network_telemetry_service import network_telemetry_service
+        return await network_telemetry_service.get_telemetry()
+    except Exception as e:
+        logger.error(f"Failed to get network telemetry: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve network telemetry")

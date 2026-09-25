@@ -54,22 +54,26 @@ frontend/
     │   ├── ProtectedRoute.jsx      # Role & capability gating wrapper
     │   ├── ExplanationPanel.jsx    # Dual-mode SHAP drawer (Smart Summary vs Raw Matrix)
     │   ├── SeverityBadge.jsx       # Color-coded severity badge (CRITICAL/HIGH/MED/LOW)
-    │   ├── VerdictCard.jsx         # Flow verdict card with Case B Heuristic fallback badge
+    │   ├── VerdictCard.jsx         # Flow verdict card with clickable IP & Case B Heuristic fallback badge
     │   ├── SnifferControlPanel.jsx # Engine start/stop controls, live uptime ticker, counters
     │   ├── OperationalMetrics.jsx  # Queue drop, non-IP, and malformed traffic stat cards
-    │   ├── ConnectionTable.jsx     # Tabular flow feed (50-item buffer, SNI, severity filter)
+    │   ├── ConnectionTable.jsx     # Tabular flow feed (clickable IP, 50-item buffer, SNI, severity filter)
     │   ├── FlowRateChart.jsx       # 60s sliding window throughput histogram (12 buckets)
+    │   ├── DeviceActivityDrawer.jsx# Universal slide-over device activity trail & timeline
+    │   ├── IncidentDetailDrawer.jsx# Incident triage drawer with clickable asset chips
+    │   ├── IncidentCard.jsx        # Incident summary card with clickable asset drill-down
+    │   ├── ResponseActionDialog.jsx# Two-stage high-stakes quarantine confirmation modal
     │   └── ui/                     # Primitives (card, button, badge, border-beam, etc.)
     └── pages/
         ├── Login.jsx               # Terminal-style login with demo account quick-fill
-        ├── Dashboard.jsx           # Smart Summary & High-level SOC view
-        ├── Monitoring.jsx          # Live Packet Stream & Real-Time Monitoring
-        ├── Incidents.jsx           # [Phase 4] Threat incident management & quarantine
-        ├── History.jsx             # [Phase 5] Historical threat traffic log
-        ├── Analytics.jsx           # [Phase 5] Threat intelligence analytics & charts
-        ├── Reports.jsx             # [Phase 5] PDF/Excel export surface
-        ├── Users.jsx               # [Phase 6] User management (Admin only)
-        └── Settings.jsx            # [Phase 6] System configuration & thresholds
+        ├── Dashboard.jsx           # Smart Summary & High-level SOC view with Device Trail drawer
+        ├── Monitoring.jsx          # Live Packet Stream & Real-Time Monitoring with Device Trail drawer
+        ├── Incidents.jsx           # Threat incident management & quarantine with Device Trail drawer
+        ├── History.jsx             # Historical traffic log with RFC 4180 CSV export & Device Trail drawer
+        ├── Analytics.jsx           # Threat intelligence analytics & charts
+        ├── Reports.jsx             # PDF/CSV export surface with completed download lifecycle
+        ├── Users.jsx               # User management (Admin only)
+        └── Settings.jsx            # System configuration & thresholds
 ```
 
 ---
@@ -183,22 +187,48 @@ To guarantee 60 FPS rendering under sustained traffic loads:
 - [x] **Phase 5 — Traffic History & Threat Intelligence Reports** (`History.jsx`, `Analytics.jsx`, `Reports.jsx`)
 - [x] **Phase 6 — Administrative Controls & Settings** (`Users.jsx`, `Settings.jsx`)
 - [x] **Phase 7 — Dual-Tone Day/Night Theme System & Brand Asset Integration** (`ThemeContext.jsx`, `index.css`, `Sidebar.jsx`, `Login.jsx`)
+- [x] **Phase 8 — Universal Device Activity Trail Drill-Down** (`DeviceActivityDrawer.jsx`, 5 universal trigger points, multi-day grouping, client-side metrics aggregation)
+- [x] **Phase 9 — Physical Live NIC Wire Capture & Production Hardening** (Windows Npcap Scapy Layer 2 capture, RFC 4180 CSV export, IPv6 `ipaddress` redaction, `EmailStr` validation)
+- [x] **Phase 10 — Network Monitor Interface Integration** (`IncidentDetailDrawer.jsx`, Network Monitor styling, 4-tab views: Network activity, Open ports, Network traffic, Blocked computers, real-time mountain wave and histogram telemetry)
 
 ---
 
-## 10. Day/Night Theme System & Brand Integration
+## 10. Design System & Theme Specifications
+
+### Network Monitor & Cyberthreat Telemetry Aesthetic
+- **Telemetry Accent**: Emerald Green (`#00D1B2` / `#00A88F`) and Alert Crimson (`#FF3366`) with neon glow shadows (`nm-glow-green`, `nm-glow-red`).
+- **Animated Data Beam (`nm-beam`)**: Real-time traveling packet particles across connection bridge.
+- **Pulsing Radar (`nm-pulse`)**: Active endpoint monitoring indicators.
+- **TCP Control Switchboard**: LED indicators for RFC 793 control flags (`SYN`, `ACK`, `FIN`, `RST`, `PSH`, `URG`, `ECE`, `CWR`).
+- **Protocol Frame Analyzer**: Raw hex and ASCII byte stream dump.
+
+### Deep Space Blue-Black & Unified Teal Dark Mode
+- **Canvas / Background**: `#050810` — subtle deep navy undertone avoiding clinical slate/gray.
+- **Card Surfaces**: `#0d1421` — dark glassmorphic panels with `#1a2436` hairline border dividers.
+- **Wells & Terminals**: `#03050a` — high-contrast recessed input and code wells.
+- **Unified Accent Range**: Clean Teal/Cyan spectrum (`#14b8c4`, `#0891a3`, `#5eead4`) replacing any legacy purple/cyan clash.
+- **Typography Tokens**: `#eef2f7` primary headers, `#8896ab` metadata descriptions.
 
 ### Dual-Tone Day Mode Architecture
 - **Theme Provider (`ThemeContext.jsx`)**: Context provider exposing `theme` state (`dark` | `light`) and `toggleTheme()` function. Synced with HTML root class (`<html class="light">` vs `<html class="dark">`) and `localStorage`.
 - **Sky-Blue Page Gradient**: Soft background gradient (`#7dd3fc` $\rightarrow$ `#38bdf8` $\rightarrow$ `#60a5fa`) with fixed attachment.
 - **Ice-Blue Card Surfaces**: Main card containers render `#f0f9ff` / `#e0f2fe` with soft cyan shadows (`rgba(2, 132, 199, 0.15)`).
 - **Sub-Box Wildcard Attribute Selectors**: In `index.css`, CSS attribute wildcard selectors (`[class*="bg-slate-950"]`, `[class*="bg-slate-900"]`, `[class*="bg-slate-800"]`, `[class*="bg-black"]`) guarantee zero pitch-black sub-boxes across all routes.
-- **Purged Purple/Violet Palette**: Legacy violet and purple fallbacks (`#8b5cf6`, `#7e22ce`, `#a855f7`) purged from `FluidBlobs.jsx`, `GlowEffect.jsx`, `BlobCard.jsx`, `AIPerformance.jsx`, and `index.css`. Replaced with Ocean Cyan (`#0284c7`) and Sky Blue (`#38bdf8`).
 
 ### Modern Animation Library Components
 - **`GlowHover.jsx`**: Radial cursor spotlight hover effect wrapper applied to stat cards in `OperationalMetrics.jsx`.
 - **`ScrambleText.jsx`**: Decrypting cyber text scramble animation integrated into IP addresses in `VerdictCard.jsx`.
 - **`ShineText.jsx`**: Metallic shimmer text sweep animation integrated into WS telemetry status badges in `Navbar.jsx`.
+- **`BorderBeam.jsx`**: Animated laser border effect on high-severity alert cards.
+
+### Universal Device Activity Trail Integration
+- **5 Trigger Locations**:
+  1. `ConnectionTable.jsx`: Clickable monospace source IP badge in feed.
+  2. `VerdictCard.jsx`: Interactive `<ScrambleText>` header button.
+  3. `History.jsx`: Interactive source IP cell in historical log table.
+  4. `IncidentDetailDrawer.jsx`: Clickable affected asset chips with external link icon.
+  5. `IncidentCard.jsx`: Direct asset click in summary incident row (`e.stopPropagation()`).
+- **Telemetry Display**: Reactive metrics ribbon (Total, Targets, Enforcements, Max Severity), quick filters (`24h`, `7d`, `All`), day grouping (`Today`, `Yesterday`, date), and Viewer sanitization.
 
 ### Official Logo Integration & Asset Processing
 - **Image Processing**: Auto-cropped asymmetric right-side margins from `netriq logo.jpeg` using Python Pillow bounding-box script (`scratch/crop_and_center_logo.py`), creating a centered 1:1 square canvas (`812px` x `812px`).

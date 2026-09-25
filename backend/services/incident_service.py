@@ -9,8 +9,7 @@ from backend.ai.contracts import PredictionResult, Action
 
 logger = get_logger(__name__)
 
-IPV4_REGEX = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
-IPV6_REGEX = re.compile(r"\b(?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}\b")
+import ipaddress
 
 class IncidentService:
     @staticmethod
@@ -22,8 +21,20 @@ class IncidentService:
             for asset in affected_assets:
                 if asset and isinstance(asset, str):
                     redacted = redacted.replace(asset, "Protected Asset")
-        redacted = IPV4_REGEX.sub("Protected Asset", redacted)
-        return IPV6_REGEX.sub("Protected Asset", redacted)
+        
+        # Token-level IP validation and redaction (supports all IPv4 and compressed/full IPv6)
+        tokens = redacted.split()
+        out = []
+        for tok in tokens:
+            clean = tok.strip(".,;:()[]{}\"'")
+            try:
+                if clean:
+                    ipaddress.ip_address(clean)
+                    tok = tok.replace(clean, "Protected Asset")
+            except ValueError:
+                pass
+            out.append(tok)
+        return " ".join(out)
 
     async def list(self, role: Role, limit: int = 100) -> List[Dict[str, Any]]:
         """Returns incidents. Viewers receive a simplified summary with redacted IPs; Analysts/Admins get full records."""

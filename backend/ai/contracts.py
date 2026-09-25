@@ -27,7 +27,7 @@ class PredictionResult(BaseModel):
     model_used: str = Field(description="Name/version of the model used")
     risk_category: RiskCategory = Field(description="Calculated risk category")
     latency_ms: float = Field(description="Inference latency in milliseconds")
-    explainability_top_features: List[Dict[str, float]] = Field(
+    explainability_top_features: List[Dict[str, Any]] = Field(
         default_factory=list,
         description="List of top contributing features: [{'feature': name, 'importance': float}]"
     )

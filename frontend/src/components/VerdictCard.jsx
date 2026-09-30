@@ -87,12 +87,17 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
               <span className="text-[#A4A5A0]">{sni || `${dst_ip}:${dst_port}`}</span>
             </div>
             <div className="text-xs text-[#70736F] font-mono flex items-center gap-2 mt-0.5">
+              <span className="text-[#9AAA78] font-semibold bg-[#141516] px-1.5 py-0.2 rounded border border-[#303334]">
+                {effectivePredictionId ? `#ALERT-${String(effectivePredictionId).slice(-4).toUpperCase()}` : '#ALERT-101'}
+              </span>
+              <span>•</span>
               <span>{protocol}</span>
               <span>•</span>
               <span>Port {src_port}</span>
               <span>•</span>
               <span>{formattedTime}</span>
             </div>
+
           </div>
         </div>
 

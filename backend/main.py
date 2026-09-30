@@ -32,7 +32,7 @@ from backend.api.response import router as response_router
 from backend.api.users import router as users_router
 from backend.api.settings import router as settings_router
 from backend.api.health import router as health_router
-from backend.api.websocket import router as websocket_router
+from backend.api.websocket import router as websocket_router, websocket_endpoint
 
 logger = get_logger(__name__)
 
@@ -125,6 +125,8 @@ app.include_router(settings_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(health_router)  # Also expose root /health for docker/lb health checks
 app.include_router(websocket_router)  # WebSockets sit at root /ws
+app.websocket("/ws")(websocket_endpoint)
+app.websocket("/api/v1/ws")(websocket_endpoint)
 
 if __name__ == "__main__":
     uvicorn.run("backend.main:app", host="0.0.0.0", port=8000, reload=True)

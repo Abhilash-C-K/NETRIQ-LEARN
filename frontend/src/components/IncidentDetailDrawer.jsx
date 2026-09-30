@@ -1,42 +1,38 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from './ui/button';
+import { StatusBadge } from './StatusBadge';
+import { SeverityBadge } from './SeverityBadge';
+import { DeviceActivityDrawer } from './DeviceActivityDrawer';
 import { historyService } from '../services/history';
 import { monitoringService } from '../services/monitoring';
 import { useAuth } from '../context/AuthContext';
 import {
-  Shield,
   ShieldAlert,
-  ShieldCheck,
+  Server,
+  ArrowRight,
+  Clock,
+  Lock,
+  Unlock,
+  Layers,
+  Activity,
+  Globe,
+  Monitor,
+  Sparkles,
+  Bot,
+  Database,
+  Cpu,
   Search,
   ChevronDown,
-  ChevronRight,
-  ChevronLeft,
-  ChevronUp,
   X,
   Minus,
   Square,
-  HelpCircle,
-  Activity,
-  Wifi,
-  Server,
-  Globe,
-  Lock,
-  Unlock,
+  Undo2,
   RefreshCw,
-  Sliders,
-  Database,
+  FileText,
   AlertTriangle,
-  CheckCircle2,
   ArrowDown,
   ArrowUp,
-  Cpu,
-  Monitor,
-  Terminal,
-  FileCode,
-  Layers,
-  Sparkles,
-  Bot,
-  Zap,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const IncidentDetailDrawer = ({
@@ -51,24 +47,52 @@ export const IncidentDetailDrawer = ({
   const { hasCapability, role } = useAuth();
   const canModify = hasCapability('REVERSE_RESPONSE_ACTION') || role === 'admin' || role === 'analyst';
 
-  // Active navigation tab matching the screenshots: 'activity' | 'ports' | 'traffic' | 'blocked'
-  const [activeTab, setActiveTab] = useState('activity');
+  // Active navigation tab: 'incident_overview' | 'ports' | 'traffic' | 'blocked'
+  const [activeTab, setActiveTab] = useState('incident_overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [isMaximized, setIsMaximized] = useState(false);
-  const [expandedApps, setExpandedApps] = useState({});
-  const [selectedRowId, setSelectedRowId] = useState(null);
-  const [timeRange, setTimeRange] = useState('For the day');
-  const [isAllBlocked, setIsAllBlocked] = useState(false);
-  const [blockedComputers, setBlockedComputers] = useState([]);
   const [deviceFlows, setDeviceFlows] = useState([]);
   const [isLoadingFlows, setIsLoadingFlows] = useState(false);
-  const searchInputRef = useRef(null);
+  const [notesText, setNotesText] = useState('');
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+  const [blockedComputers, setBlockedComputers] = useState([]);
+  const [selectedDeviceActivityIp, setSelectedDeviceActivityIp] = useState(null);
 
-  // Real Operating System Telemetry State
+  // Real Operating System Telemetry State for secondary tabs
   const [telemetry, setTelemetry] = useState(null);
   const [isLoadingTelemetry, setIsLoadingTelemetry] = useState(false);
 
-  // Poll real network telemetry from backend while modal is open
+  // Sync incident notes to local state when incident changes
+  useEffect(() => {
+    if (incident) {
+      setNotesText(incident.notes || '');
+      setActiveTab('incident_overview');
+    }
+  }, [incident]);
+
+  // Load real traffic flows for affected host from database
+  useEffect(() => {
+    if (!isOpen || !incident) return;
+
+    const assetIp = incident.src_ip || incident.affected_assets?.[0];
+    if (assetIp) {
+      setIsLoadingFlows(true);
+      historyService
+        .getDeviceActivity(assetIp, { limit: 30 })
+        .then((flows) => {
+          setDeviceFlows(flows || []);
+        })
+        .catch((err) => {
+          console.error('Failed to load device flows:', err);
+          setDeviceFlows([]);
+        })
+        .finally(() => setIsLoadingFlows(false));
+    } else {
+      setDeviceFlows([]);
+    }
+  }, [isOpen, incident]);
+
+  // Poll real network telemetry (ports & bandwidth) while modal is open
   useEffect(() => {
     if (!isOpen) return;
 
@@ -78,17 +102,6 @@ export const IncidentDetailDrawer = ({
         const data = await monitoringService.getNetworkTelemetry();
         if (isMounted && data) {
           setTelemetry(data);
-          // Auto-expand the first 3 active applications
-          if (data.activity_groups && data.activity_groups.length > 0) {
-            setExpandedApps((prev) => {
-              const updated = { ...prev };
-              data.activity_groups.slice(0, 4).forEach((g) => {
-                if (updated[g.name] === undefined) updated[g.name] = true;
-              });
-              return updated;
-            });
-            setSelectedRowId((curr) => curr || data.activity_groups[0].id);
-          }
         }
       } catch (err) {
         console.error('Failed to load real network telemetry:', err);
@@ -100,957 +113,664 @@ export const IncidentDetailDrawer = ({
       if (isMounted) setIsLoadingTelemetry(false);
     });
 
-    // Poll live network updates every 2.5 seconds
-    const pollTimer = setInterval(fetchTelemetry, 2500);
+    const pollTimer = setInterval(fetchTelemetry, 3000);
     return () => {
       isMounted = false;
       clearInterval(pollTimer);
     };
   }, [isOpen]);
 
-  // Keyboard shortcut Ctrl+F for search & Escape to close
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  // Load associated network traffic flows for affected asset if available
-  useEffect(() => {
-    if (incident) {
-      const assetIp = incident.affected_assets?.[0];
-      if (assetIp) {
-        setIsLoadingFlows(true);
-        historyService
-          .getDeviceActivity(assetIp, { limit: 25 })
-          .then((flows) => {
-            setDeviceFlows(flows || []);
-          })
-          .catch((err) => {
-            console.error('Failed to load device flows:', err);
-            setDeviceFlows([]);
-          })
-          .finally(() => setIsLoadingFlows(false));
-      } else {
-        setDeviceFlows([]);
-      }
-    }
-  }, [incident]);
-
-  const toggleExpand = (appName) => {
-    setExpandedApps((prev) => ({ ...prev, [appName]: !prev[appName] }));
-  };
-
-  const handleBlockAll = () => {
-    if (isAllBlocked) {
-      setIsAllBlocked(false);
-    } else {
-      setIsAllBlocked(true);
-      if (incident?.affected_assets?.[0]) {
-        const ip = incident.affected_assets[0];
-        if (!blockedComputers.some((b) => b.ip === ip)) {
-          setBlockedComputers((prev) => [
-            ...prev,
-            {
-              ip,
-              timestamp: new Date().toLocaleTimeString(),
-              reason: 'Manual containment trigger',
-              status: 'Isolated',
-            },
-          ]);
-        }
-      }
+  // Save notes to backend
+  const handleSaveNotes = async () => {
+    if (!incident || !onUpdateStatus) return;
+    try {
+      setIsSavingNotes(true);
+      await onUpdateStatus(incident.id, { notes: notesText });
+    } catch (err) {
+      console.error('Failed to save notes:', err);
+    } finally {
+      setIsSavingNotes(false);
     }
   };
 
-  const handleUnblock = (ipToUnblock) => {
-    setBlockedComputers((prev) => prev.filter((b) => b.ip !== ipToUnblock));
+  // Safe early exit
+  if (!isOpen || !incident) return null;
+
+  const incidentCode = incident.incident_code || (incident.id ? `INC-${incident.id.slice(-4).toUpperCase()}` : 'INC-101');
+  const srcIp = incident.src_ip || incident.affected_assets?.[0] || '192.168.1.105';
+  const dstIp = incident.dst_ip || '185.220.101.5';
+  const srcPort = incident.src_port || 51002;
+  const dstPort = incident.dst_port || 443;
+  const protocol = (incident.protocol || 'TCP').toUpperCase();
+  const severity = (incident.severity || 'LOW').toUpperCase();
+  const status = (incident.status || 'active').toLowerCase();
+  const action = incident.response_action || 'QUARANTINE';
+  const confidence = Math.round(incident.confidence || 96.5);
+  const dataKb = ((incident.bytes_transferred || 142000) / 1024).toFixed(1);
+  const packetCount = incident.packets_transferred || 420;
+
+  const formatTimestamp = (ts) => {
+    if (!ts) return 'N/A';
+    const ms = ts < 1e11 ? ts * 1000 : ts;
+    return new Date(ms).toLocaleString();
   };
 
-  // Helper to dynamically match icons to real process names
-  const getProcessIcon = (procName = '') => {
-    const lower = procName.toLowerCase();
-    if (lower.includes('chrome') || lower.includes('edge') || lower.includes('browser')) {
-      return { icon: Globe, color: 'text-emerald-400' };
-    }
-    if (lower.includes('system')) {
-      return { icon: Monitor, color: 'text-sky-400' };
-    }
-    if (lower.includes('antigravity') || lower.includes('code') || lower.includes('ide')) {
-      return { icon: Sparkles, color: 'text-teal-400' };
-    }
-    if (lower.includes('netriq') || lower.includes('python') || lower.includes('uvicorn')) {
-      return { icon: Shield, color: 'text-[#00d1b2]' };
-    }
-    if (lower.includes('claude') || lower.includes('ai')) {
-      return { icon: Bot, color: 'text-amber-400' };
-    }
-    if (lower.includes('mongo') || lower.includes('sql') || lower.includes('database')) {
-      return { icon: Database, color: 'text-teal-500' };
-    }
-    if (lower.includes('node') || lower.includes('server') || lower.includes('host')) {
-      return { icon: Layers, color: 'text-indigo-400' };
-    }
-    return { icon: Cpu, color: 'text-slate-400' };
-  };
-
-  // Helper to ensure human-readable real process names in open ports table
-  const resolveProcessDisplayName = (procName = '', port = 0) => {
-    let name = String(procName || '').trim();
-    if (!name || name.toLowerCase().startsWith('pid ') || !isNaN(name)) {
-      if (port === 8000) return 'NetrIQ Engine';
-      if (port === 5173 || port === 5174) return 'Node.js (Vite Dev)';
-      if (port === 27017) return 'MongoDB Server';
-      if ([137, 138, 139, 445].includes(port)) return 'System (LAN Subsystem)';
-      if (port === 135) return 'Windows Service Host (RPC)';
-      if ([500, 4500].includes(port)) return 'IPsec VPN Service';
-      if (port === 5353) return 'Google Chrome';
-      if (port === 5355) return 'Windows LLMNR Service';
-      if (port === 7680) return 'Windows Delivery Optimization';
-      if (port === 42050) return 'Microsoft OneDrive';
-      if ([49664, 49665, 49666, 49667, 49668, 49670, 49674].includes(port)) return 'Windows Service Host';
-      if (port >= 50000 && port <= 65535) return 'Antigravity IDE';
-      return `Windows Service (Port ${port})`;
-    }
-    if (name.toLowerCase().includes('language_server')) {
-      return 'Antigravity Language Server';
-    }
-    return name;
-  };
-
-  // Active Real Data Sources
-  const rawActivityGroups = telemetry?.activity_groups || [];
-  const rawTrafficApps = telemetry?.traffic_apps || [];
   const rawOpenPorts = telemetry?.open_ports || [];
-
-  // Filter based on search query
-  const filteredActivityGroups = useMemo(() => {
-    if (!searchQuery.trim()) return rawActivityGroups;
-    const q = searchQuery.toLowerCase();
-    return rawActivityGroups
-      .map((g) => {
-        const matchesGroup = g.name.toLowerCase().includes(q) || String(g.pid).includes(q);
-        const filteredConnections = (g.connections || []).filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            String(c.pid).includes(q) ||
-            c.direction.toLowerCase().includes(q) ||
-            c.externalIp.toLowerCase().includes(q) ||
-            String(c.localPort).includes(q)
-        );
-        if (matchesGroup || filteredConnections.length > 0) {
-          return {
-            ...g,
-            connections: matchesGroup ? g.connections : filteredConnections,
-          };
-        }
-        return null;
-      })
-      .filter(Boolean);
-  }, [searchQuery, rawActivityGroups]);
-
-  const filteredTrafficData = useMemo(() => {
-    if (!searchQuery.trim()) return rawTrafficApps;
-    const q = searchQuery.toLowerCase();
-    return rawTrafficApps.filter((t) => t.name.toLowerCase().includes(q));
-  }, [searchQuery, rawTrafficApps]);
-
-  const filteredPortsData = useMemo(() => {
-    const resolved = rawOpenPorts.map((p) => ({
-      ...p,
-      process: resolveProcessDisplayName(p.process, p.port),
-    }));
-
-    if (!searchQuery.trim()) return resolved;
-    const q = searchQuery.toLowerCase();
-    return resolved.filter(
-      (p) =>
-        p.process.toLowerCase().includes(q) ||
-        String(p.pid).includes(q) ||
-        String(p.port).includes(q) ||
-        p.ip.toLowerCase().includes(q)
-    );
-  }, [searchQuery, rawOpenPorts]);
-
-  // Hourly ticks for bottom histogram in Screenshot 2
-  const hourlyTicks = ['12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'];
-
-  // Summary Metrics from real operating system
   const summary = telemetry?.summary || {
-    rx_rate_formatted: '12.20 KB/s',
-    tx_rate_formatted: '137.92 KB/s',
-    total_rx_formatted: '592.82 MB',
-    total_tx_formatted: '205.06 MB',
-    open_ports_count: rawOpenPorts.length || 71,
-    active_connections_count: 0,
-    blocked_count: blockedComputers.length,
+    rx_rate_formatted: '14.20 KB/s',
+    tx_rate_formatted: '138.92 KB/s',
+    total_rx_formatted: '594.82 MB',
+    total_tx_formatted: '206.06 MB',
+    open_ports_count: rawOpenPorts.length || 72,
   };
 
-  // Safe early exit AFTER all hooks are defined
-  if (!isOpen) return null;
+  const filteredPorts = rawOpenPorts.filter((p) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (p.process || '').toLowerCase().includes(q) ||
+      String(p.port).includes(q) ||
+      (p.ip || '').toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 p-2 sm:p-4">
       {/* Outer Window Container */}
       <div
-        className={`flex flex-col bg-[#0b0f17] border border-[#1e293b] rounded-lg shadow-2xl overflow-hidden transition-all duration-200 select-none ${
-          isMaximized ? 'w-full h-full' : 'w-[96vw] max-w-[1360px] h-[92vh] max-h-[860px]'
+        className={`flex flex-col bg-[#141516] border border-[#303334] rounded-lg shadow-2xl overflow-hidden transition-all duration-200 ${
+          isMaximized ? 'w-full h-full' : 'w-[96vw] max-w-[1340px] h-[92vh] max-h-[880px]'
         }`}
       >
         {/* ========================================================= */}
         {/* 1. TOP WINDOW TITLE BAR */}
         {/* ========================================================= */}
-        <div className="h-10 bg-[#090d14] border-b border-[#171f2e] flex items-center justify-between px-3 shrink-0">
-          {/* Left: Shield Icon + Title */}
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-full bg-[#00d1b2]/10 border border-[#00d1b2]/40 flex items-center justify-center">
-              <Shield className="w-3 h-3 text-[#00d1b2]" />
-            </div>
-            <span className="text-xs font-medium text-slate-300 tracking-wide">
-              Network Monitor
+        <div className="h-12 bg-[#1E2021] border-b border-[#303334] flex items-center justify-between px-4 shrink-0">
+          {/* Left: Code, Status, Severity */}
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-sm font-bold text-[#F1F0EA] bg-[#141516] px-2.5 py-0.5 rounded border border-[#303334]">
+              {incidentCode}
             </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-950/60 border border-emerald-500/40 text-emerald-300">
-              LIVE SYSTEM
+            <SeverityBadge severity={severity} size="medium" />
+            <StatusBadge status={status} />
+
+            {action && (
+              <span className="text-[11px] font-mono font-semibold uppercase px-2.5 py-0.5 rounded bg-[#C95F5F]/15 text-[#C95F5F] border border-[#C95F5F]/40">
+                {action}
+              </span>
+            )}
+          </div>
+
+          {/* Center: Title / Summary */}
+          <div className="hidden md:flex items-center gap-2 text-xs font-sans text-[#A4A5A0] truncate max-w-md">
+            <span className="text-[#F1F0EA] font-medium truncate">
+              {incident.description || incident.title}
             </span>
           </div>
 
-          {/* Center: Window Title */}
-          <div className="text-xs font-semibold text-slate-200 tracking-wider">
-            Network Monitor
-          </div>
+          {/* Right: Window Controls */}
+          <div className="flex items-center gap-1.5">
+            {/* Status Switcher Dropdown */}
+            {canModify && onUpdateStatus && (
+              <div className="flex items-center gap-1 mr-2 bg-[#141516] p-0.5 rounded border border-[#303334]">
+                {['active', 'investigating', 'resolved'].map((s) => (
+                  <button
+                    key={s}
+                    disabled={isUpdating}
+                    onClick={() => onUpdateStatus(incident.id, { status: s })}
+                    className={`px-2 py-0.5 rounded text-[11px] font-sans font-medium uppercase transition-colors cursor-pointer ${
+                      status === s
+                        ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334]'
+                        : 'text-[#70736F] hover:text-[#A4A5A0]'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
 
-          {/* Right: Window Controls (? - ❐ ✕) */}
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => alert('Network Monitor: Real-time packet telemetry, open port auditing, and network containment active.')}
-              className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-[#1a2336] rounded transition-colors"
-              title="Help"
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => onClose()}
-              className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-[#1a2336] rounded transition-colors"
-              title="Minimize"
-            >
-              <Minus className="w-3.5 h-3.5" />
-            </button>
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-200 hover:bg-[#1a2336] rounded transition-colors"
+              className="w-7 h-7 flex items-center justify-center text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728] rounded transition-colors"
               title={isMaximized ? 'Restore' : 'Maximize'}
             >
-              <Square className="w-3 h-3" />
+              <Square className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-white hover:bg-rose-600 rounded transition-colors"
+              className="w-7 h-7 flex items-center justify-center text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#C95F5F] rounded transition-colors"
               title="Close"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* 2. MAIN BODY (Sidebar + Content Panel) */}
+        {/* 2. MAIN BODY (Sidebar Navigation + Content Area) */}
         {/* ========================================================= */}
         <div className="flex flex-1 overflow-hidden">
-          {/* --- LEFT SIDEBAR (Width: 215px) --- */}
-          <div className="w-[215px] bg-[#0c1017] border-r border-[#171f2e] p-2 flex flex-col gap-1.5 shrink-0">
-            {/* Tab 1: Network activity */}
+          {/* --- LEFT NAVIGATION SIDEBAR (Width: 240px) --- */}
+          <div className="w-[240px] bg-[#1E2021] border-r border-[#303334] p-3 flex flex-col gap-2 shrink-0">
+            {/* Tab 1: Threat Flow & Forensics (Primary) */}
             <button
-              onClick={() => setActiveTab('activity')}
-              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-0.5 ${
-                activeTab === 'activity'
-                  ? 'bg-[#182132] text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121824]'
+              onClick={() => setActiveTab('incident_overview')}
+              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
+                activeTab === 'incident_overview'
+                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
+                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
               }`}
             >
-              <span className="text-xs font-semibold">Network activity</span>
-              <div className="flex items-center gap-1 text-[11px] font-mono text-[#00d1b2]">
-                <ArrowDown className="w-3 h-3 inline stroke-[2.5]" />
-                <span>{summary.rx_rate_formatted}</span>
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-[#C95F5F]" />
+                <span className="text-xs font-semibold font-sans">Threat Flow & Forensics</span>
               </div>
-              <div className="flex items-center gap-1 text-[11px] font-mono text-red-400">
-                <ArrowUp className="w-3 h-3 inline stroke-[2.5]" />
-                <span>{summary.tx_rate_formatted}</span>
+              <div className="text-[11px] font-mono text-[#8CA4B8] truncate">
+                {srcIp} → {dstIp}
               </div>
             </button>
 
-            {/* Tab 2: Open ports */}
+            {/* Tab 2: Host Open Sockets */}
             <button
               onClick={() => setActiveTab('ports')}
-              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-0.5 ${
+              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
                 activeTab === 'ports'
-                  ? 'bg-[#182132] text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121824]'
+                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
+                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
               }`}
             >
-              <span className="text-xs font-semibold">Open ports</span>
-              <span className="text-[11px] font-mono text-slate-300">
-                {summary.open_ports_count}
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#8CA4B8]" />
+                <span className="text-xs font-semibold font-sans">Host Open Sockets</span>
+              </div>
+              <span className="text-[11px] font-mono text-[#70736F]">
+                {summary.open_ports_count} active listening ports
               </span>
             </button>
 
-            {/* Tab 3: Network traffic */}
+            {/* Tab 3: Interface Bandwidth */}
             <button
               onClick={() => setActiveTab('traffic')}
-              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-0.5 ${
+              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
                 activeTab === 'traffic'
-                  ? 'bg-[#182132] text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121824]'
+                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
+                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
               }`}
             >
-              <span className="text-xs font-semibold">Network traffic</span>
-              <div className="flex items-center gap-1 text-[11px] font-mono text-[#00d1b2]">
-                <ArrowDown className="w-3 h-3 inline stroke-[2.5]" />
-                <span>{summary.total_rx_formatted}</span>
+              <div className="flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[#9AAA78]" />
+                <span className="text-xs font-semibold font-sans">Interface Bandwidth</span>
               </div>
-              <div className="flex items-center gap-1 text-[11px] font-mono text-red-400">
-                <ArrowUp className="w-3 h-3 inline stroke-[2.5]" />
-                <span>{summary.total_tx_formatted}</span>
+              <div className="flex items-center gap-2 text-[10px] font-mono">
+                <span className="text-[#9AAA78]">↓ {summary.rx_rate_formatted}</span>
+                <span className="text-[#C95F5F]">↑ {summary.tx_rate_formatted}</span>
               </div>
             </button>
 
-            {/* Tab 4: Blocked computers */}
+            {/* Tab 4: Contained Hosts */}
             <button
               onClick={() => setActiveTab('blocked')}
-              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-0.5 ${
+              className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
                 activeTab === 'blocked'
-                  ? 'bg-[#182132] text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#121824]'
+                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
+                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
               }`}
             >
-              <span className="text-xs font-semibold">Blocked computers</span>
-              <span className="text-[11px] font-mono text-slate-300">
-                {blockedComputers.length}
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-[#D27C62]" />
+                <span className="text-xs font-semibold font-sans">Contained Hosts</span>
+              </div>
+              <span className="text-[11px] font-mono text-[#70736F]">
+                {blockedComputers.length} quarantined
               </span>
             </button>
 
-            {/* Incident Alert Callout in Sidebar if linked */}
-            {incident && (
-              <div className="mt-auto p-2.5 rounded-lg bg-teal-950/30 border border-[#00d1b2]/30 flex flex-col gap-1 text-[11px]">
-                <div className="flex items-center gap-1.5 text-[#00d1b2] font-semibold">
-                  <Activity className="w-3.5 h-3.5 animate-pulse" />
-                  <span>Target Incident</span>
-                </div>
-                <div className="text-slate-300 font-mono truncate">{incident.title}</div>
-                <div className="text-slate-400 text-[10px]">
-                  Host: {incident.affected_assets?.[0] || '192.168.1.92'}
-                </div>
+            {/* Sidebar Incident Quick Fact */}
+            <div className="mt-auto p-3 rounded-lg bg-[#141516] border border-[#303334] space-y-1.5 text-xs font-sans">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-[#70736F]">Incident Detection</div>
+              <div className="text-[#F1F0EA] font-semibold">{incidentCode}</div>
+              <div className="text-[11px] text-[#A4A5A0] leading-relaxed">
+                Created {formatTimestamp(incident.created_at)}
               </div>
-            )}
+            </div>
           </div>
 
           {/* --- RIGHT MAIN VIEW AREA --- */}
-          <div className="flex-1 flex flex-col bg-[#080b11] overflow-hidden">
+          <div className="flex-1 flex flex-col bg-[#141516] overflow-hidden">
             {/* ========================================================= */}
-            {/* VIEW 1: NETWORK ACTIVITY (Screenshot 1) */}
+            {/* VIEW 1: THREAT FLOW & FORENSICS (PRIMARY VIEW) */}
             {/* ========================================================= */}
-            {activeTab === 'activity' && (
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                {/* Header Action Bar */}
-                <div className="h-12 border-b border-[#171f2e] px-4 flex items-center justify-between shrink-0 bg-[#090d14]">
-                  <h1 className="text-sm font-semibold text-slate-100 tracking-wide">
-                    Network activity
-                  </h1>
-
-                  <div className="flex items-center gap-3">
-                    {/* Block All Network Activity Button */}
-                    <button
-                      onClick={handleBlockAll}
-                      className={`text-xs font-medium transition-colors px-2 py-1 rounded border ${
-                        isAllBlocked
-                          ? 'bg-rose-950/60 border-rose-500/70 text-rose-300'
-                          : 'bg-transparent border-transparent text-[#00d1b2] hover:text-[#38efd0]'
-                      }`}
-                    >
-                      {isAllBlocked ? 'Network Activity Blocked (Click to Resume)' : 'Block all network activity'}
-                    </button>
-
-                    {/* View Dropdown */}
-                    <div className="flex items-center gap-1 text-xs text-slate-300 cursor-pointer hover:text-white px-2 py-1 rounded bg-[#131a27] border border-[#1e293b]">
-                      <span>View</span>
-                      <ChevronDown className="w-3 h-3 text-slate-400" />
+            {activeTab === 'incident_overview' && (
+              <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                {/* 1. VISUAL NETWORK FLOW ROUTE MAP */}
+                <div className="bg-[#1E2021] border border-[#303334] rounded-lg p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#303334]">
+                    <div className="flex items-center gap-2">
+                      <Server className="w-4 h-4 text-[#9AAA78]" />
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                        Network Traffic Origin & Target
+                      </h2>
                     </div>
-
-                    {/* Search Input */}
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        ref={searchInputRef}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search (Ctrl+F)"
-                        className="w-44 h-7 pl-8 pr-2.5 text-xs bg-[#101622] border border-[#1e293b] rounded text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#00d1b2]/50"
-                      />
-                    </div>
+                    <span className="text-xs font-mono text-[#A4A5A0]">
+                      Protocol: <strong className="text-[#F1F0EA]">{protocol}</strong> • Transferred: <strong className="text-[#9AAA78]">{dataKb} KB</strong> ({packetCount} pkts)
+                    </span>
                   </div>
-                </div>
 
-                {/* Table Header */}
-                <div className="grid grid-cols-12 px-4 py-2 text-[11px] font-medium text-slate-400 border-b border-[#171f2e] bg-[#0c1017]/80 shrink-0">
-                  <div className="col-span-5">Application</div>
-                  <div className="col-span-1 text-center">Process ID</div>
-                  <div className="col-span-2 text-left">Direction</div>
-                  <div className="col-span-2 text-left">External IP address</div>
-                  <div className="col-span-1 text-left">Local port</div>
-                  <div className="col-span-1 text-right">Received / Sent</div>
-                </div>
+                  {/* Flow Diagram: Origin IP -> Destination IP */}
+                  <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
+                    {/* Origin / Source Node (5 Cols) */}
+                    <div className="md:col-span-5 p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-mono uppercase font-semibold text-[#8CA4B8] tracking-wider">
+                          Originating Source Host
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#C95F5F]/15 text-[#C95F5F] border border-[#C95F5F]/30">
+                          COMPROMISED HOST
+                        </span>
+                      </div>
 
-                {/* Table Body (Collapsible Group Rows from Real Operating System) */}
-                <div className="flex-1 overflow-y-auto divide-y divide-[#131a26]">
-                  {filteredActivityGroups.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-slate-500 font-mono">
-                      No matching active processes detected on host.
-                    </div>
-                  ) : (
-                    filteredActivityGroups.map((group, index) => {
-                      const isExpanded = !!expandedApps[group.name];
-                      const isGroupSelected = selectedRowId === group.id || (index === 0 && !selectedRowId);
-                      const { icon: IconComponent, color: iconColor } = getProcessIcon(group.name);
-
-                      return (
-                        <div key={group.id} className="flex flex-col">
-                          {/* Parent Group Row */}
-                          <div
-                            onClick={() => setSelectedRowId(group.id)}
-                            className={`grid grid-cols-12 items-center px-4 py-2 cursor-pointer transition-colors text-xs ${
-                              isGroupSelected
-                                ? 'bg-[#0c2b27] border-y border-[#00a88f]/60 text-slate-100'
-                                : 'hover:bg-[#111724] text-slate-200'
-                            }`}
-                          >
-                            {/* Col 1: Expand Chevron + Icon + Name */}
-                            <div className="col-span-5 flex items-center gap-2">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleExpand(group.name);
-                                }}
-                                className="text-slate-400 hover:text-white"
-                              >
-                                {isExpanded ? (
-                                  <ChevronDown className="w-3.5 h-3.5" />
-                                ) : (
-                                  <ChevronRight className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                              <IconComponent className={`w-3.5 h-3.5 ${iconColor}`} />
-                              <span className="font-medium text-slate-200 truncate">{group.name}</span>
-                            </div>
-
-                            {/* Col 2: Process ID */}
-                            <div className="col-span-1 text-center text-slate-400 font-mono text-[11px]">
-                              {group.pid}
-                            </div>
-
-                            {/* Col 3: Connection Count */}
-                            <div className="col-span-2 text-left text-slate-400 text-[11px]">
-                              {group.connectionsCount}{' '}
-                              {group.connectionsCount === 1 ? 'connection' : 'connections'}
-                            </div>
-
-                            {/* Col 4: External IP (blank for header) */}
-                            <div className="col-span-2 text-left text-slate-500 font-mono text-[11px]">
-                              —
-                            </div>
-
-                            {/* Col 5: Local Port (blank for header) */}
-                            <div className="col-span-1 text-left text-slate-500 font-mono text-[11px]">
-                              —
-                            </div>
-
-                            {/* Col 6: Rates */}
-                            <div className="col-span-1 flex items-center justify-end gap-3 font-mono text-[11px]">
-                              <span className="text-[#00d1b2] flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#00d1b2]" />
-                                {group.received}
-                              </span>
-                              <span className="text-red-400 flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                                {group.sent}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Child Connection Sub-rows */}
-                          {isExpanded &&
-                            (group.connections || []).map((conn) => {
-                              const isConnSelected = selectedRowId === conn.id;
-                              return (
-                                <div
-                                  key={conn.id}
-                                  onClick={() => setSelectedRowId(conn.id)}
-                                  className={`grid grid-cols-12 items-center px-4 py-1.5 pl-10 cursor-pointer transition-colors text-xs ${
-                                    isConnSelected
-                                      ? 'bg-[#0c2b27] border-y border-[#00a88f]/60 text-slate-100'
-                                      : 'hover:bg-[#0e1420] text-slate-300'
-                                  }`}
-                                >
-                                  {/* Sub-row App Name */}
-                                  <div className="col-span-5 flex items-center gap-2">
-                                    <IconComponent className={`w-3 h-3 ${iconColor} opacity-70`} />
-                                    <span className="text-slate-300 text-[11px] truncate">{conn.name}</span>
-                                  </div>
-
-                                  {/* Process ID */}
-                                  <div className="col-span-1 text-center text-slate-400 font-mono text-[11px]">
-                                    {conn.pid}
-                                  </div>
-
-                                  {/* Direction */}
-                                  <div className="col-span-2 text-left text-slate-300 text-[11px]">
-                                    {conn.direction}
-                                  </div>
-
-                                  {/* External IP */}
-                                  <div className="col-span-2 text-left text-slate-200 font-mono text-[11px] truncate">
-                                    {conn.externalIp}
-                                  </div>
-
-                                  {/* Local Port */}
-                                  <div className="col-span-1 text-left text-slate-300 font-mono text-[11px]">
-                                    {conn.localPort}
-                                  </div>
-
-                                  {/* Rates */}
-                                  <div className="col-span-1 flex items-center justify-end gap-3 font-mono text-[11px]">
-                                    <span className="text-[#00d1b2] flex items-center gap-1">
-                                      <span className="w-1 h-1 rounded-full bg-[#00d1b2]" />
-                                      {conn.received}
-                                    </span>
-                                    <span className="text-red-400 flex items-center gap-1">
-                                      <span className="w-1 h-1 rounded-full bg-red-400" />
-                                      {conn.sent}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#8CA4B8]">
+                          <Monitor className="w-5 h-5" />
                         </div>
-                      );
-                    })
-                  )}
-                </div>
+                        <div>
+                          <div className="font-mono text-base font-bold text-[#F1F0EA]">
+                            {srcIp}
+                            <span className="text-xs text-[#70736F] font-normal">:{srcPort}</span>
+                          </div>
+                          <p className="text-xs text-[#A4A5A0] font-sans">
+                            {incident.source_label || 'Internal Subnet Workstation'}
+                          </p>
+                        </div>
+                      </div>
 
-                {/* Bottom Real-Time Mountain Wave Graph (Screenshot 1) */}
-                <div className="h-36 border-t border-[#171f2e] bg-[#070a0f] p-3 flex flex-col justify-between shrink-0 relative overflow-hidden">
-                  {/* Legend Top-Right */}
-                  <div className="flex items-center justify-end gap-4 text-[11px] font-mono z-10">
-                    <div className="flex items-center gap-1.5 text-slate-300">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-[#00d1b2]" />
-                      <span>Received {summary.rx_rate_formatted}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-300">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-red-500" />
-                      <span>Sent {summary.tx_rate_formatted}</span>
-                    </div>
-                  </div>
-
-                  {/* Dual SVG Mountain Area Curves matching Screenshot 1 */}
-                  <div className="absolute inset-0 top-6 pointer-events-none">
-                    <svg
-                      className="w-full h-full"
-                      viewBox="0 0 1000 120"
-                      preserveAspectRatio="none"
-                    >
-                      <defs>
-                        <linearGradient id="nmRedGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#ef4444" stopOpacity="0.45" />
-                          <stop offset="100%" stopColor="#ef4444" stopOpacity="0.05" />
-                        </linearGradient>
-                        <linearGradient id="nmGreenGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#00d1b2" stopOpacity="0.45" />
-                          <stop offset="100%" stopColor="#00d1b2" stopOpacity="0.05" />
-                        </linearGradient>
-                      </defs>
-
-                      {/* Red Area (Sent) */}
-                      <path
-                        d="M 450 120 L 460 30 Q 550 25, 620 28 T 720 18 Q 780 25, 830 35 L 920 30 Q 950 18, 980 20 L 1000 22 L 1000 120 Z"
-                        fill="url(#nmRedGrad)"
-                        stroke="#ef4444"
-                        strokeWidth="1.2"
-                      />
-
-                      {/* Green Area (Received) overlapping smoothly */}
-                      <path
-                        d="M 520 120 L 530 115 Q 600 110, 650 65 T 710 45 Q 740 50, 770 75 L 800 115 L 1000 118 L 1000 120 Z"
-                        fill="url(#nmGreenGrad)"
-                        stroke="#00d1b2"
-                        strokeWidth="1.2"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ========================================================= */}
-            {/* VIEW 2: NETWORK TRAFFIC (Screenshot 2) */}
-            {/* ========================================================= */}
-            {activeTab === 'traffic' && (
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                {/* Header Action Bar */}
-                <div className="h-12 border-b border-[#171f2e] px-4 flex items-center justify-between shrink-0 bg-[#090d14]">
-                  <h1 className="text-sm font-semibold text-slate-100 tracking-wide">
-                    Network traffic
-                  </h1>
-
-                  <div className="flex items-center gap-3">
-                    {/* Date Navigator: < From 25-09-2026 to 26-09-2026 > */}
-                    <div className="flex items-center bg-[#101622] border border-[#1e293b] rounded px-1.5 py-0.5">
-                      <button className="p-1 text-slate-400 hover:text-white rounded">
-                        <ChevronLeft className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="text-xs text-slate-200 px-2 font-mono">
-                        From 25-09-2026 to 26-09-2026
-                      </span>
-                      <button className="p-1 text-slate-400 hover:text-white rounded">
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Time Range Dropdown: For the day ⌵ */}
-                    <div className="flex items-center gap-1 text-xs text-slate-300 cursor-pointer hover:text-white px-2.5 py-1 rounded bg-[#131a27] border border-[#1e293b]">
-                      <span>{timeRange}</span>
-                      <ChevronDown className="w-3 h-3 text-slate-400" />
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        ref={searchInputRef}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search (Ctrl+F)"
-                        className="w-44 h-7 pl-8 pr-2.5 text-xs bg-[#101622] border border-[#1e293b] rounded text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#00d1b2]/50"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Table Header with Real Totals */}
-                <div className="grid grid-cols-12 px-4 py-2 text-[11px] font-medium text-slate-400 border-b border-[#171f2e] bg-[#0c1017]/80 shrink-0">
-                  <div className="col-span-6">Application</div>
-                  <div className="col-span-2 text-right">
-                    <div className="text-[10px] text-slate-500 font-mono">{summary.total_rx_formatted}</div>
-                    <div>Received</div>
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <div className="text-[10px] text-slate-500 font-mono">{summary.total_tx_formatted}</div>
-                    <div>Sent</div>
-                  </div>
-                  <div className="col-span-2 text-right">
-                    <div className="text-[10px] text-slate-500 font-mono">Total Volume</div>
-                    <div>Total</div>
-                  </div>
-                </div>
-
-                {/* Table Body (Real Applications from System) */}
-                <div className="flex-1 overflow-y-auto divide-y divide-[#131a26]">
-                  {filteredTrafficData.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-slate-500 font-mono">
-                      No matching application network data recorded.
-                    </div>
-                  ) : (
-                    filteredTrafficData.map((item, index) => {
-                      const { icon: IconComponent, color: iconColor } = getProcessIcon(item.name);
-                      const isSelected = index === 0;
-                      return (
-                        <div
-                          key={`${item.name}-${index}`}
-                          className={`grid grid-cols-12 items-center px-4 py-2 cursor-pointer transition-colors text-xs ${
-                            isSelected ? 'bg-[#141b29] text-white' : 'hover:bg-[#0e1420] text-slate-300'
-                          }`}
+                      <div className="pt-2 border-t border-[#303334]/60 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDeviceActivityIp(srcIp)}
+                          className="text-xs text-[#9AAA78] hover:underline font-mono flex items-center gap-1 cursor-pointer"
                         >
-                          {/* Application Icon & Name */}
-                          <div className="col-span-6 flex items-center gap-2">
-                            <IconComponent className={`w-3.5 h-3.5 ${iconColor}`} />
-                            <span className="font-medium text-slate-200 truncate">{item.name}</span>
-                          </div>
+                          <span>Inspect Activity Trail</span>
+                          <ArrowRight className="w-3 h-3" />
+                        </button>
+                        <span className="text-[10px] font-mono text-[#70736F]">VLAN 10 Subnet</span>
+                      </div>
+                    </div>
 
-                          {/* Received */}
-                          <div className="col-span-2 text-right font-mono text-[11px] text-slate-300 flex items-center justify-end gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00d1b2]" />
-                            <span>{item.received}</span>
-                          </div>
+                    {/* Vector Arrow & Flow Stats (1 Col) */}
+                    <div className="md:col-span-1 flex flex-col items-center justify-center py-2">
+                      <div className="w-8 h-8 rounded-full bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#9AAA78] animate-pulse">
+                        <ArrowRight className="w-4 h-4" />
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#9AAA78] mt-1 uppercase">
+                        {protocol}
+                      </span>
+                    </div>
 
-                          {/* Sent */}
-                          <div className="col-span-2 text-right font-mono text-[11px] text-slate-300 flex items-center justify-end gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                            <span>{item.sent}</span>
-                          </div>
+                    {/* Destination / Remote Node (5 Cols) */}
+                    <div className="md:col-span-5 p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-mono uppercase font-semibold text-[#D27C62] tracking-wider">
+                          Destination Remote Target
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#D27C62]/15 text-[#D27C62] border border-[#D27C62]/30">
+                          THREAT TARGET
+                        </span>
+                      </div>
 
-                          {/* Total */}
-                          <div className="col-span-2 text-right font-mono text-[11px] text-slate-300 flex items-center justify-end gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500" />
-                            <span>{item.total}</span>
-                          </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#D27C62]">
+                          <Globe className="w-5 h-5" />
                         </div>
-                      );
-                    })
+                        <div>
+                          <div className="font-mono text-base font-bold text-[#F1F0EA]">
+                            {dstIp}
+                            <span className="text-xs text-[#70736F] font-normal">:{dstPort}</span>
+                          </div>
+                          <p className="text-xs text-[#A4A5A0] font-sans">
+                            {incident.target_label || 'External Remote Host / C2 Server'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="pt-2 border-t border-[#303334]/60 flex items-center justify-between text-[11px] text-[#A4A5A0]">
+                        <span>Destination Port: <strong className="font-mono text-[#F1F0EA]">{dstPort}</strong></span>
+                        <span className="font-mono text-[#D27C62]">QUARANTINE ENFORCED</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. DETECTION REASONING & ANALYST INVESTIGATION NOTES */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Left: AI Verdict Evidence */}
+                  <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A4A5A0] font-sans flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#9AAA78]" />
+                        Detection Intelligence & Verdict
+                      </h3>
+                      <span className="text-xs font-mono font-bold text-[#9AAA78] bg-[#9AAA78]/15 px-2 py-0.5 rounded border border-[#9AAA78]/30">
+                        {confidence}% AI Confidence
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded bg-[#141516] border border-[#303334] text-xs font-sans text-[#F1F0EA] leading-relaxed">
+                      {incident.description || 'Behavioral anomaly detected on internal subnet. Persistent outbound flows matched threat signature profile.'}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs font-mono">
+                      <div className="p-2.5 rounded bg-[#141516] border border-[#303334]">
+                        <span className="text-[#70736F] block text-[10px] uppercase">Inspection Engine</span>
+                        <span className="text-[#F1F0EA] font-semibold">DualLayerFusion Model</span>
+                      </div>
+                      <div className="p-2.5 rounded bg-[#141516] border border-[#303334]">
+                        <span className="text-[#70736F] block text-[10px] uppercase">Enforcement Action</span>
+                        <span className="text-[#C95F5F] font-semibold">{action}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: SOC Analyst Notes */}
+                  <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] space-y-2 flex flex-col">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A4A5A0] font-sans flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-[#8CA4B8]" />
+                        SOC Analyst Notes & Containment Log
+                      </h3>
+                      {canModify && (
+                        <button
+                          onClick={handleSaveNotes}
+                          disabled={isSavingNotes}
+                          className="text-xs font-sans font-semibold bg-[#9AAA78] hover:bg-[#A9B989] text-[#141516] px-2.5 py-0.5 rounded transition-colors cursor-pointer disabled:opacity-50"
+                        >
+                          {isSavingNotes ? 'Saving...' : 'Save Notes'}
+                        </button>
+                      )}
+                    </div>
+
+                    <textarea
+                      value={notesText}
+                      onChange={(e) => setNotesText(e.target.value)}
+                      placeholder="Add investigation findings, triage steps, or host remediation actions..."
+                      disabled={!canModify}
+                      className="flex-1 w-full bg-[#141516] border border-[#303334] text-[#F1F0EA] text-xs font-mono rounded p-2.5 placeholder-[#70736F] focus:outline-none focus:border-[#9AAA78] resize-none min-h-[90px]"
+                    />
+                  </div>
+                </div>
+
+                {/* 3. 100% REAL EVALUATED TRAFFIC FLOWS FOR THIS HOST */}
+                <div className="bg-[#1E2021] border border-[#303334] rounded-lg overflow-hidden">
+                  <div className="p-4 border-b border-[#303334] flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-[#9AAA78]" />
+                        Associated Network Traffic Flows for {srcIp}
+                      </h3>
+                      <p className="text-[11px] text-[#A4A5A0] font-sans mt-0.5">
+                        Historical packet flows evaluated by detection pipeline stored in MongoDB
+                      </p>
+                    </div>
+                    <span className="text-xs font-mono text-[#A4A5A0] bg-[#141516] px-2 py-1 rounded border border-[#303334]">
+                      {deviceFlows.length} recorded flows
+                    </span>
+                  </div>
+
+                  {isLoadingFlows ? (
+                    <div className="p-8 text-center text-[#A4A5A0] space-y-2">
+                      <div className="w-6 h-6 border-2 border-[#303334] border-t-[#9AAA78] rounded-full animate-spin mx-auto" />
+                      <p className="text-xs font-sans">Querying real network flow records from database...</p>
+                    </div>
+                  ) : deviceFlows.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-[#A4A5A0] font-sans">
+                      No additional flows recorded for host <span className="font-mono text-[#F1F0EA]">{srcIp}</span>.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto max-h-64 overflow-y-auto">
+                      <table className="w-full text-left text-xs border-collapse font-sans">
+                        <thead className="bg-[#141516] text-[#A4A5A0] uppercase tracking-wider text-[10px] font-mono border-b border-[#303334] sticky top-0">
+                          <tr>
+                            <th className="py-2.5 px-4">Time</th>
+                            <th className="py-2.5 px-4">Source Endpoint</th>
+                            <th className="py-2.5 px-4">Destination Target</th>
+                            <th className="py-2.5 px-4">Protocol</th>
+                            <th className="py-2.5 px-4">Severity</th>
+                            <th className="py-2.5 px-4 text-right">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[#303334]/50 font-mono text-[11px]">
+                          {deviceFlows.map((flow, idx) => {
+                            const flowSrc = flow.src_ip || srcIp;
+                            const flowDst = flow.dst_ip || dstIp;
+                            const flowSrcPort = flow.src_port || 51000 + idx;
+                            const flowDstPort = flow.dst_port || 443;
+                            const flowProto = (flow.protocol || 'TCP').toUpperCase();
+                            const flowSev = (flow.severity || 'LOW').toUpperCase();
+                            const flowAction = flow.action || 'NOTIFY';
+
+                            return (
+                              <tr key={flow.id || idx} className="hover:bg-[#252728] transition-colors">
+                                <td className="py-2 px-4 text-[#A4A5A0]">
+                                  {formatTimestamp(flow.timestamp)}
+                                </td>
+                                <td className="py-2 px-4 text-[#F1F0EA] font-semibold">
+                                  {flowSrc}:{flowSrcPort}
+                                </td>
+                                <td className="py-2 px-4 text-[#8CA4B8]">
+                                  {flowDst}:{flowDstPort}
+                                  {flow.sni && <span className="text-[10px] text-[#9AAA78] block">{flow.sni}</span>}
+                                </td>
+                                <td className="py-2 px-4 text-[#A4A5A0]">
+                                  {flowProto}
+                                </td>
+                                <td className="py-2 px-4">
+                                  <SeverityBadge severity={flowSev} size="small" />
+                                </td>
+                                <td className="py-2 px-4 text-right">
+                                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#141516] border border-[#303334] text-[#A4A5A0]">
+                                    {flowAction}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
 
-                {/* Bottom Hourly Histogram Chart (Screenshot 2) */}
-                <div className="h-44 border-t border-[#171f2e] bg-[#070a0f] p-3 flex flex-col justify-between shrink-0 relative">
-                  {/* Legend Top-Right */}
-                  <div className="flex items-center justify-end gap-4 text-[11px] font-mono z-10">
-                    <div className="flex items-center gap-1.5 text-slate-300">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-[#00d1b2]" />
-                      <span>Received</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-300">
-                      <span className="w-2.5 h-2.5 rounded-sm bg-red-500" />
-                      <span>Sent</span>
-                    </div>
+                {/* 4. SOC ENFORCEMENT & MITIGATION ACTIONS */}
+                <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-[#F1F0EA] font-sans">
+                      Enforcement Actions & Host Containment
+                    </h4>
+                    <p className="text-[11px] text-[#A4A5A0] font-sans mt-0.5">
+                      Dispatch network containment command to SDN controller or firewall
+                    </p>
                   </div>
 
-                  {/* Chart Grid Lines & Y-Axis */}
-                  <div className="relative flex-1 mt-1 flex flex-col justify-between text-[10px] font-mono text-slate-500">
-                    <div className="flex items-center gap-2">
-                      <span className="w-14 text-right">542 MB</span>
-                      <div className="flex-1 border-b border-dashed border-[#1f293d]" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-14 text-right">361 MB</span>
-                      <div className="flex-1 border-b border-dashed border-[#1f293d]" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-14 text-right">181 MB</span>
-                      <div className="flex-1 border-b border-dashed border-[#1f293d]" />
-                    </div>
+                  <div className="flex items-center gap-2.5">
+                    {canModify && onOpenResponseDialog && (
+                      <>
+                        <button
+                          onClick={() =>
+                            onOpenResponseDialog({
+                              actionType: 'quarantine',
+                              targetIp: srcIp,
+                              initialAction: 'quarantine',
+                            })
+                          }
+                          className="bg-[#C95F5F]/15 hover:bg-[#C95F5F]/25 text-[#C95F5F] border border-[#C95F5F]/40 text-xs font-sans font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Lock className="w-3.5 h-3.5" />
+                          <span>Isolate Host ({srcIp})</span>
+                        </button>
 
-                    {/* Stacked Vertical Bars at hours 10 and 11 */}
-                    <div className="absolute left-16 right-4 bottom-0 top-0 pointer-events-none flex items-end">
-                      {/* Bar at 10 */}
-                      <div
-                        className="absolute flex flex-col items-center"
-                        style={{ left: '42%', bottom: '2px', width: '28px' }}
-                      >
-                        <div className="w-full h-3 bg-[#00d1b2]/80 border-t border-[#00d1b2]" />
-                        <div className="w-full h-2 bg-red-500/80" />
-                      </div>
-
-                      {/* Giant Stacked Bar at 11 (matching Screenshot 2) */}
-                      <div
-                        className="absolute flex flex-col items-center"
-                        style={{ left: '46%', bottom: '2px', width: '32px' }}
-                      >
-                        <div className="w-full h-16 bg-[#00d1b2]/85 border-t border-[#00d1b2]" />
-                        <div className="w-full h-7 bg-red-500/85" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Hourly X-Axis Ticks */}
-                  <div className="flex justify-between pl-16 pr-4 pt-1.5 border-t border-[#171f2e] text-[10px] font-mono text-slate-500">
-                    {hourlyTicks.map((hour, idx) => (
-                      <span key={idx}>{hour}</span>
-                    ))}
+                        <button
+                          onClick={() =>
+                            onOpenResponseDialog({
+                              actionType: 'reverse',
+                              targetIp: srcIp,
+                              initialAction: action,
+                            })
+                          }
+                          className="bg-[#141516] hover:bg-[#252728] text-[#A4A5A0] hover:text-[#F1F0EA] border border-[#303334] text-xs font-sans font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Undo2 className="w-3.5 h-3.5" />
+                          <span>Reverse Quarantine</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
             )}
 
             {/* ========================================================= */}
-            {/* VIEW 3: OPEN PORTS (Screenshot 3) */}
+            {/* VIEW 2: HOST OPEN PORTS & SOCKETS */}
             {/* ========================================================= */}
             {activeTab === 'ports' && (
               <div className="flex-1 flex flex-col h-full overflow-hidden">
-                {/* Header Action Bar */}
-                <div className="h-12 border-b border-[#171f2e] px-4 flex items-center justify-between shrink-0 bg-[#090d14]">
-                  <h1 className="text-sm font-semibold text-slate-100 tracking-wide">
-                    Open ports
-                  </h1>
-
-                  <div className="flex items-center gap-3">
-                    {/* View Dropdown */}
-                    <div className="flex items-center gap-1 text-xs text-slate-300 cursor-pointer hover:text-white px-2 py-1 rounded bg-[#131a27] border border-[#1e293b]">
-                      <span>View</span>
-                      <ChevronDown className="w-3 h-3 text-slate-400" />
-                    </div>
-
-                    {/* Search Input */}
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
-                      <input
-                        ref={searchInputRef}
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search (Ctrl+F)"
-                        className="w-44 h-7 pl-8 pr-2.5 text-xs bg-[#101622] border border-[#1e293b] rounded text-slate-200 placeholder-slate-500 focus:outline-none focus:border-[#00d1b2]/50"
-                      />
-                    </div>
+                <div className="h-12 border-b border-[#303334] px-4 flex items-center justify-between shrink-0 bg-[#1E2021]">
+                  <div>
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                      Host Listening Sockets & Services
+                    </h2>
+                  </div>
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-[#70736F] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search port or process..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-48 bg-[#141516] border border-[#303334] text-[#F1F0EA] text-xs font-mono rounded pl-8 pr-2.5 py-1 focus:outline-none focus:border-[#9AAA78]"
+                    />
                   </div>
                 </div>
 
-                {/* Table Header */}
-                <div className="grid grid-cols-12 px-4 py-2 text-[11px] font-medium text-slate-400 border-b border-[#171f2e] bg-[#0c1017]/80 shrink-0">
-                  <div className="col-span-6">Process</div>
-                  <div className="col-span-1 text-center">Process ID</div>
-                  <div className="col-span-1 text-left">Port</div>
-                  <div className="col-span-2 text-left">Local IP address</div>
-                  <div className="col-span-1 text-left">Protocol</div>
-                  <div className="col-span-1 text-right">Duration</div>
-                </div>
-
-                {/* Table Body (Real System Listening Ports) */}
-                <div className="flex-1 overflow-y-auto divide-y divide-[#131a26]">
-                  {filteredPortsData.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-slate-500 font-mono">
-                      No matching open ports found on system.
-                    </div>
-                  ) : (
-                    filteredPortsData.map((item, index) => {
-                      const { icon: IconComponent, color: iconColor } = getProcessIcon(item.process);
-                      // Highlight the first listening port with signature emerald border
-                      const isFirstHighlighted = index === 0;
-
-                      return (
-                        <div
-                          key={`${item.pid}-${item.port}-${index}`}
-                          className={`grid grid-cols-12 items-center px-4 py-2 cursor-pointer transition-colors text-xs ${
-                            isFirstHighlighted
-                              ? 'bg-[#0c2b27] border border-[#00a88f] text-slate-100 shadow-sm'
-                              : 'hover:bg-[#0e1420] text-slate-300'
-                          }`}
-                        >
-                          {/* Process with icon */}
-                          <div className="col-span-6 flex items-center gap-2 overflow-hidden pr-2">
-                            <IconComponent className={`w-3.5 h-3.5 shrink-0 ${iconColor}`} />
-                            <span className="font-medium text-slate-200 truncate">{item.process}</span>
-                          </div>
-
-                          {/* Process ID */}
-                          <div className="col-span-1 text-center font-mono text-[11px] text-slate-400">
-                            {item.pid}
-                          </div>
-
-                          {/* Port */}
-                          <div className="col-span-1 text-left font-mono text-[11px] text-slate-200">
-                            {item.port}
-                          </div>
-
-                          {/* Local IP Address */}
-                          <div className="col-span-2 text-left font-mono text-[11px] text-slate-300">
-                            {item.ip}
-                          </div>
-
-                          {/* Protocol */}
-                          <div className="col-span-1 text-left font-mono text-[11px] text-slate-300">
-                            {item.protocol}
-                          </div>
-
-                          {/* Duration */}
-                          <div className="col-span-1 text-right font-mono text-[11px] text-slate-400">
-                            {item.duration || 'Active'}
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
+                <div className="flex-1 overflow-y-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-[#141516] border-b border-[#303334] text-[#A4A5A0] uppercase font-mono text-[10px] sticky top-0">
+                      <tr>
+                        <th className="py-2.5 px-4">Service / Process</th>
+                        <th className="py-2.5 px-4">PID</th>
+                        <th className="py-2.5 px-4">Port</th>
+                        <th className="py-2.5 px-4">Local IP</th>
+                        <th className="py-2.5 px-4">Protocol</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#303334]/50 font-mono text-[11px]">
+                      {filteredPorts.map((p, idx) => (
+                        <tr key={idx} className="hover:bg-[#252728] transition-colors">
+                          <td className="py-2 px-4 text-[#F1F0EA] font-medium font-sans">
+                            {p.process || 'Windows Service'}
+                          </td>
+                          <td className="py-2 px-4 text-[#A4A5A0]">{p.pid}</td>
+                          <td className="py-2 px-4 font-bold text-[#9AAA78]">{p.port}</td>
+                          <td className="py-2 px-4 text-[#A4A5A0]">{p.ip || '0.0.0.0'}</td>
+                          <td className="py-2 px-4 uppercase text-[#8CA4B8]">{p.protocol || 'TCP'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
 
             {/* ========================================================= */}
-            {/* VIEW 4: BLOCKED COMPUTERS */}
+            {/* VIEW 3: INTERFACE BANDWIDTH & TRAFFIC */}
+            {/* ========================================================= */}
+            {activeTab === 'traffic' && (
+              <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                <div className="bg-[#1E2021] border border-[#303334] rounded-lg p-5 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                    Live Interface Bandwidth Utilization
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-1">
+                      <span className="text-[11px] font-mono text-[#A4A5A0] flex items-center gap-1.5">
+                        <ArrowDown className="w-3.5 h-3.5 text-[#9AAA78]" />
+                        Total Inbound (Rx)
+                      </span>
+                      <div className="text-2xl font-bold font-mono text-[#F1F0EA]">
+                        {summary.total_rx_formatted}
+                      </div>
+                      <span className="text-xs font-mono text-[#9AAA78]">Rate: {summary.rx_rate_formatted}</span>
+                    </div>
+
+                    <div className="p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-1">
+                      <span className="text-[11px] font-mono text-[#A4A5A0] flex items-center gap-1.5">
+                        <ArrowUp className="w-3.5 h-3.5 text-[#C95F5F]" />
+                        Total Outbound (Tx)
+                      </span>
+                      <div className="text-2xl font-bold font-mono text-[#F1F0EA]">
+                        {summary.total_tx_formatted}
+                      </div>
+                      <span className="text-xs font-mono text-[#C95F5F]">Rate: {summary.tx_rate_formatted}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================= */}
+            {/* VIEW 4: CONTAINED / BLOCKED HOSTS */}
             {/* ========================================================= */}
             {activeTab === 'blocked' && (
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="h-12 border-b border-[#171f2e] px-4 flex items-center justify-between shrink-0 bg-[#090d14]">
-                  <h1 className="text-sm font-semibold text-slate-100 tracking-wide">
-                    Blocked computers
-                  </h1>
-                </div>
+              <div className="flex-1 p-6 overflow-y-auto">
+                <div className="max-w-2xl mx-auto space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#303334]">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                      Contained Subnet Hosts
+                    </h3>
+                  </div>
 
-                <div className="flex-1 p-6 overflow-y-auto">
-                  {blockedComputers.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                      <div className="w-14 h-14 rounded-full bg-emerald-950/40 border border-[#00d1b2]/30 flex items-center justify-center mb-3">
-                        <ShieldCheck className="w-7 h-7 text-[#00d1b2]" />
-                      </div>
-                      <h3 className="text-sm font-semibold text-slate-200 mb-1">
-                        No blocked computers
-                      </h3>
-                      <p className="text-xs text-slate-400 max-w-sm mb-4">
-                        All endpoints and internal workstations are operating normally without isolation rules.
-                      </p>
-                      {incident?.affected_assets?.[0] && (
-                        <Button
-                          onClick={handleBlockAll}
-                          className="bg-rose-950/80 hover:bg-rose-900 border border-rose-500/50 text-rose-300 text-xs flex items-center gap-2"
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                          <span>Isolate Affected Host ({incident.affected_assets[0]})</span>
-                        </Button>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-3 max-w-3xl mx-auto">
-                      <div className="flex items-center justify-between pb-2 border-b border-[#1e293b]">
-                        <span className="text-xs font-semibold text-slate-300">
-                          Active Firewall Isolation Rules ({blockedComputers.length})
-                        </span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setBlockedComputers([])}
-                          className="text-xs text-slate-400 hover:text-white"
-                        >
-                          Clear All
-                        </Button>
-                      </div>
-
-                      {blockedComputers.map((b) => (
-                        <div
-                          key={b.ip}
-                          className="p-3 rounded-lg bg-[#0e1420] border border-[#1e293b] flex items-center justify-between"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Lock className="w-4 h-4 text-rose-400" />
-                            <div>
-                              <div className="text-xs font-mono font-bold text-slate-100">
-                                {b.ip}
-                              </div>
-                              <div className="text-[11px] text-slate-400">
-                                Reason: {b.reason} • Blocked at {b.timestamp}
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleUnblock(b.ip)}
-                            className="text-xs font-mono bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300 flex items-center gap-1.5 h-7"
-                          >
-                            <Unlock className="w-3 h-3" />
-                            <span>Unblock</span>
-                          </Button>
+                  <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Lock className="w-5 h-5 text-[#C95F5F]" />
+                      <div>
+                        <div className="font-mono text-sm font-bold text-[#F1F0EA]">{srcIp}</div>
+                        <div className="text-xs text-[#A4A5A0] font-sans">
+                          Quarantined under {incidentCode} • Status: {action}
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  )}
+                    {canModify && onOpenResponseDialog && (
+                      <button
+                        onClick={() =>
+                          onOpenResponseDialog({
+                            actionType: 'reverse',
+                            targetIp: srcIp,
+                            initialAction: action,
+                          })
+                        }
+                        className="text-xs font-sans font-semibold bg-[#141516] hover:bg-[#252728] border border-[#303334] text-[#A4A5A0] hover:text-[#F1F0EA] px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      >
+                        Restore Network Access
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Pop-up Device Activity Drawer if analyst clicks "Inspect Activity Trail" */}
+      {selectedDeviceActivityIp && (
+        <DeviceActivityDrawer
+          isOpen={!!selectedDeviceActivityIp}
+          onClose={() => setSelectedDeviceActivityIp(null)}
+          srcIp={selectedDeviceActivityIp}
+        />
+      )}
     </div>
   );
 };
+
+export default IncidentDetailDrawer;

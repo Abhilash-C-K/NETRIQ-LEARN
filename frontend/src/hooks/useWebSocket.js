@@ -39,7 +39,10 @@ export const useWebSocket = (customPath = '/ws') => {
       if (!isMounted) return;
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.host;
+      const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const host = isLocalDev && window.location.port !== '8000'
+        ? `${window.location.hostname}:8000`
+        : window.location.host;
       const wsUrl = `${protocol}//${host}${customPath}`;
 
       setConnectionStatus('connecting');

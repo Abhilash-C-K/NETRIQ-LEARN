@@ -2,9 +2,9 @@ from pydantic import BaseModel
 from typing import Optional
 
 class ReportGenerateReq(BaseModel):
-    report_type: str
-    start_time: float
-    end_time: float
+    report_type: str = "incident_summary"
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
     format: str = "pdf"
 
 class ReportMetadata(BaseModel):

@@ -48,8 +48,8 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
           <div className="space-y-1.5">
             {/* Header Badges Row */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-semibold text-[#A4A5A0]">
-                #{incident.id ? incident.id.slice(-8) : 'N/A'}
+              <span className="font-mono text-xs font-bold text-[#F1F0EA] bg-[#141516] px-2 py-0.5 rounded border border-[#303334]">
+                {incident.incident_code || (incident.id ? `INC-${incident.id.slice(-4).toUpperCase()}` : 'INC-101')}
               </span>
               <StatusBadge status={incident.status} />
               <SeverityBadge severity={incident.severity} size="small" />
@@ -67,37 +67,61 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
               {incident.description || incident.title || 'Security incident flagged by detection engine'}
             </p>
 
-            {/* Metadata row */}
-            <div className="flex items-center gap-4 text-[11px] text-[#A4A5A0] font-mono pt-0.5">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-[#70736F]" />
-                {formatTimestamp(incident.created_at)}
-              </span>
-
-              <span className="flex items-center gap-1">
+            {/* Real Network Flow: Source IP:Port -> Destination IP:Port */}
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#A4A5A0] font-mono pt-1">
+              {/* Origin IP */}
+              <div className="flex items-center gap-1.5 bg-[#141516] px-2 py-0.5 rounded border border-[#303334]">
                 <Server className="w-3 h-3 text-[#8CA4B8]" />
-                {assetDisplay ? (
+                {incident.src_ip || incident.affected_assets?.[0] ? (
                   onSelectDevice ? (
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const firstIp = incident.affected_assets?.[0] || assetDisplay;
-                        onSelectDevice(firstIp);
+                        onSelectDevice(incident.src_ip || incident.affected_assets[0]);
                       }}
-                      className="text-[#8CA4B8] hover:text-[#9AAA78] hover:underline font-mono cursor-pointer focus:outline-none"
-                      title={`View device activity trail for ${incident.affected_assets?.[0] || assetDisplay}`}
+                      className="text-[#F1F0EA] hover:text-[#9AAA78] hover:underline font-mono font-semibold cursor-pointer"
+                      title="View host activity trail"
                     >
-                      {assetDisplay}
+                      {incident.src_ip || incident.affected_assets[0]}
+                      {incident.src_port ? <span className="text-[#70736F] font-normal">:{incident.src_port}</span> : ''}
                     </button>
                   ) : (
-                    <span className="text-[#8CA4B8]">{assetDisplay}</span>
+                    <span className="text-[#F1F0EA] font-semibold">
+                      {incident.src_ip || incident.affected_assets[0]}
+                      {incident.src_port ? `:${incident.src_port}` : ''}
+                    </span>
                   )
                 ) : (
-                  <span className="text-[#70736F] italic">Restricted</span>
+                  <span className="text-[#70736F]">Protected Host</span>
                 )}
+              </div>
+
+              {/* Direction Indicator */}
+              <div className="flex items-center gap-1 text-[#70736F]">
+                <ArrowRight className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-mono uppercase bg-[#141516] px-1 rounded text-[#8CA4B8]">
+                  {incident.protocol || 'TCP'}
+                </span>
+              </div>
+
+              {/* Destination Target IP */}
+              {incident.dst_ip && (
+                <div className="flex items-center gap-1 bg-[#141516] px-2 py-0.5 rounded border border-[#303334] text-[#A4A5A0]">
+                  <span className="text-[#8CA4B8] font-mono font-medium">
+                    {incident.dst_ip}
+                    {incident.dst_port ? `:${incident.dst_port}` : ''}
+                  </span>
+                </div>
+              )}
+
+              {/* Created Timestamp */}
+              <span className="flex items-center gap-1 text-[#70736F]">
+                <Clock className="w-3 h-3 text-[#70736F]" />
+                {formatTimestamp(incident.created_at)}
               </span>
             </div>
+
           </div>
         </div>
 

@@ -83,9 +83,11 @@ export const Incidents = () => {
         return [payload, ...prev];
       });
 
-      setToastMessage(`New Incident #${payload.id.slice(-6)} recorded`);
+      const code = payload.incident_code || (payload.id ? `INC-${payload.id.slice(-4).toUpperCase()}` : 'INC-NEW');
+      setToastMessage(`New Incident ${code} recorded`);
       setTimeout(() => setToastMessage(null), 4000);
     };
+
 
     const unsub = subscribe('new_incident', handleNewIncident);
     return () => unsub();
@@ -173,12 +175,16 @@ export const Incidents = () => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesId = item.id && item.id.toLowerCase().includes(q);
+        const matchesCode = item.incident_code && item.incident_code.toLowerCase().includes(q);
         const matchesDesc = item.description && item.description.toLowerCase().includes(q);
+        const matchesSrc = item.src_ip && item.src_ip.toLowerCase().includes(q);
+        const matchesDst = item.dst_ip && item.dst_ip.toLowerCase().includes(q);
         const matchesAsset =
           item.affected_assets &&
           item.affected_assets.some((ip) => ip.toLowerCase().includes(q));
-        if (!matchesId && !matchesDesc && !matchesAsset) return false;
+        if (!matchesId && !matchesCode && !matchesDesc && !matchesSrc && !matchesDst && !matchesAsset) return false;
       }
+
 
       return true;
     });

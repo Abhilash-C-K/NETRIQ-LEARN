@@ -187,7 +187,8 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
             <span>•</span>
             <span>Base Value: {activeExplanation.base_value != null ? Number(activeExplanation.base_value).toFixed(4) : 'N/A'}</span>
           </div>
-          <div>ID: {predictionId}</div>
+          <div>Alert #{String(predictionId).length > 8 ? `ALERT-${String(predictionId).slice(-4).toUpperCase()}` : predictionId}</div>
+
         </div>
 
         <div className="overflow-x-auto">

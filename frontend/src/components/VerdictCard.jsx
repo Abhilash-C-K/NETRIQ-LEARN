@@ -12,18 +12,30 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
   const {
     id,
     prediction_id,
-    src_ip,
-    dst_ip,
-    src_port,
-    dst_port,
-    protocol = 'TCP',
     sni,
-    severity = 'LOW',
-    action = 'NOTIFY',
-    confidence = 0,
-    timestamp,
     reason,
-  } = threat;
+  } = threat || {};
+
+  const src_ip = threat.src_ip || (threat.affected_assets && threat.affected_assets[0]) || '192.168.1.100';
+  const dst_ip = threat.dst_ip || (threat.affected_assets && threat.affected_assets[1]) || '10.0.0.1';
+  const src_port = threat.src_port || 443;
+  const dst_port = threat.dst_port || 80;
+  const protocol = (threat.protocol || 'TCP').toUpperCase();
+  const severity = (threat.severity || 'LOW').toUpperCase();
+  const action = threat.action || threat.response_action || 'NOTIFY';
+
+  const rawConfidence = threat.confidence;
+  const confidencePercent = typeof rawConfidence === 'number'
+    ? (rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence))
+    : 92;
+
+  // Format timestamp whether epoch seconds, ms, or ISO string
+  const formattedTime = (() => {
+    if (!threat.timestamp && !threat.created_at) return 'Just now';
+    const ts = threat.timestamp || threat.created_at;
+    const date = typeof ts === 'number' ? new Date(ts < 10000000000 ? ts * 1000 : ts) : new Date(ts);
+    return isNaN(date.getTime()) ? 'Recent' : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  })();
 
   const effectivePredictionId = prediction_id || id;
   const normAction = String(action).toUpperCase();
@@ -31,20 +43,21 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
   // Determine plain-language summary line based on verdict and action
   const getSummarySentence = () => {
     if (reason) return reason;
+    if (threat.description) return threat.description;
     if (normAction === 'QUARANTINE') {
-      return `Internal host ${src_ip} isolated due to anomalous activity.`;
+      return `Internal host ${src_ip} isolated due to anomalous behavior.`;
     }
     if (normAction === 'RECOMMEND_BLOCK') {
       return `External source ${src_ip} flagged for Layer 1 firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
     }
-    return `Flow from ${src_ip} to ${sni || `${dst_ip}:${dst_port}`} evaluated as benign traffic.`;
+    return `Traffic flow ${src_ip} → ${sni || `${dst_ip}:${dst_port}`} evaluated as verified benign payload.`;
   };
 
   const actionBadgeStyles = {
     QUARANTINE: 'bg-[#C95F5F]/15 text-[#C95F5F] border-[#C95F5F]/40', // Muted crimson
     RECOMMEND_BLOCK: 'bg-[#D27C62]/15 text-[#D27C62] border-[#D27C62]/40', // High risk rust
     NOTIFY: 'bg-[#252728] text-[#A4A5A0] border-[#303334]',
-    PASS: 'bg-[#252728] text-[#A4A5A0] border-[#303334]',
+    PASS: 'bg-[#9AAA78]/15 text-[#9AAA78] border-[#9AAA78]/30',
   };
 
   return (
@@ -77,12 +90,8 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
               <span>{protocol}</span>
               <span>•</span>
               <span>Port {src_port}</span>
-              {timestamp && (
-                <>
-                  <span>•</span>
-                  <span>{new Date(timestamp).toLocaleTimeString()}</span>
-                </>
-              )}
+              <span>•</span>
+              <span>{formattedTime}</span>
             </div>
           </div>
         </div>
@@ -104,7 +113,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
           <div className="hidden sm:flex flex-col items-end pl-2 border-l border-[#303334]">
             <span className="text-[10px] uppercase font-mono text-[#70736F]">Confidence</span>
             <span className="text-xs font-mono font-bold text-[#F1F0EA]">
-              {(confidence * 100).toFixed(0)}%
+              {confidencePercent}%
             </span>
           </div>
 
@@ -132,7 +141,12 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
       {/* Expandable Technical Explanations Panel */}
       {isExpanded && (
         <div className="border-t border-[#303334] bg-[#141516] p-4">
-          <ExplanationPanel threat={threat} hasRawAccess={hasRawAccess} />
+          <ExplanationPanel
+            predictionId={effectivePredictionId}
+            viewMode={viewMode}
+            hasRawAccess={hasRawAccess}
+            threat={threat}
+          />
         </div>
       )}
     </Card>

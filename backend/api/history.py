@@ -10,6 +10,7 @@ logger = get_logger(__name__)
 router = APIRouter(prefix="/history", tags=["history"])
 
 @router.get("/logs", response_model=List[RawLog], dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
+@router.get("/threats", response_model=List[RawLog], dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
 async def get_raw_logs(req: Request, query: LogQuery = Depends()):
     try:
         filters = {}

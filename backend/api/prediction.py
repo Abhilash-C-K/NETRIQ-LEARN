@@ -31,6 +31,23 @@ async def test_prediction(payload: Dict[str, Any], req: Request):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Prediction failed: {e}")
 
 
+@router.get("/performance", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))], summary="Real-time AI performance metrics, model architecture, and live benchmark")
+async def get_performance(req: Request):
+    """
+    Returns real-time model telemetry, active model architectures,
+    and a live micro-benchmark measuring actual packet-to-verdict latency.
+    """
+    try:
+        data = await predict_service.get_ai_performance()
+        return data
+    except Exception as e:
+        logger.error(f"Failed to fetch AI performance: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve AI performance: {e}"
+        )
+
+
 @router.get("/{prediction_id}/explain", response_model=ExplanationResult, dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))], summary="On-demand SHAP or deviation explainability for a stored prediction")
 async def explain_prediction(prediction_id: str, req: Request):
     """

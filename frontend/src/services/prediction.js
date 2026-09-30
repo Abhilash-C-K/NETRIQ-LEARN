@@ -3,12 +3,11 @@ import api from './api';
 export const predictionService = {
   async getRecentThreats(limit = 20) {
     try {
-      const response = await api.get(`/history/threats?limit=${limit}`);
+      const response = await api.get(`/history/logs?limit=${limit}`);
       return response.data;
     } catch (err) {
       console.warn('Failed to fetch historical threats, using fallback query:', err);
-      // Fallback query to incidents API if history endpoint returns empty
-      const fallbackResponse = await api.get(`/incidents?limit=${limit}`);
+      const fallbackResponse = await api.get(`/history/threats?limit=${limit}`);
       return fallbackResponse.data;
     }
   },
@@ -34,6 +33,11 @@ export const predictionService = {
       throw new Error('Prediction ID is required to fetch explanation.');
     }
     const response = await api.get(`/prediction/${predictionId}/explain`);
+    return response.data;
+  },
+
+  async getPerformance() {
+    const response = await api.get('/prediction/performance');
     return response.data;
   },
 };

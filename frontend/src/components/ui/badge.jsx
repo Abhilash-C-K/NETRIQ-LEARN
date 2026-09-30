@@ -3,18 +3,25 @@ import { cn } from '../../lib/utils';
 
 function Badge({ className, variant = 'default', ...props }) {
   const variants = {
-    default: 'border-slate-700 bg-slate-800 text-slate-200',
-    cyan: 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400',
-    emerald: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
-    amber: 'border-amber-500/30 bg-amber-500/10 text-amber-400',
-    rose: 'border-rose-500/40 bg-rose-500/15 text-rose-400',
-    outline: 'border-slate-800 text-slate-400',
+    default: 'border-[#303334] bg-[#252728] text-[#A4A5A0]',
+    outline: 'border-[#303334] bg-transparent text-[#A4A5A0]',
+    healthy: 'border-[#9AAA78]/40 bg-[#9AAA78]/15 text-[#9AAA78]',
+    info: 'border-[#8CA4B8]/40 bg-[#8CA4B8]/15 text-[#8CA4B8]',
+    warning: 'border-[#D0A05C]/40 bg-[#D0A05C]/15 text-[#D0A05C]',
+    critical: 'border-[#C95F5F]/40 bg-[#C95F5F]/15 text-[#C95F5F]',
+    // Backward compatibility aliases
+    cyan: 'border-[#8CA4B8]/40 bg-[#8CA4B8]/15 text-[#8CA4B8]',
+    emerald: 'border-[#9AAA78]/40 bg-[#9AAA78]/15 text-[#9AAA78]',
+    amber: 'border-[#D0A05C]/40 bg-[#D0A05C]/15 text-[#D0A05C]',
+    rose: 'border-[#C95F5F]/40 bg-[#C95F5F]/15 text-[#C95F5F]',
+    success: 'border-[#9AAA78]/40 bg-[#9AAA78]/15 text-[#9AAA78]',
+    destructive: 'border-[#C95F5F]/40 bg-[#C95F5F]/15 text-[#C95F5F]',
   };
 
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 uppercase tracking-wide',
+        'inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors focus:outline-none uppercase tracking-wide',
         variants[variant] || variants.default,
         className
       )}

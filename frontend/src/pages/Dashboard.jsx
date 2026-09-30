@@ -11,7 +11,7 @@ import {
   Play,
   RefreshCw,
   Terminal,
-  Sparkles,
+  FileText,
   Lock,
 } from 'lucide-react';
 
@@ -67,11 +67,10 @@ export const Dashboard = () => {
     try {
       setIsSimulating(true);
       const mockPayload = {
-        src_ip: '192.168.1.105',
-        src_port: 54321,
-        dst_ip: '198.51.100.42',
-        dst_port: 443,
-        sni: 'malicious-c2-beacon.darknet.local',
+        src_ip: '10.40.184.165',
+        src_port: 58496,
+        dst_ip: '159.41.181.98',
+        dst_port: 27017,
         protocol: 'TCP',
         flow_duration_ms: 142.5,
         packet_count: 85,
@@ -79,8 +78,8 @@ export const Dashboard = () => {
         bytes_received: 384000,
         payload_entropy: 7.82,
         model_used: 'DualLayerFusion',
-        risk_category: 'CRITICAL',
-        confidence_score: 99.4,
+        severity: 'HIGH',
+        confidence: 0.96,
         is_anomaly: true,
         anomaly_score: 0.88,
         action: 'QUARANTINE',
@@ -90,7 +89,7 @@ export const Dashboard = () => {
           { feature: 'bytes_received', shap_value: 0.35, description: 'Abnormal data exfiltration volume' },
           { feature: 'flow_duration_ms', shap_value: 0.18, description: 'Persistent connection duration' },
         ],
-        plain_text_summary: 'CRITICAL: Encrypted C2 Beacon exfiltrating 384KB to darknet domain with 99.4% AI confidence.',
+        plain_text_summary: 'Internal host isolated due to anomalous activity.',
       };
 
       setThreats((prev) => [mockPayload, ...prev.slice(0, 24)]);
@@ -102,36 +101,34 @@ export const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Top Banner Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-6 rounded-xl shadow-xl backdrop-blur-md">
+    <div className="space-y-5">
+      {/* Top Banner Header: #1E2021, 1px solid #303334, no glow */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1E2021] border border-[#303334] p-5 rounded-lg shadow-none">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-100 flex items-center gap-2">
-            <Shield className="w-5 h-5 text-cyan-400" />
-            Smart Summary Dashboard
+          <h1 className="text-lg font-semibold tracking-normal text-[#F1F0EA] flex items-center gap-2 font-sans">
+            <Shield className="w-5 h-5 text-[#9AAA78]" />
+            Smart Summary
           </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-time AI threat telemetry translated into plain-language explanations
+          <p className="text-xs text-[#A4A5A0] mt-0.5 font-sans">
+            Real-time telemetry and explainable threat verdicts translated into plain language
           </p>
         </div>
 
         {/* Action Controls & View Mode Toggle */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           {hasAdminAccess ? (
-            <Button
+            <button
               onClick={handleSimulateFlow}
               disabled={isSimulating}
-              variant="default"
-              size="sm"
-              className="bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-md border border-cyan-400/40 flex items-center"
+              className="bg-[#9AAA78] hover:bg-[#A9B989] text-[#141516] font-sans text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               {isSimulating ? (
-                <RefreshCw className="w-3.5 h-3.5 animate-spin mr-1.5 text-white" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <Play className="w-3.5 h-3.5 fill-white text-white mr-1.5" />
+                <Play className="w-3.5 h-3.5 fill-current" />
               )}
-              <span className="text-white font-bold">Simulate Flow</span>
-            </Button>
+              <span>Simulate Flow</span>
+            </button>
           ) : (
             <Button
               disabled
@@ -139,7 +136,7 @@ export const Dashboard = () => {
               size="sm"
               title="Simulate Flow requires Admin capability (MANAGE_SETTINGS)"
             >
-              <Lock className="w-3.5 h-3.5 mr-1.5 text-rose-400" />
+              <Lock className="w-3.5 h-3.5 mr-1.5 text-[#C95F5F]" />
               <span>Simulate (Admin)</span>
             </Button>
           )}
@@ -149,21 +146,22 @@ export const Dashboard = () => {
             title="Refresh threat feed"
             variant="outline"
             size="icon"
+            className="w-8 h-8 border-[#303334] bg-[#141516] text-[#A4A5A0] hover:text-[#F1F0EA]"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           </Button>
 
           {/* View Mode Segmented Control */}
-          <div className="bg-slate-950/80 p-1 rounded-lg border border-slate-800 flex items-center gap-1">
+          <div className="bg-[#141516] p-1 rounded-lg border border-[#303334] flex items-center gap-1">
             <button
               onClick={() => setViewMode('smart')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-sans font-medium transition-colors cursor-pointer ${
                 viewMode === 'smart'
-                  ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334]'
+                  : 'text-[#A4A5A0] hover:text-[#F1F0EA]'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+              <FileText className="w-3.5 h-3.5 text-[#9AAA78]" />
               <span>Smart Summary</span>
             </button>
 
@@ -171,13 +169,13 @@ export const Dashboard = () => {
               onClick={() => hasRawAccess && setViewMode('raw')}
               disabled={!hasRawAccess}
               title={!hasRawAccess ? 'Raw technical log view requires Analyst capability' : ''}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-mono transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-sans font-medium transition-colors cursor-pointer ${
                 viewMode === 'raw'
-                  ? 'bg-cyan-500/20 text-cyan-300 font-semibold shadow-sm border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-slate-200 disabled:opacity-40 disabled:cursor-not-allowed'
+                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334]'
+                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] disabled:opacity-40 disabled:cursor-not-allowed'
               }`}
             >
-              {!hasRawAccess ? <Lock className="w-3 h-3 text-rose-400" /> : <Terminal className="w-3.5 h-3.5" />}
+              {!hasRawAccess ? <Lock className="w-3 h-3 text-[#C95F5F]" /> : <Terminal className="w-3.5 h-3.5 text-[#8CA4B8]" />}
               <span>Raw Logs</span>
             </button>
           </div>
@@ -188,16 +186,16 @@ export const Dashboard = () => {
       <div>
         {viewMode === 'smart' ? (
           loading ? (
-            <div className="p-12 text-center text-slate-400 space-y-3">
-              <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mx-auto" />
-              <p className="text-xs font-mono">Loading threat feed telemetry...</p>
+            <div className="p-12 text-center text-[#A4A5A0] space-y-3">
+              <div className="w-7 h-7 border-2 border-[#303334] border-t-[#9AAA78] rounded-full animate-spin mx-auto" />
+              <p className="text-xs font-sans">Loading threat telemetry...</p>
             </div>
           ) : threats.length === 0 ? (
-            <div className="p-12 text-center bg-slate-900/60 border border-slate-800 rounded-xl text-slate-400 text-xs font-mono">
+            <div className="p-12 text-center bg-[#1E2021] border border-[#303334] rounded-lg text-[#A4A5A0] text-xs font-sans">
               No recent network threat verdicts recorded.
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {threats.map((t, idx) => (
                 <VerdictCard
                   key={t.id || idx}

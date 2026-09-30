@@ -2,14 +2,140 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/jpeg" href="/logo.jpeg" />
+    <link rel="icon" type="image/svg+xml" href="/shield.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NETRIQ — AI-Driven Autonomous NIDS</title>
+    
+    <!-- SEO & Metadata -->
+    <title>NetrIQ — AI Network Intrusion Detection &amp; Firewall Response</title>
+    <meta name="description" content="Two-layer AI network intrusion detection. Layer 1 passive pre-firewall traffic scoring and Layer 2 post-firewall internal threat quarantine with SHAP explainability." />
+    <link rel="canonical" href="https://netriq.ai/" />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="NetrIQ — AI Network Intrusion Detection &amp; Intelligent Firewall Response" />
+    <meta property="og:description" content="Continuous two-layer threat defense: passive pre-firewall AI scoring with RECOMMEND_BLOCK signals and post-firewall lateral movement quarantine." />
+    <meta property="og:url" content="https://netriq.ai/" />
+    <meta property="og:site_name" content="NetrIQ" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NetrIQ — AI Network Intrusion Detection System" />
+    <meta name="twitter:description" content="Passive packet tap scoring, deterministic firewall enforcement, and post-firewall internal quarantine." />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "name": "NetrIQ",
+            "url": "https://netriq.ai",
+            "logo": "https://netriq.ai/logo.png",
+            "description": "Developer of two-layer AI network intrusion detection and intelligent firewall response systems."
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "NetrIQ Autonomous NIDS",
+            "applicationCategory": "SecurityApplication",
+            "operatingSystem": "Linux, Cloud VPC (AWS, Azure, GCP)",
+            "description": "Two-layer intrusion detection combining pre-firewall passive packet tap AI scoring with RECOMMEND_BLOCK signals and post-firewall device quarantine."
+          }
+        ]
+      }
+    </script>
+
+    <!-- Typography (Preconnected) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=Syncopate:wght@400;700&family=Cinzel:wght@600;700;800;900&family=Syne:wght@700;800&family=Marcellus&display=swap" rel="stylesheet">
+
+    <!-- Blocking Inline CSS for Zero-FOUC Initial App Preloader (Graphite + Olive Theme) -->
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      body {
+        margin: 0;
+        background-color: #141516;
+        color: #F1F0EA;
+      }
+      #app-preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #141516;
+        color: #F1F0EA;
+        transition: opacity 220ms ease-out, visibility 220ms ease-out;
+        user-select: none;
+      }
+      #app-preloader.preloader-exit {
+        opacity: 0;
+        visibility: hidden;
+      }
+      .preloader-shield {
+        width: 48px;
+        height: 48px;
+        background-color: #1E2021;
+        border: 1px solid #303334;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      .preloader-spinner-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .preloader-spinner {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #303334;
+        border-top-color: #9AAA78;
+        animation: preloader-spin 0.8s linear infinite;
+      }
+      .preloader-text {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 11px;
+        font-weight: 500;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #A4A5A0;
+      }
+      @keyframes preloader-spin {
+        to { transform: rotate(360deg); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .preloader-spinner {
+          animation: none;
+          border-top-color: #9AAA78;
+        }
+      }
+    </style>
   </head>
-  <body class="bg-slate-950 text-slate-100 antialiased font-sans selection:bg-cyan-500 selection:text-white min-h-screen">
+  <body class="bg-[#141516] text-[#F1F0EA] antialiased font-sans selection:bg-[#9AAA78]/20 selection:text-[#F1F0EA] min-h-screen">
+    <!-- Initial App Preloader: pure HTML/CSS before React mounts -->
+    <div id="app-preloader" aria-hidden="true">
+      <div class="preloader-shield">
+        <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="#9AAA78" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <path d="M9 12l2 2 4-4"></path>
+        </svg>
+      </div>
+      <div class="preloader-spinner-wrap">
+        <div class="preloader-spinner"></div>
+        <span class="preloader-text">Loading NetrIQ...</span>
+      </div>
+    </div>
+
+    <!-- React Application Root -->
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

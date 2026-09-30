@@ -6,11 +6,8 @@ import {
   FileText,
   Download,
   CheckCircle2,
-  Clock,
-  Sparkles,
   AlertCircle,
   FileCheck,
-  ShieldAlert,
 } from 'lucide-react';
 
 export const Reports = () => {
@@ -77,13 +74,12 @@ export const Reports = () => {
   };
 
   const handleDownload = (report) => {
-    // Generate simulated export blob for verified offline compliance download
     const blobContent = JSON.stringify(
       {
         report_id: report.id,
         title: report.title,
         generated_at: new Date(report.created_at).toISOString(),
-        classification: 'SOC Restricted / Internal Audit',
+        classification: 'SOC Restricted / Internal Compliance',
         integrity_hash: 'SHA256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
       },
       null,
@@ -99,60 +95,60 @@ export const Reports = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-5 pb-8">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-6 rounded-xl shadow-xl backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#19242E] border border-[#2A3944] p-5 rounded-lg shadow-none">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400">
-            <FileText className="w-6 h-6" />
+          <div className="p-2 rounded-lg bg-[#101820] border border-[#2A3944] text-[#7895B2]">
+            <FileText className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-100">Audit & Compliance Reports</h1>
-            <p className="text-xs text-slate-400">Automated PDF & JSON audit exports for executive leadership and compliance auditors.</p>
+            <h1 className="text-lg font-semibold text-[#E7ECEF] font-sans">Compliance & Audit Reports</h1>
+            <p className="text-xs text-[#9AA8B2] font-sans">Automated compliance artifacts and technical audit records</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left: Generator Form */}
-        <Card className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md">
-          <CardHeader className="border-b border-slate-800/80 pb-4">
-            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-200">
-              <Sparkles className="w-4 h-4 text-cyan-400" />
-              Generate New Audit Report
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardHeader className="border-b border-[#2A3944] pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-[#E7ECEF] font-sans">
+              <FileCheck className="w-4 h-4 text-[#71A99D]" />
+              Generate Audit Report
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-5">
+          <CardContent className="p-4">
             <form onSubmit={handleGenerate} className="space-y-4">
               {error && (
-                <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-300 text-xs flex items-center gap-2">
+                <div className="p-2.5 bg-[#DF857C]/15 border border-[#DF857C]/30 rounded-lg text-[#DF857C] text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{error}</span>
                 </div>
               )}
 
-              {/* Report Type */}
+              {/* Report Scope */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Report Scope & Template
+                <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1.5">
+                  Report Scope
                 </label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 focus:outline-none focus:border-cyan-500"
+                  className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-sans"
                 >
                   <option value="incident_summary">Incident & Threat Mitigation Summary</option>
                   <option value="sdn_audit">SDN Quarantine & Reversal Audit</option>
-                  <option value="model_accuracy">AI Classifier Drift & Accuracy Telemetry</option>
+                  <option value="model_accuracy">Classifier Drift & Accuracy Telemetry</option>
                 </select>
               </div>
 
-              {/* Time Range */}
+              {/* Audit Window */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1.5">
                   Audit Window
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 font-sans">
                   {[
                     { id: '24h', label: 'Last 24h' },
                     { id: '7d', label: 'Last 7 Days' },
@@ -162,10 +158,10 @@ export const Reports = () => {
                       key={t.id}
                       type="button"
                       onClick={() => setTimeRange(t.id)}
-                      className={`py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      className={`py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         timeRange === t.id
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                          : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200'
+                          ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
+                          : 'bg-[#101820] border border-[#2A3944] text-[#9AA8B2] hover:text-[#E7ECEF]'
                       }`}
                     >
                       {t.label}
@@ -176,10 +172,10 @@ export const Reports = () => {
 
               {/* Format */}
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Export Document Format
+                <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1.5">
+                  Format
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 font-sans">
                   {[
                     { id: 'pdf', label: 'Executive PDF' },
                     { id: 'json', label: 'Raw JSON Audit' },
@@ -188,10 +184,10 @@ export const Reports = () => {
                       key={f.id}
                       type="button"
                       onClick={() => setFormat(f.id)}
-                      className={`py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      className={`py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         format === f.id
-                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                          : 'bg-slate-950 border border-slate-800 text-slate-400 hover:text-slate-200'
+                          ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
+                          : 'bg-[#101820] border border-[#2A3944] text-[#9AA8B2] hover:text-[#E7ECEF]'
                       }`}
                     >
                       {f.label}
@@ -200,62 +196,56 @@ export const Reports = () => {
                 </div>
               </div>
 
-              <Button
+              {/* Button: #71A99D */}
+              <button
                 type="submit"
                 disabled={isGenerating}
-                className="w-full text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-950/40 mt-2"
+                className="w-full text-xs font-sans font-semibold bg-[#71A99D] hover:bg-[#60958a] text-[#101820] py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 mt-2"
               >
-                {isGenerating ? (
-                  <>
-                    <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin mr-1.5" />
-                    Compiling Audit Artifact...
-                  </>
-                ) : (
-                  <>
-                    <FileCheck className="w-4 h-4 mr-1.5" />
-                    Generate Compliance Report
-                  </>
-                )}
-              </Button>
+                {isGenerating ? 'Compiling Artifact...' : 'Generate Report'}
+              </button>
             </form>
           </CardContent>
         </Card>
 
         {/* Right: Available Reports Repository */}
         <div className="lg:col-span-2 space-y-3">
-          <div className="flex items-center justify-between text-xs text-slate-400 font-mono px-1">
+          <div className="flex items-center justify-between text-xs text-[#9AA8B2] font-sans px-1">
             <span>AVAILABLE ARTIFACTS ({reportsList.length})</span>
-            <span>STORAGE: 7-DAY RETENTION</span>
+            <span>RETENTION: 7 DAYS</span>
           </div>
 
           {reportsList.map((rep) => (
-            <Card key={rep.id} className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md hover:border-slate-700 transition-all">
+            <Card key={rep.id} className="bg-[#19242E] hover:bg-[#202D36] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg transition-colors">
               <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-cyan-400 shrink-0">
-                    <FileText className="w-5 h-5" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-[#101820] border border-[#2A3944] text-[#7895B2] shrink-0">
+                    <FileText className="w-4 h-4" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-slate-300">{rep.id}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                      <span className="font-mono text-xs font-semibold text-[#9AA8B2]">{rep.id}</span>
+                      {/* Format label: Neutral */}
+                      <span className="text-[10px] font-sans px-1.5 py-0.2 rounded bg-[#202D36] text-[#9AA8B2] border border-[#2A3944]">
                         {rep.format}
                       </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                      {/* Status: READY in #71A99D */}
+                      <span className="text-[10px] font-sans font-medium px-1.5 py-0.2 rounded bg-[#71A99D]/15 text-[#71A99D] border border-[#71A99D]/30 flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" /> READY
                       </span>
                     </div>
-                    <h4 className="text-xs font-semibold text-slate-200">{rep.title}</h4>
-                    <p className="text-[11px] text-slate-400 font-mono">
-                      Generated {new Date(rep.created_at).toLocaleString()} • {rep.size}
+                    <h4 className="text-xs font-medium text-[#E7ECEF] font-sans">{rep.title}</h4>
+                    <p className="text-[11px] text-[#9AA8B2] font-mono">
+                      {new Date(rep.created_at).toLocaleDateString()} • {rep.size}
                     </p>
                   </div>
                 </div>
 
                 <Button
                   size="sm"
+                  variant="outline"
                   onClick={() => handleDownload(rep)}
-                  className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 flex items-center gap-1.5 shrink-0"
+                  className="text-xs border-[#2A3944] bg-[#101820] hover:bg-[#202D36] text-[#E7ECEF] flex items-center gap-1.5 shrink-0 h-8 font-sans"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Download

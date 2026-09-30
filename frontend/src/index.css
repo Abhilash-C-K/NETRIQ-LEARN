@@ -2,193 +2,51 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Corpta';
+  src: url('/fonts/Corpta-Demo.otf') format('opentype'),
+       url('/fonts/Corpta DEMO.otf') format('opentype');
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @layer base {
   body {
-    @apply bg-slate-950 text-slate-100 font-sans antialiased transition-colors duration-300;
+    background-color: #141516;
+    color: #F1F0EA;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-}
 
-/* --- Day Mode (Dual-Tone Light Blue Theme - 100% Wildcard Class Matching) --- */
-
-/* 1. Page Body Background */
-html.light body {
-  background: linear-gradient(135deg, #7dd3fc 0%, #38bdf8 40%, #60a5fa 100%) !important;
-  background-attachment: fixed !important;
-  color: #0f172a !important;
-}
-
-/* 2. Navigation Header & Sidebar */
-html.light header {
-  background-color: #bae6fd !important;
-  border-color: #7dd3fc !important;
-}
-
-html.light aside {
-  background-color: #e0f2fe !important;
-  border-color: #7dd3fc !important;
-}
-
-/* 3. Main Cards & Outer Containers */
-html.light [class*="bg-slate-900"] {
-  background-color: #f0f9ff !important;
-  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.15) !important;
-  color: #0f172a !important;
-}
-
-/* 4. Sub-Boxes, Telemetry Pill Badges, Segmented Controls & Buttons */
-html.light [class*="bg-slate-950"],
-html.light [class*="bg-slate-800"],
-html.light [class*="bg-black"] {
-  background-color: #e0f2fe !important;
-  color: #0f172a !important;
-  border-color: #7dd3fc !important;
-}
-
-/* 5. Tables, Table Headers & Row Hovers */
-html.light thead,
-html.light th {
-  background-color: #bae6fd !important;
-  color: #0f172a !important;
-  border-color: #7dd3fc !important;
-}
-
-html.light tbody tr {
-  background-color: #f0f9ff !important;
-}
-
-html.light tbody tr:hover {
-  background-color: #bae6fd !important;
-}
-
-/* 6. Borders & Dividers */
-html.light [class*="border-slate-800"],
-html.light [class*="border-slate-700"] {
-  border-color: #7dd3fc !important;
-}
-
-/* 7. Typography Contrast */
-html.light [class*="text-slate-100"],
-html.light [class*="text-slate-200"] {
-  color: #0f172a !important;
-}
-
-html.light [class*="text-slate-300"],
-html.light [class*="text-slate-400"] {
-  color: #1e293b !important;
-}
-
-html.light [class*="text-slate-500"] {
-  color: #334155 !important;
-}
-
-/* 8. Accent Colors - Pure Ocean Cyan, Crimson Red & Electric Blue Palette */
-html.light .text-cyan-400,
-html.light .text-cyan-300 {
-  color: #0284c7 !important;
-}
-
-html.light .text-purple-400,
-html.light .text-purple-300 {
-  color: #0369a1 !important;
-}
-
-html.light .text-emerald-400 {
-  color: #047857 !important;
-}
-
-html.light .text-amber-400 {
-  color: #b45309 !important;
-}
-
-html.light .text-rose-400,
-html.light .text-rose-300 {
-  color: #9f1239 !important;
-}
-
-/* 9. Form Inputs & Select Controls */
-html.light input,
-html.light select,
-html.light textarea {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #0284c7 !important;
-}
-
-html.light input::placeholder {
-  color: #64748b !important;
-}
-
-/* Magic UI & Custom Animation Keyframes */
-@keyframes border-beam {
-  100% {
-    offset-distance: 100%;
+  /* JetBrains Mono strictly for telemetry, IPs, ports, code, hashes */
+  code, kbd, samp, pre, .font-mono {
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
   }
-}
 
-.animate-border-beam {
-  animation: border-beam var(--duration, 12s) infinite linear;
-}
-
-@keyframes spin-around {
-  0% {
-    transform: translate(-50%, -50%) rotate(0deg);
+  .font-corpta {
+    font-family: 'Corpta', system-ui, -apple-system, sans-serif !important;
   }
-  100% {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
 
-.animate-spin-around {
-  animation: spin-around calc(var(--speed, 3s)) infinite linear;
-}
-
-@keyframes rippling {
-  0% {
-    opacity: 1;
-    transform: scale(0);
+  .font-syncopate {
+    font-family: 'Syncopate', system-ui, -apple-system, sans-serif !important;
   }
-  100% {
-    opacity: 0;
-    transform: scale(2.5);
-  }
-}
 
-.animate-rippling {
-  animation: rippling var(--duration, 600ms) ease-out forwards;
-}
-
-@keyframes grid {
-  0% {
-    transform: translateY(0);
+  .font-cinzel {
+    font-family: 'Cinzel', Georgia, serif !important;
   }
-  100% {
-    transform: translateY(60px);
-  }
-}
 
-.animate-grid {
-  animation: grid 15s linear infinite;
-}
-
-@keyframes ripple {
-  0%, 100% {
-    transform: scale(1);
+  .font-syne {
+    font-family: 'Syne', system-ui, -apple-system, sans-serif !important;
   }
-  50% {
-    transform: scale(1.05);
-  }
-}
 
-.animate-ripple {
-  animation: ripple 4s ease-in-out infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+  .font-marcellus {
+    font-family: 'Marcellus', Georgia, serif !important;
   }
-  100% {
-    background-position: 200% 0;
+
+  .font-orbitron {
+    font-family: 'Orbitron', system-ui, -apple-system, sans-serif !important;
   }
 }
 
@@ -202,76 +60,32 @@ html.light input::placeholder {
   scrollbar-width: none;  /* Firefox */
 }
 
-/* Custom scrollbar for SOC dashboard tables and feeds */
+/* Restrained Enterprise scrollbar: Graphite + Olive */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #050810;
+  background: #141516;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1a2436;
-  border-radius: 3px;
+  background: #303334;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #0891a3;
+  background: #9AAA78;
 }
 
-/* --- Network Monitor Aesthetics --- */
-@keyframes nmPulse {
+/* Clean animation for pulsing live indicator without excessive blur */
+@keyframes subtlePulse {
   0%, 100% {
-    transform: scale(1);
-    opacity: 0.8;
+    opacity: 1;
   }
   50% {
-    transform: scale(1.15);
-    opacity: 1;
+    opacity: 0.4;
   }
 }
 
-@keyframes nmDataBeam {
-  0% {
-    transform: translateX(-100%);
-    opacity: 0;
-  }
-  30% {
-    opacity: 1;
-  }
-  70% {
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes nmRadarSweep {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.nm-pulse {
-  animation: nmPulse 2s ease-in-out infinite;
-}
-
-.nm-beam {
-  animation: nmDataBeam 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-.nm-radar {
-  animation: nmRadarSweep 4s linear infinite;
-}
-
-.nm-glow-green {
-  box-shadow: 0 0 20px rgba(0, 209, 178, 0.35), inset 0 0 10px rgba(0, 209, 178, 0.15);
-}
-
-.nm-glow-red {
-  box-shadow: 0 0 20px rgba(255, 51, 102, 0.4), inset 0 0 10px rgba(255, 51, 102, 0.2);
+.animate-subtle-pulse {
+  animation: subtlePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

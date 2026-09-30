@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { IncidentCard } from '../components/IncidentCard';
 import { IncidentDetailDrawer } from '../components/IncidentDetailDrawer';
@@ -14,12 +14,9 @@ import {
   ShieldCheck,
   Search,
   RefreshCw,
-  Filter,
   Plus,
   AlertTriangle,
-  Server,
   Bell,
-  Lock,
 } from 'lucide-react';
 
 export const Incidents = () => {
@@ -43,7 +40,7 @@ export const Incidents = () => {
 
   const [dialogState, setDialogState] = useState({
     isOpen: false,
-    actionType: 'quarantine', // 'quarantine' or 'reverse'
+    actionType: 'quarantine',
     targetIp: '',
     targetMac: null,
     initialAction: 'quarantine',
@@ -79,7 +76,6 @@ export const Incidents = () => {
       if (!payload || !payload.id) return;
 
       setIncidents((prev) => {
-        // Deduplicate by ID
         const exists = prev.some((item) => item.id === payload.id);
         if (exists) {
           return prev.map((item) => (item.id === payload.id ? { ...item, ...payload } : item));
@@ -87,8 +83,7 @@ export const Incidents = () => {
         return [payload, ...prev];
       });
 
-      // Show toast
-      setToastMessage(`New ${payload.severity || 'Threat'} Incident #${payload.id.slice(-6)} logged!`);
+      setToastMessage(`New Incident #${payload.id.slice(-6)} recorded`);
       setTimeout(() => setToastMessage(null), 4000);
     };
 
@@ -133,11 +128,10 @@ export const Incidents = () => {
           target_mac,
           reason,
         });
-        setToastMessage(`Layer 2 Quarantine enforced for ${target_ip}`);
+        setToastMessage(`Quarantine enforced for ${target_ip}`);
       }
 
       setDialogState((prev) => ({ ...prev, isOpen: false, isLoading: false }));
-      // Refresh to pull updated incident audit logs
       fetchIncidents();
     } catch (err) {
       console.error('Enforcement action error:', err);
@@ -165,20 +159,17 @@ export const Incidents = () => {
   // Filtered Incidents calculation
   const filteredIncidents = useMemo(() => {
     return incidents.filter((item) => {
-      // Status filter
       if (filterStatus !== 'ALL') {
         const itemStatus = (item.status || 'active').toUpperCase();
         if (filterStatus === 'ACTIVE' && itemStatus !== 'ACTIVE' && itemStatus !== 'OPEN') return false;
         if (filterStatus !== 'ACTIVE' && itemStatus !== filterStatus) return false;
       }
 
-      // Severity filter
       if (filterSeverity !== 'ALL') {
         const itemSev = (item.severity || 'LOW').toUpperCase();
         if (itemSev !== filterSeverity) return false;
       }
 
-      // Search query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
         const matchesId = item.id && item.id.toLowerCase().includes(q);
@@ -198,47 +189,46 @@ export const Incidents = () => {
   ).length;
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-5 pb-8">
       {/* Toast Alert */}
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-indigo-600 text-white text-xs font-semibold px-4 py-3 rounded-lg shadow-xl flex items-center gap-2.5 animate-in slide-in-from-bottom-5">
-          <Bell className="w-4 h-4 animate-bounce" />
+        <div className="fixed bottom-6 right-6 z-50 bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] text-xs font-medium px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2">
+          <Bell className="w-3.5 h-3.5 text-[#D3A35D]" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-6 rounded-xl shadow-xl backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#19242E] border border-[#2A3944] p-5 rounded-lg shadow-none">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-xl font-bold tracking-tight text-slate-100 flex items-center gap-2.5">
-              <ShieldAlert className="w-6 h-6 text-rose-400" />
-              Incidents & Threat Management
+          <div className="flex items-center gap-2.5 mb-1">
+            <h1 className="text-lg font-semibold tracking-normal text-[#E7ECEF] flex items-center gap-2 font-sans">
+              <ShieldAlert className="w-5 h-5 text-[#DF857C]" />
+              Threat Incidents
             </h1>
-            <span className="text-xs font-mono px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+            <span className="text-xs font-mono px-2 py-0.5 rounded bg-[#DF857C]/15 text-[#DF857C] border border-[#DF857C]/30">
               {activeCount} Active
             </span>
           </div>
-          <p className="text-xs text-slate-400">
-            Autonomous threat response audits, containment reviews, and manual SDN mitigation controls.
+          <p className="text-xs text-[#9AA8B2] font-sans">
+            Detection audit records, host containment status, and manual mitigation actions
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <Button
             variant="outline"
             size="sm"
             onClick={fetchIncidents}
             disabled={isLoading}
-            className="text-xs border-slate-700 hover:bg-slate-800 flex items-center gap-1.5"
+            className="text-xs border-[#2A3944] bg-[#101820] hover:bg-[#202D36] text-[#E7ECEF] flex items-center gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
 
           {canEnforce && (
-            <Button
-              size="sm"
+            <button
               onClick={() =>
                 openResponseDialog({
                   actionType: 'quarantine',
@@ -246,42 +236,42 @@ export const Incidents = () => {
                   initialAction: 'quarantine',
                 })
               }
-              className="text-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold flex items-center gap-1.5 shadow-lg shadow-rose-950/40"
+              className="text-xs bg-[#DF857C]/15 hover:bg-[#DF857C]/25 text-[#DF857C] border border-[#DF857C]/40 font-sans font-semibold h-8 px-3 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               Manual Quarantine
-            </Button>
+            </button>
           )}
         </div>
       </div>
 
       {/* Filter & Search Bar */}
-      <Card className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md">
-        <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+        <CardContent className="p-3.5 flex flex-col md:flex-row items-center justify-between gap-4">
           {/* Search Box */}
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
+          <div className="relative w-full md:w-64">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#687883]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by IP, ID, or threat..."
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full bg-[#101820] border border-[#2A3944] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#E7ECEF] placeholder-[#687883] focus:outline-none focus:border-[#71A99D] transition-colors font-sans"
             />
           </div>
 
           {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-4 text-xs w-full md:w-auto justify-end">
+          <div className="flex flex-wrap items-center gap-3 text-xs w-full md:w-auto justify-end font-sans">
             {/* Status Pills */}
-            <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
+            <div className="flex items-center gap-1 bg-[#101820] p-1 rounded-lg border border-[#2A3944]">
               {['ALL', 'ACTIVE', 'INVESTIGATING', 'RESOLVED'].map((st) => (
                 <button
                   key={st}
                   onClick={() => setFilterStatus(st)}
-                  className={`px-2.5 py-1 rounded font-medium transition-all ${
+                  className={`px-2.5 py-0.5 rounded font-medium transition-colors cursor-pointer ${
                     filterStatus === st
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
+                      : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
                   }`}
                 >
                   {st}
@@ -290,15 +280,15 @@ export const Incidents = () => {
             </div>
 
             {/* Severity Pills */}
-            <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800">
+            <div className="flex items-center gap-1 bg-[#101820] p-1 rounded-lg border border-[#2A3944]">
               {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
                 <button
                   key={sev}
                   onClick={() => setFilterSeverity(sev)}
-                  className={`px-2 py-1 rounded font-medium transition-all ${
+                  className={`px-2 py-0.5 rounded font-medium transition-colors cursor-pointer ${
                     filterSeverity === sev
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
+                      : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
                   }`}
                 >
                   {sev}
@@ -311,26 +301,26 @@ export const Incidents = () => {
 
       {/* Incident List Content */}
       {isLoading ? (
-        <div className="p-12 text-center text-slate-400 space-y-3">
-          <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mx-auto" />
-          <p className="text-xs font-mono">Loading active incidents from database...</p>
+        <div className="p-12 text-center text-[#9AA8B2] space-y-3">
+          <div className="w-7 h-7 border-2 border-[#2A3944] border-t-[#71A99D] rounded-full animate-spin mx-auto" />
+          <p className="text-xs font-sans">Loading active incidents...</p>
         </div>
       ) : error ? (
-        <div className="p-8 text-center bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-300 text-xs">
-          <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-rose-400" />
+        <div className="p-6 text-center bg-[#19242E] border border-[#DF857C]/40 rounded-lg text-[#DF857C] text-xs font-sans">
+          <AlertTriangle className="w-5 h-5 mx-auto mb-1.5" />
           <p>{error}</p>
         </div>
       ) : filteredIncidents.length === 0 ? (
-        <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-xl space-y-2">
-          <ShieldCheck className="w-8 h-8 text-emerald-400 mx-auto" />
-          <h4 className="text-sm font-bold text-slate-200">No Incidents Found</h4>
-          <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            There are currently no incidents matching the selected status and severity filters.
+        <div className="p-12 text-center bg-[#19242E] border border-[#2A3944] rounded-lg space-y-2">
+          <ShieldCheck className="w-7 h-7 text-[#71A99D] mx-auto" />
+          <h4 className="text-sm font-semibold text-[#E7ECEF] font-sans">No Incidents Found</h4>
+          <p className="text-xs text-[#9AA8B2] max-w-sm mx-auto font-sans">
+            There are currently no incidents matching the selected filter criteria.
           </p>
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs text-slate-400 px-1 font-mono">
+          <div className="flex items-center justify-between text-xs text-[#9AA8B2] px-1 font-mono">
             <span>SHOWING {filteredIncidents.length} OF {incidents.length} INCIDENTS</span>
           </div>
 

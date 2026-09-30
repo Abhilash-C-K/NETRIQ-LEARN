@@ -37,14 +37,18 @@ export const Sidebar = () => {
       {/* Brand Header with Official NETRIQ Logo */}
       <Sidebar001Header>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl overflow-hidden border border-cyan-500/40 shadow-[0_0_12px_rgba(6,182,212,0.4)] shrink-0 bg-slate-950 flex items-center justify-center p-0.5">
-            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-lg block" />
+          <div className="w-9 h-9 rounded-lg overflow-hidden border border-[#303334] shrink-0 bg-[#141516] flex items-center justify-center p-0.5">
+            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-md block" />
           </div>
           <div>
-            <h1 className="font-mono font-bold text-sm tracking-wider text-slate-100 flex items-center gap-1.5">
-              NETRIQ <span className="text-[9px] bg-cyan-500/20 text-cyan-400 px-1.5 py-0.5 rounded font-sans uppercase font-semibold">Core</span>
+            <h1 className="font-corpta text-sm tracking-[0.12em] uppercase flex items-center gap-1 select-none">
+              <span className="text-[#F1F0EA]">NETR</span>
+              <span className="text-[#9AAA78]">IQ</span>
+              <span className="text-[9px] font-sans font-medium bg-[#9AAA78]/15 text-[#9AAA78] border border-[#9AAA78]/30 px-1 py-0.2 rounded uppercase ml-1">
+                SOC
+              </span>
             </h1>
-            <p className="text-[10px] text-slate-400 font-mono tracking-tight">Autonomous Dual-Layer NIDS</p>
+            <p className="text-[11px] text-[#A4A5A0] font-sans tracking-tight">Security Operations Platform</p>
           </div>
         </div>
       </Sidebar001Header>
@@ -58,7 +62,7 @@ export const Sidebar = () => {
               href="/dashboard"
               label={
                 <span className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                  <Shield className="w-3.5 h-3.5 text-[#71A99D]" />
                   <span>Smart Summary</span>
                 </span>
               }
@@ -71,7 +75,7 @@ export const Sidebar = () => {
             href="/monitoring"
             label={
               <span className="flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                <Activity className="w-3.5 h-3.5 text-[#71A99D]" />
                 <span>Live Capture</span>
               </span>
             }
@@ -83,7 +87,7 @@ export const Sidebar = () => {
             href="/incidents"
             label={
               <span className="flex items-center gap-2">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+                <AlertTriangle className="w-3.5 h-3.5 text-[#D3A35D]" />
                 <span>Incidents</span>
               </span>
             }
@@ -99,7 +103,7 @@ export const Sidebar = () => {
               href="/history"
               label={
                 <span className="flex items-center gap-2">
-                  <History className="w-3.5 h-3.5 text-slate-400" />
+                  <History className="w-3.5 h-3.5 text-[#9AA8B2]" />
                   <span>Traffic History</span>
                 </span>
               }
@@ -111,7 +115,7 @@ export const Sidebar = () => {
               href="/analytics"
               label={
                 <span className="flex items-center gap-2">
-                  <BarChart3 className="w-3.5 h-3.5 text-slate-400" />
+                  <BarChart3 className="w-3.5 h-3.5 text-[#9AA8B2]" />
                   <span>Analytics</span>
                 </span>
               }
@@ -123,7 +127,7 @@ export const Sidebar = () => {
               href="/reports"
               label={
                 <span className="flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5 text-slate-400" />
+                  <FileText className="w-3.5 h-3.5 text-[#9AA8B2]" />
                   <span>Reports</span>
                 </span>
               }
@@ -137,7 +141,7 @@ export const Sidebar = () => {
               href="/ai-performance"
               label={
                 <span className="flex items-center gap-2">
-                  <Cpu className="w-3.5 h-3.5 text-slate-400" />
+                  <Cpu className="w-3.5 h-3.5 text-[#9AA8B2]" />
                   <span>AI Performance</span>
                 </span>
               }
@@ -155,7 +159,7 @@ export const Sidebar = () => {
                 href="/users"
                 label={
                   <span className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5 text-blue-400" />
+                    <Users className="w-3.5 h-3.5 text-[#7895B2]" />
                     <span>User Management</span>
                   </span>
                 }
@@ -169,7 +173,7 @@ export const Sidebar = () => {
                 href="/settings"
                 label={
                   <span className="flex items-center gap-2">
-                    <Settings className="w-3.5 h-3.5 text-slate-400" />
+                    <Settings className="w-3.5 h-3.5 text-[#9AA8B2]" />
                     <span>System Settings</span>
                   </span>
                 }
@@ -183,14 +187,15 @@ export const Sidebar = () => {
 
       {/* Status Footer */}
       <Sidebar001Footer>
-        <div className="flex items-center justify-between text-slate-400">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+        <div className="flex items-center justify-between text-[#9AA8B2] text-xs">
+          <span className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#71A99D]" />
             NIDS Engine
           </span>
-          <span className="text-emerald-400 uppercase font-semibold">Active</span>
+          <span className="text-[#71A99D] uppercase font-semibold text-[11px]">Active</span>
         </div>
       </Sidebar001Footer>
     </Sidebar001>
   );
 };
+export default Sidebar;

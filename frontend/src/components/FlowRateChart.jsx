@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
-import { Activity, ShieldAlert, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 export const FlowRateChart = ({ entries = [], feed = [] }) => {
   const chartData = useMemo(() => {
@@ -40,70 +40,76 @@ export const FlowRateChart = ({ entries = [], feed = [] }) => {
   }, [entries, feed]);
 
   return (
-    <Card className="bg-slate-900/90 border-slate-800 text-slate-100 shadow-xl backdrop-blur-md">
-      <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-slate-800">
+    <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#2A3944]">
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-5 h-5 text-indigo-400" />
-          <CardTitle className="text-base font-bold text-slate-100">
-            Real-Time Flow Throughput (60s Sliding Window)
+          <BarChart3 className="w-4 h-4 text-[#7895B2]" />
+          <CardTitle className="text-sm font-semibold text-[#E7ECEF] font-sans">
+            Real-Time Flow Throughput (60s Window)
           </CardTitle>
         </div>
 
-        {/* Legend */}
-        <div className="flex items-center gap-3 text-xs">
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block" />
-            <span className="text-slate-400">Critical/High</span>
+        {/* Legend matching NetrIQ specification */}
+        <div className="flex items-center gap-4 text-xs font-sans">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-sm bg-[#DF857C] inline-block" />
+            <span className="text-[#9AA8B2]">Critical</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block" />
-            <span className="text-slate-400">Medium</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-sm bg-[#D3A35D] inline-block" />
+            <span className="text-[#9AA8B2]">Suspicious</span>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-            <span className="text-slate-400">Low/Pass</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-sm bg-[#7895B2] inline-block" />
+            <span className="text-[#9AA8B2]">Normal</span>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="pt-4">
         {/* SVG Bar Chart Container */}
-        <div className="h-40 w-full flex items-end justify-between gap-2 pt-4 px-2 bg-slate-950/60 rounded-lg border border-slate-800/80">
+        <div className="h-36 w-full flex items-end justify-between gap-2 pt-4 px-3 bg-[#101820] rounded-lg border border-[#2A3944]">
           {chartData.buckets.map((b) => {
             const heightPct = Math.min((b.count / chartData.maxCount) * 100, 100);
 
             return (
               <div key={b.index} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                 {/* Tooltip on Hover */}
-                <div className="absolute -top-10 hidden group-hover:flex flex-col items-center bg-slate-900 border border-slate-700 text-[11px] px-2 py-1 rounded shadow-xl whitespace-nowrap z-20">
-                  <span className="font-bold text-slate-200">{b.count} flows</span>
-                  <span className="text-slate-400 font-mono">{b.label}</span>
+                <div className="absolute -top-9 hidden group-hover:flex flex-col items-center bg-[#19242E] border border-[#2A3944] text-[11px] px-2 py-0.5 rounded shadow-none whitespace-nowrap z-20">
+                  <span className="font-semibold text-[#E7ECEF]">{b.count} flows</span>
+                  <span className="text-[#9AA8B2] font-mono text-[10px]">{b.label}</span>
                 </div>
 
                 {/* Stacked Bar */}
-                <div className="w-full max-w-[28px] bg-slate-800/50 rounded-t overflow-hidden flex flex-col justify-end transition-all duration-300" style={{ height: `${Math.max(heightPct, 4)}%` }}>
-                  {b.critical + b.high > 0 && (
+                <div
+                  className="w-full max-w-[24px] bg-[#202D36] rounded-t overflow-hidden flex flex-col justify-end transition-all duration-200"
+                  style={{ height: `${Math.max(heightPct, 4)}%` }}
+                >
+                  {/* Critical: #DF857C */}
+                  {b.critical > 0 && (
                     <div
-                      style={{ height: `${((b.critical + b.high) / (b.count || 1)) * 100}%` }}
-                      className="bg-gradient-to-t from-rose-600 to-rose-500"
+                      style={{ height: `${(b.critical / (b.count || 1)) * 100}%` }}
+                      className="bg-[#DF857C]"
                     />
                   )}
-                  {b.medium > 0 && (
+                  {/* Suspicious / High / Medium: #D3A35D */}
+                  {b.high + b.medium > 0 && (
                     <div
-                      style={{ height: `${(b.medium / (b.count || 1)) * 100}%` }}
-                      className="bg-gradient-to-t from-amber-600 to-amber-500"
+                      style={{ height: `${((b.high + b.medium) / (b.count || 1)) * 100}%` }}
+                      className="bg-[#D3A35D]"
                     />
                   )}
+                  {/* Normal: #7895B2 */}
                   {b.low > 0 && (
                     <div
                       style={{ height: `${(b.low / (b.count || 1)) * 100}%` }}
-                      className="bg-gradient-to-t from-emerald-600 to-emerald-500"
+                      className="bg-[#7895B2]"
                     />
                   )}
                 </div>
 
                 {/* X Axis Label */}
-                <span className="text-[10px] text-slate-500 font-mono mt-2 truncate w-full text-center">
+                <span className="text-[10px] text-[#687883] font-mono mt-2 truncate w-full text-center">
                   {b.index % 3 === 0 ? b.label : ''}
                 </span>
               </div>

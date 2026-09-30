@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { LogOut, User, Wifi, WifiOff, Bell, Sun, Moon } from 'lucide-react';
+import { LogOut, User, Wifi, WifiOff, Bell } from 'lucide-react';
 import { NotificationBadge } from '../components/ui/NotificationBadge';
-import { SmoothButton } from '../components/ui/SmoothButton';
-import { ShineText } from '../components/ui/ShineText';
 
 export const Navbar = () => {
   const { user, role, logout } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
   const { connectionStatus, subscribe } = useWebSocket();
   const navigate = useNavigate();
   const [alertCount, setAlertCount] = useState(3);
@@ -31,27 +27,29 @@ export const Navbar = () => {
   }, [subscribe]);
 
   const roleBadges = {
-    admin: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
-    analyst: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
-    viewer: 'bg-slate-700/40 text-slate-300 border-slate-600',
+    admin: 'bg-[#8CA4B8]/15 text-[#8CA4B8] border-[#8CA4B8]/40',
+    analyst: 'bg-[#9AAA78]/15 text-[#9AAA78] border-[#9AAA78]/40',
+    viewer: 'bg-[#252728] text-[#A4A5A0] border-[#303334]',
   };
 
   return (
-    <header className="h-16 bg-slate-900 border-b border-slate-800 px-6 flex items-center justify-between select-none">
+    <header className="h-14 bg-[#17191A] border-b border-[#303334] px-6 flex items-center justify-between select-none shrink-0">
       {/* Search / Context Status */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-xs font-mono bg-slate-950/60 border border-slate-800 px-3 py-1.5 rounded-full">
+        <div className="flex items-center gap-2 text-xs font-sans bg-[#1E2021] border border-[#303334] px-3 py-1 rounded-md">
           {connectionStatus === 'connected' ? (
             <>
-              <Wifi className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              <ShineText text="Live WS Telemetry" className="text-slate-300 font-semibold" />
-              <span className="text-[10px] text-emerald-400 font-semibold uppercase">Connected</span>
+              <Wifi className="w-3.5 h-3.5 text-[#9AAA78]" />
+              <span className="text-[#F1F0EA] font-medium">Live Telemetry</span>
+              <span className="text-[10px] text-[#9AAA78] font-semibold uppercase px-1.5 py-0.2 bg-[#9AAA78]/15 rounded">
+                Connected
+              </span>
             </>
           ) : (
             <>
-              <WifiOff className="w-3.5 h-3.5 text-amber-400" />
-              <span className="text-slate-400">Telemetry Feed</span>
-              <span className="text-[10px] text-amber-400 font-semibold uppercase">
+              <WifiOff className="w-3.5 h-3.5 text-[#D0A05C]" />
+              <span className="text-[#A4A5A0]">Telemetry Feed</span>
+              <span className="text-[10px] text-[#D0A05C] font-semibold uppercase px-1.5 py-0.2 bg-[#D0A05C]/15 rounded">
                 {connectionStatus}
               </span>
             </>
@@ -59,64 +57,52 @@ export const Navbar = () => {
         </div>
       </div>
 
-      {/* User Actions & Day/Night Toggle */}
+      {/* User Actions & Session Info */}
       <div className="flex items-center gap-3">
-        {/* Day / Night Theme Toggle */}
-        <SmoothButton
-          onClick={toggleTheme}
-          variant="outline"
-          size="icon"
-          title={isDark ? "Switch to Day Mode (Light)" : "Switch to Night Mode (Dark)"}
-          className="rounded-xl border-slate-800 bg-slate-950/70 hover:bg-slate-800 text-amber-400 hover:text-amber-300"
-        >
-          {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-cyan-400" />}
-        </SmoothButton>
-
-        {/* Notification Icon with Animated Spring Count Badge */}
+        {/* Notification Icon with Alert Count Badge */}
         <NotificationBadge count={alertCount} variant="count" ping={alertCount > 0}>
-          <SmoothButton
-            variant="outline"
-            size="icon"
+          <button
             onClick={() => {
               navigate('/incidents');
               setAlertCount(0);
             }}
             title="View Live Incidents"
-            className="rounded-xl border-slate-800 bg-slate-950/70 hover:bg-slate-800"
+            className="w-8 h-8 rounded-lg border border-[#303334] bg-[#1E2021] hover:bg-[#252728] flex items-center justify-center transition-colors cursor-pointer"
           >
-            <Bell className="w-4 h-4 text-amber-400" />
-          </SmoothButton>
+            <Bell className="w-4 h-4 text-[#D0A05C]" />
+          </button>
         </NotificationBadge>
 
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300">
-            <User className="w-4 h-4" />
+        {/* User Identity Pill */}
+        <div className="flex items-center gap-2.5 pl-2 border-l border-[#303334]">
+          <div className="w-7 h-7 rounded-full bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#A4A5A0]">
+            <User className="w-3.5 h-3.5" />
           </div>
           <div className="text-right hidden sm:block">
-            <div className="text-xs font-semibold text-slate-200 flex items-center gap-2 justify-end">
+            <div className="text-xs font-medium text-[#F1F0EA] flex items-center gap-2 justify-end">
               {user?.username || 'SOC Analyst'}
               <span
-                className={`text-[10px] px-2 py-0.5 rounded border uppercase font-mono font-medium ${
+                className={`text-[10px] px-1.5 py-0.2 rounded border uppercase font-medium ${
                   roleBadges[role] || roleBadges.viewer
                 }`}
               >
                 {role}
               </span>
             </div>
-            <div className="text-[10px] text-slate-400">{user?.email || 'analyst@netriq.local'}</div>
+            <div className="text-[10px] text-[#A4A5A0]">{user?.email || 'analyst@netriq.local'}</div>
           </div>
         </div>
 
-        <SmoothButton
+        {/* Logout */}
+        <button
           onClick={logout}
-          variant="ghost"
-          size="icon-sm"
           title="Logout of session"
-          className="text-slate-400 hover:text-rose-400 hover:bg-rose-500/10"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#A4A5A0] hover:text-[#C95F5F] hover:bg-[#C95F5F]/10 transition-colors ml-1 cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
-        </SmoothButton>
+        </button>
       </div>
     </header>
   );
 };
+export default Navbar;

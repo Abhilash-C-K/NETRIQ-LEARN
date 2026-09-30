@@ -3,7 +3,7 @@ import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { StatusBadge } from './StatusBadge';
 import { SeverityBadge } from './SeverityBadge';
-import { ShieldAlert, Server, ArrowRight, Lock, Clock, Undo2, Activity } from 'lucide-react';
+import { ShieldAlert, Server, ArrowRight, Clock, Undo2, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelectDevice }) => {
@@ -21,45 +21,61 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
       ? incident.affected_assets.join(', ')
       : null;
 
+  const normSeverity = String(incident.severity || 'LOW').toUpperCase();
+
+  // Left severity indicator lines: High (#D27C62), Critical (#C95F5F), Medium (#D0A05C), Low (#8CA4B8)
+  const severityIndicatorStyles = {
+    CRITICAL: 'border-l-[3px] border-l-[#C95F5F]',
+    HIGH: 'border-l-[3px] border-l-[#D27C62]',
+    MEDIUM: 'border-l-[3px] border-l-[#D0A05C]',
+    LOW: 'border-l-[3px] border-l-[#8CA4B8]',
+  };
+
   return (
     <Card
       onClick={() => onSelect && onSelect(incident)}
-      className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md hover:border-[#00d1b2]/40 hover:shadow-cyan-950/20 cursor-pointer transition-all duration-200"
+      className={`bg-[#1E2021] hover:bg-[#252728] border border-[#303334] ${
+        severityIndicatorStyles[normSeverity] || severityIndicatorStyles.LOW
+      } text-[#F1F0EA] shadow-none rounded-lg cursor-pointer transition-colors duration-150`}
     >
       <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left Info */}
         <div className="flex items-start gap-3.5">
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[#00d1b2] mt-0.5 shrink-0">
-            <ShieldAlert className="w-5 h-5" />
+          <div className="p-2 rounded-lg bg-[#141516] border border-[#303334] text-[#A4A5A0] mt-0.5 shrink-0">
+            <ShieldAlert className="w-4 h-4" />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
+            {/* Header Badges Row */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-bold text-slate-300">
+              <span className="font-mono text-xs font-semibold text-[#A4A5A0]">
                 #{incident.id ? incident.id.slice(-8) : 'N/A'}
               </span>
               <StatusBadge status={incident.status} />
-              <SeverityBadge severity={incident.severity} />
+              <SeverityBadge severity={incident.severity} size="small" />
 
+              {/* Quarantine: dark red outline #C95F5F */}
               {incident.response_action && (
-                <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-[#C95F5F]/10 text-[#C95F5F] border border-[#C95F5F]/60">
                   {incident.response_action}
                 </span>
               )}
             </div>
 
-            <p className="text-xs font-medium text-slate-200 line-clamp-1 max-w-xl">
-              {incident.description || 'No description provided'}
+            {/* Main incident text: Warm White #F1F0EA */}
+            <p className="text-sm font-medium text-[#F1F0EA] font-sans line-clamp-1 max-w-xl">
+              {incident.description || incident.title || 'Security incident flagged by detection engine'}
             </p>
 
-            <div className="flex items-center gap-4 text-[11px] text-slate-400 font-mono pt-0.5">
+            {/* Metadata row */}
+            <div className="flex items-center gap-4 text-[11px] text-[#A4A5A0] font-mono pt-0.5">
               <span className="flex items-center gap-1">
-                <Clock className="w-3 h-3 text-slate-500" />
+                <Clock className="w-3 h-3 text-[#70736F]" />
                 {formatTimestamp(incident.created_at)}
               </span>
 
               <span className="flex items-center gap-1">
-                <Server className="w-3 h-3 text-cyan-400" />
+                <Server className="w-3 h-3 text-[#8CA4B8]" />
                 {assetDisplay ? (
                   onSelectDevice ? (
                     <button
@@ -69,26 +85,24 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
                         const firstIp = incident.affected_assets?.[0] || assetDisplay;
                         onSelectDevice(firstIp);
                       }}
-                      className="text-cyan-300 hover:text-cyan-100 hover:underline font-semibold cursor-pointer focus:outline-none"
+                      className="text-[#8CA4B8] hover:text-[#9AAA78] hover:underline font-mono cursor-pointer focus:outline-none"
                       title={`View device activity trail for ${incident.affected_assets?.[0] || assetDisplay}`}
                     >
                       {assetDisplay}
                     </button>
                   ) : (
-                    <span className="text-cyan-300 font-semibold">{assetDisplay}</span>
+                    <span className="text-[#8CA4B8]">{assetDisplay}</span>
                   )
                 ) : (
-                  <span className="text-slate-400 italic flex items-center gap-1">
-                    <Lock className="w-2.5 h-2.5" /> Restricted (Viewer)
-                  </span>
+                  <span className="text-[#70736F] italic">Restricted</span>
                 )}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right Actions */}
-        <div className="flex items-center gap-2.5 self-end md:self-center shrink-0">
+        {/* Right Actions: Reverse (neutral #303334) + Details */}
+        <div className="flex items-center gap-2 self-end md:self-center shrink-0">
           {canModify && incident.response_action && (
             <Button
               size="sm"
@@ -101,28 +115,28 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
                   initialAction: incident.response_action,
                 });
               }}
-              className="text-xs border-amber-500/30 text-amber-300 hover:bg-amber-500/10 flex items-center gap-1 h-8"
+              className="text-xs border-[#303334] bg-[#141516] hover:bg-[#252728] text-[#A4A5A0] hover:text-[#F1F0EA] flex items-center gap-1.5 h-8 font-sans font-medium"
             >
               <Undo2 className="w-3.5 h-3.5" />
               Reverse
             </Button>
           )}
 
-          <Button
-            size="sm"
+          <button
             onClick={(e) => {
               e.stopPropagation();
               onSelect(incident);
             }}
-            className="text-xs font-mono font-bold uppercase bg-teal-950/80 hover:bg-teal-900 border border-[#00d1b2]/40 text-[#00d1b2] hover:text-white flex items-center gap-1.5 h-8 shadow-sm transition-all"
-            title="Inspect in Network Monitor"
+            className="text-xs font-sans font-medium bg-[#141516] hover:bg-[#252728] border border-[#303334] text-[#A4A5A0] hover:text-[#F1F0EA] flex items-center gap-1.5 h-8 px-3 rounded-lg transition-colors cursor-pointer"
+            title="Inspect Incident Details"
           >
-            <Activity className="w-3.5 h-3.5 nm-pulse" />
-            <span>Network Traffic</span>
+            <Activity className="w-3.5 h-3.5 text-[#8CA4B8]" />
+            <span>Details</span>
             <ArrowRight className="w-3.5 h-3.5" />
-          </Button>
+          </button>
         </div>
       </CardContent>
     </Card>
   );
 };
+export default IncidentCard;

@@ -11,9 +11,8 @@ import { monitoringService } from '../services/monitoring';
 import { predictionService } from '../services/prediction';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { RippleBackground } from '../components/ui/RippleBackground';
 import { CyberTerminal } from '../components/ui/CyberTerminal';
-import { Activity, Radio, RefreshCw, AlertTriangle, ShieldCheck, Zap, Terminal as TerminalIcon } from 'lucide-react';
+import { Activity, Radio, AlertTriangle, Zap, Terminal as TerminalIcon } from 'lucide-react';
 
 export const Monitoring = () => {
   const { role, hasCapability } = useAuth();
@@ -74,14 +73,14 @@ export const Monitoring = () => {
       const { data, predictionId } = await predictionService.runTestPrediction();
       const payload = {
         prediction_id: predictionId,
-        src_ip: data.flow_summary?.src_ip || '192.168.1.100',
-        dst_ip: data.flow_summary?.dst_ip || '185.220.101.5',
-        src_port: data.flow_summary?.src_port || 54321,
-        dst_port: data.flow_summary?.dst_port || 443,
+        src_ip: data.flow_summary?.src_ip || '10.40.184.165',
+        dst_ip: data.flow_summary?.dst_ip || '159.41.181.98',
+        src_port: data.flow_summary?.src_port || 58496,
+        dst_port: data.flow_summary?.dst_port || 27017,
         protocol: 'TCP',
-        sni: data.flow_summary?.sni || 'tor-exit.node',
+        sni: data.flow_summary?.sni,
         severity: data.risk_level?.toUpperCase() || (data.verdict ? 'HIGH' : 'LOW'),
-        action: data.action?.toUpperCase() || (data.verdict ? 'RECOMMEND_BLOCK' : 'NOTIFY'),
+        action: data.action?.toUpperCase() || (data.verdict ? 'QUARANTINE' : 'NOTIFY'),
         verdict: data.verdict,
         confidence: data.confidence || 0.96,
         timestamp: new Date().toISOString(),
@@ -102,35 +101,30 @@ export const Monitoring = () => {
   );
 
   return (
-    <div className="space-y-6">
-      {/* 1. Sniffer Control Card Container with Magic UI Radar Ripple Background */}
-      <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-900/90 backdrop-blur-md">
-        <RippleBackground mainCircleSize={180} numCircles={6} className="opacity-40" />
-        <div className="relative z-10 p-6">
-          <SnifferControlPanel
-            status={status}
-            onStatusChange={setStatus}
-            isLoading={isLoading}
-          />
-        </div>
-      </div>
+    <div className="space-y-5">
+      {/* 1. Sniffer Control & Statistics (Hierarchy: Capture status -> Statistics) */}
+      <SnifferControlPanel
+        status={status}
+        onStatusChange={setStatus}
+        isLoading={isLoading}
+      />
 
       {/* 2. Operational Metrics Cards */}
       <OperationalMetrics metrics={metrics} />
 
-      {/* 3. Real-Time Flow Rate Telemetry Chart */}
+      {/* 3. Real-Time Flow Throughput Chart */}
       <FlowRateChart entries={feed} isRunning={isRunning} />
 
-      {/* Header Bar for Live Stream */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-3">
+      {/* 4. Live Stream Header Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2A3944] pb-3 pt-2">
         <div className="flex items-center gap-2">
-          <Activity className="w-5 h-5 text-cyan-400" />
-          <h2 className="text-base font-bold font-mono text-slate-100">
-            Live Wire Telemetry Stream
+          <Activity className="w-4 h-4 text-[#71A99D]" />
+          <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">
+            Live Stream Feed
           </h2>
           {isRunning && (
-            <span className="flex items-center gap-1.5 text-xs font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="flex items-center gap-1.5 text-xs font-sans text-[#71A99D] bg-[#71A99D]/15 px-2 py-0.5 rounded border border-[#71A99D]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#71A99D]" />
               SNIFFING ACTIVE
             </span>
           )}
@@ -138,57 +132,55 @@ export const Monitoring = () => {
 
         <div className="flex items-center gap-3">
           {isAdmin && (
-            <Button
+            <button
               onClick={handleSimulateThreat}
-              variant="default"
-              size="sm"
-              className="bg-cyan-600 hover:bg-cyan-500 text-white font-mono text-xs font-bold px-3 py-1.5 rounded-lg border border-cyan-400/40 shadow-sm flex items-center gap-1.5"
+              className="bg-[#19242E] hover:bg-[#202D36] text-[#E7ECEF] border border-[#2A3944] font-sans text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <Zap className="w-3.5 h-3.5 fill-white text-white" />
-              <span className="text-white font-bold">Simulate Threat Flow</span>
-            </Button>
+              <Zap className="w-3.5 h-3.5 text-[#D3A35D]" />
+              <span>Simulate Threat</span>
+            </button>
           )}
 
-          <div className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-lg border border-slate-800 text-xs">
+          <div className="flex items-center gap-1 bg-[#101820] p-1 rounded-lg border border-[#2A3944] text-xs font-sans">
             <button
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded font-medium transition-all ${
-                viewMode === 'table' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                viewMode === 'table' ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]' : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
               }`}
             >
               Connection Table
             </button>
             <button
               onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 rounded font-medium transition-all ${
-                viewMode === 'cards' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1 rounded-md font-medium transition-colors cursor-pointer ${
+                viewMode === 'cards' ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]' : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
               }`}
             >
               Verdict Cards
             </button>
             <button
               onClick={() => setViewMode('terminal')}
-              className={`px-3 py-1.5 rounded font-medium transition-all flex items-center gap-1 ${
-                viewMode === 'terminal' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-400 hover:text-slate-200'
+              className={`px-3 py-1 rounded-md font-medium transition-colors flex items-center gap-1 cursor-pointer ${
+                viewMode === 'terminal' ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]' : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
               }`}
             >
-              <TerminalIcon className="w-3.5 h-3.5 text-cyan-400" />
+              <TerminalIcon className="w-3.5 h-3.5 text-[#7895B2]" />
               Terminal
             </button>
           </div>
         </div>
       </div>
 
-      {/* Disconnected WS Reconnection Banner */}
+      {/* Disconnected WS Banner */}
       {connectionStatus !== 'connected' && (
-        <Card className="bg-amber-950/40 border-amber-800 text-amber-200 backdrop-blur-md">
-          <CardContent className="p-3.5 flex items-center justify-between text-xs font-mono">
+        <Card className="bg-[#19242E] border border-[#D3A35D]/40 text-[#D3A35D] rounded-lg">
+          <CardContent className="p-3 flex items-center justify-between text-xs font-sans">
             <div className="flex items-center gap-2">
-              <Radio className="w-4 h-4 text-amber-400 animate-pulse" />
-              <span>WebSocket stream ({connectionStatus}). Auto-reconnecting to backend telemetry endpoint...</span>
+              <Radio className="w-4 h-4 text-[#D3A35D]" />
+              <span>Telemetry disconnected ({connectionStatus}). Reconnecting to backend endpoint...</span>
             </div>
-            <Button onClick={fetchStatus} variant="ghost" size="sm" className="h-7 text-xs text-amber-300 hover:bg-amber-500/10">
-              Retry Sync
+            <Button onClick={fetchStatus} variant="ghost" size="sm" className="h-6 text-xs text-[#D3A35D] hover:bg-[#D3A35D]/10">
+              Retry
             </Button>
           </CardContent>
         </Card>
@@ -196,30 +188,30 @@ export const Monitoring = () => {
 
       {/* Error Alert */}
       {error && (
-        <Card className="bg-rose-950/40 border-rose-800 text-rose-200">
-          <CardContent className="p-3.5 flex items-center justify-between text-xs">
+        <Card className="bg-[#19242E] border border-[#DF857C]/40 text-[#DF857C] rounded-lg">
+          <CardContent className="p-3 flex items-center justify-between text-xs font-sans">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-rose-400" />
+              <AlertTriangle className="w-4 h-4 text-[#DF857C]" />
               <span>{error}</span>
             </div>
-            <Button onClick={fetchStatus} variant="ghost" size="sm" className="h-7 text-xs text-rose-300 hover:bg-rose-500/10">
+            <Button onClick={fetchStatus} variant="ghost" size="sm" className="h-6 text-xs text-[#DF857C] hover:bg-[#DF857C]/10">
               Dismiss
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* 4. Live Stream Content View (Table vs Cards vs Terminal) */}
+      {/* 5. Packet Data Content View */}
       {!isRunning && feed.length === 0 ? (
-        <Card className="bg-slate-900/60 border-slate-800 p-8 text-center backdrop-blur-md">
-          <CardContent className="space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
-              <Activity className="w-6 h-6" />
+        <Card className="bg-[#19242E] border border-[#2A3944] p-8 text-center rounded-lg">
+          <CardContent className="space-y-2">
+            <div className="w-10 h-10 rounded-full bg-[#101820] border border-[#2A3944] flex items-center justify-center mx-auto text-[#9AA8B2]">
+              <Activity className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-slate-200">
+            <h3 className="text-sm font-semibold text-[#E7ECEF] font-sans">
               Packet Capture Engine Stopped
             </h3>
-            <p className="text-xs text-slate-400 max-w-md mx-auto">
+            <p className="text-xs text-[#9AA8B2] max-w-md mx-auto font-sans">
               {isAdmin
                 ? 'Click "Start Capture" above to initiate Scapy wire listening on active network interfaces.'
                 : 'Packet capture engine is currently offline. Contact an Administrator to enable live sniffing.'}
@@ -235,7 +227,7 @@ export const Monitoring = () => {
         />
       ) : (
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs text-slate-400 px-1 font-mono">
+          <div className="flex items-center justify-between text-xs text-[#9AA8B2] px-1 font-sans">
             <span>Evaluating stream ({feed.length} flows in buffer)</span>
             <span>Max buffer: 50 entries</span>
           </div>
@@ -260,3 +252,4 @@ export const Monitoring = () => {
     </div>
   );
 };
+export default Monitoring;

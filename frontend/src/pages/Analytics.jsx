@@ -38,16 +38,16 @@ export const Analytics = () => {
   }, []);
 
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-5 pb-8">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-6 rounded-xl shadow-xl backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#19242E] border border-[#2A3944] p-5 rounded-lg shadow-none">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-purple-400">
-            <BarChart3 className="w-6 h-6" />
+          <div className="p-2 rounded-lg bg-[#101820] border border-[#2A3944] text-[#7895B2]">
+            <BarChart3 className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-100">Threat Intelligence Analytics</h1>
-            <p className="text-xs text-slate-400">Ensemble model velocity metrics, risk distributions, and behavioral trends.</p>
+            <h1 className="text-lg font-semibold text-[#E7ECEF] font-sans">Threat Intelligence</h1>
+            <p className="text-xs text-[#9AA8B2] font-sans">Detection velocity, risk distribution, and ensemble decision metrics</p>
           </div>
         </div>
 
@@ -56,94 +56,98 @@ export const Analytics = () => {
           size="sm"
           onClick={fetchTrends}
           disabled={isLoading}
-          className="text-xs border-slate-700 hover:bg-slate-800 flex items-center gap-1.5"
+          className="text-xs border-[#2A3944] bg-[#101820] hover:bg-[#202D36] text-[#E7ECEF] flex items-center gap-1.5"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           Refresh Metrics
         </Button>
       </div>
 
-      {/* KPI Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-slate-900/80 border-slate-800 text-slate-100">
-          <CardContent className="p-5 flex items-center justify-between">
+      {/* KPI Row (Almost everything white, only 3.18% gets critical color per spec) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* TOTAL FLOWS: 148,290 */}
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <span className="text-xs text-slate-400 block font-medium">TOTAL EVALUATED FLOWS</span>
-              <span className="text-2xl font-bold font-mono text-cyan-400 mt-1 block">148,290</span>
-              <span className="text-[11px] text-emerald-400 font-mono mt-0.5 block flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" /> +12.4% vs last 24h
+              <span className="text-[11px] text-[#9AA8B2] block font-sans font-medium uppercase tracking-wide">TOTAL FLOWS</span>
+              <span className="text-2xl font-mono font-bold text-[#E7ECEF] mt-1 block">148,290</span>
+              <span className="text-[11px] text-[#9AA8B2] font-sans mt-0.5 block flex items-center gap-1">
+                +12.4% vs last 24h
               </span>
             </div>
-            <div className="p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-              <Activity className="w-6 h-6" />
+            <div className="p-2.5 rounded-lg bg-[#101820] border border-[#2A3944] text-[#9AA8B2]">
+              <Activity className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/80 border-slate-800 text-slate-100">
-          <CardContent className="p-5 flex items-center justify-between">
+        {/* MALICIOUS FLOW RATE: 3.18% (Critical #DF857C) */}
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <span className="text-xs text-slate-400 block font-medium">MALICIOUS FLOW RATIO</span>
-              <span className="text-2xl font-bold font-mono text-rose-400 mt-1 block">3.18%</span>
-              <span className="text-[11px] text-rose-400/80 font-mono mt-0.5 block">4,715 High/Critical</span>
+              <span className="text-[11px] text-[#9AA8B2] block font-sans font-medium uppercase tracking-wide">MALICIOUS FLOW RATE</span>
+              <span className="text-2xl font-mono font-bold text-[#DF857C] mt-1 block">3.18%</span>
+              <span className="text-[11px] text-[#9AA8B2] font-sans mt-0.5 block">4,715 flagged events</span>
             </div>
-            <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400">
-              <ShieldAlert className="w-6 h-6" />
+            <div className="p-2.5 rounded-lg bg-[#101820] border border-[#2A3944] text-[#DF857C]">
+              <ShieldAlert className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/80 border-slate-800 text-slate-100">
-          <CardContent className="p-5 flex items-center justify-between">
+        {/* MEAN INFERENCE LATENCY: 1.42 ms */}
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <span className="text-xs text-slate-400 block font-medium">MEAN INFERENCE LATENCY</span>
-              <span className="text-2xl font-bold font-mono text-emerald-400 mt-1 block">1.42 ms</span>
-              <span className="text-[11px] text-slate-400 font-mono mt-0.5 block">Target: &lt; 2.0 ms SLA</span>
+              <span className="text-[11px] text-[#9AA8B2] block font-sans font-medium uppercase tracking-wide">MEAN INFERENCE LATENCY</span>
+              <span className="text-2xl font-mono font-bold text-[#E7ECEF] mt-1 block">1.42 ms</span>
+              <span className="text-[11px] text-[#9AA8B2] font-sans mt-0.5 block">Target &lt; 2.0 ms SLA</span>
             </div>
-            <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <Zap className="w-6 h-6" />
+            <div className="p-2.5 rounded-lg bg-[#101820] border border-[#2A3944] text-[#9AA8B2]">
+              <Zap className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-900/80 border-slate-800 text-slate-100">
-          <CardContent className="p-5 flex items-center justify-between">
+        {/* BLOCKED CONNECTIONS: 284 */}
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <span className="text-xs text-slate-400 block font-medium">SDN CONTAINMENTS</span>
-              <span className="text-2xl font-bold font-mono text-purple-400 mt-1 block">24</span>
-              <span className="text-[11px] text-purple-300 font-mono mt-0.5 block">100% Reversal Integrity</span>
+              <span className="text-[11px] text-[#9AA8B2] block font-sans font-medium uppercase tracking-wide">BLOCKED CONNECTIONS</span>
+              <span className="text-2xl font-mono font-bold text-[#E7ECEF] mt-1 block">284</span>
+              <span className="text-[11px] text-[#9AA8B2] font-sans mt-0.5 block">Layer 1 & 2 containment</span>
             </div>
-            <div className="p-3 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
-              <Layers className="w-6 h-6" />
+            <div className="p-2.5 rounded-lg bg-[#101820] border border-[#2A3944] text-[#9AA8B2]">
+              <Layers className="w-5 h-5" />
             </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Chart Rows */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Threat Distribution Breakdown */}
-        <Card className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md">
-          <CardHeader className="border-b border-slate-800/80 pb-4">
-            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-200">
-              <PieChart className="w-4 h-4 text-cyan-400" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Attack Vector Chart: Dominant #7895B2, higher risk #D3A35D / #DF857C */}
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardHeader className="border-b border-[#2A3944] pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-[#E7ECEF] font-sans">
+              <PieChart className="w-4 h-4 text-[#7895B2]" />
               Attack Vector Classification Breakdown
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-4">
+          <CardContent className="p-5 space-y-4">
             {[
-              { type: 'Distributed Denial of Service (DDoS)', percent: 46, color: 'bg-rose-500', count: '2,168 flows' },
-              { type: 'Reconnaissance & Port Scanning', percent: 28, color: 'bg-amber-500', count: '1,320 flows' },
-              { type: 'SSH / RDP Brute Force Attempt', percent: 14, color: 'bg-purple-500', count: '660 flows' },
-              { type: 'Zero-Day Anomaly (IsolationForest)', percent: 9, color: 'bg-cyan-500', count: '424 flows' },
-              { type: 'Lateral Infiltration / Shellcode', percent: 3, color: 'bg-indigo-500', count: '143 flows' },
+              { type: 'Distributed Denial of Service (DDoS)', percent: 46, color: 'bg-[#DF857C]', count: '2,168 flows' },
+              { type: 'Reconnaissance & Port Scanning', percent: 28, color: 'bg-[#D3A35D]', count: '1,320 flows' },
+              { type: 'SSH / RDP Brute Force Attempt', percent: 14, color: 'bg-[#7895B2]', count: '660 flows' },
+              { type: 'Zero-Day Outlier (IsolationForest)', percent: 9, color: 'bg-[#7895B2]', count: '424 flows' },
+              { type: 'Lateral Infiltration Attempt', percent: 3, color: 'bg-[#7895B2]', count: '143 flows' },
             ].map((item) => (
               <div key={item.type} className="space-y-1.5">
-                <div className="flex justify-between text-xs font-mono">
-                  <span className="text-slate-300">{item.type}</span>
-                  <span className="text-slate-400">{item.percent}% ({item.count})</span>
+                <div className="flex justify-between text-xs font-sans">
+                  <span className="text-[#E7ECEF]">{item.type}</span>
+                  <span className="text-[#9AA8B2] font-mono">{item.percent}% ({item.count})</span>
                 </div>
-                <div className="w-full h-2 rounded-full bg-slate-950 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-[#101820] overflow-hidden">
                   <div className={`h-full rounded-full ${item.color}`} style={{ width: `${item.percent}%` }} />
                 </div>
               </div>
@@ -152,41 +156,41 @@ export const Analytics = () => {
         </Card>
 
         {/* Model Ensemble Confidence Distribution */}
-        <Card className="bg-slate-900/80 border-slate-800 text-slate-100 shadow-md">
-          <CardHeader className="border-b border-slate-800/80 pb-4">
-            <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-200">
-              <Cpu className="w-4 h-4 text-purple-400" />
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardHeader className="border-b border-[#2A3944] pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-[#E7ECEF] font-sans">
+              <Cpu className="w-4 h-4 text-[#7895B2]" />
               Ensemble Confidence & Agreement
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 space-y-5">
-            <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">UNANIMOUS AGREEMENT (Supervised + Anomaly)</span>
-                <span className="font-bold text-emerald-400">88.4%</span>
+          <CardContent className="p-5 space-y-3.5">
+            <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944] space-y-1">
+              <div className="flex justify-between items-center text-xs font-sans">
+                <span className="text-[#9AA8B2] font-medium uppercase tracking-wide">UNANIMOUS AGREEMENT</span>
+                <span className="font-bold text-[#E7ECEF] font-mono">88.4%</span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Both Random Forest/XGBoost classification and Isolation Forest anomaly detector concurred on threat verdict.
+              <p className="text-[11px] text-[#9AA8B2] font-sans leading-relaxed">
+                Supervised classification and Isolation Forest anomaly detector concurred on threat verdict.
               </p>
             </div>
 
-            <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">HEURISTIC FALLBACK OVERRIDES (CASE B)</span>
-                <span className="font-bold text-amber-400">2.1%</span>
+            <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944] space-y-1">
+              <div className="flex justify-between items-center text-xs font-sans">
+                <span className="text-[#9AA8B2] font-medium uppercase tracking-wide">HEURISTIC OVERRIDES</span>
+                <span className="font-bold text-[#D3A35D] font-mono">2.1%</span>
               </div>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-[#9AA8B2] font-sans leading-relaxed">
                 Malformed frames evaluated via deterministic burst thresholds and port escalation rules.
               </p>
             </div>
 
-            <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 space-y-3">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">ZERO-DAY WEIGHT INFLUENCE</span>
-                <span className="font-bold text-cyan-400">0.80 (Active)</span>
+            <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944] space-y-1">
+              <div className="flex justify-between items-center text-xs font-sans">
+                <span className="text-[#9AA8B2] font-medium uppercase tracking-wide">ZERO-DAY WEIGHT</span>
+                <span className="font-bold text-[#7895B2] font-mono">0.80</span>
               </div>
-              <p className="text-[11px] text-slate-400">
-                Unsupervised anomaly score heavily weighted in decision fusion to catch novel zero-day behaviors.
+              <p className="text-[11px] text-[#9AA8B2] font-sans leading-relaxed">
+                Unsupervised anomaly score weighted in decision fusion to catch novel zero-day behaviors.
               </p>
             </div>
           </CardContent>

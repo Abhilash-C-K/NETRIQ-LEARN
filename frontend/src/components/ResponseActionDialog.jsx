@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { ShieldAlert, ShieldCheck, AlertTriangle, X, Check, Lock } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, X, Check, Lock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const ResponseActionDialog = ({
   isOpen,
   onClose,
   onConfirm,
-  actionType = 'reverse', // 'reverse' or 'quarantine'
+  actionType = 'reverse',
   targetIp = '',
   targetMac = null,
   initialAction = 'quarantine',
@@ -36,64 +35,64 @@ export const ResponseActionDialog = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-700 rounded-xl shadow-2xl text-slate-100 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#101820]/80 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg bg-[#19242E] border border-[#2A3944] rounded-lg shadow-2xl text-[#E7ECEF] overflow-hidden">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-950/40">
+        <div className="flex items-center justify-between p-5 border-b border-[#2A3944] bg-[#101820]/60">
           <div className="flex items-center gap-2.5">
             <div
               className={`p-2 rounded-lg border ${
                 isReverse
-                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                  : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+                  ? 'bg-[#D3A35D]/15 border-[#D3A35D]/30 text-[#D3A35D]'
+                  : 'bg-[#DF857C]/15 border-[#DF857C]/30 text-[#DF857C]'
               }`}
             >
               <ShieldAlert className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-100">
-                {isReverse ? 'Confirm Enforcement Reversal' : 'Confirm Manual SDN Quarantine'}
+              <h3 className="text-sm font-semibold text-[#E7ECEF] font-sans">
+                {isReverse ? 'Confirm Mitigation Reversal' : 'Confirm Manual Containment'}
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-[#9AA8B2] font-sans">
                 {isReverse
-                  ? 'Reverse an active firewall block or SDN host isolation'
-                  : 'Enforce immediate Layer 2 port isolation on the network switch'}
+                  ? 'Release an active firewall block or host isolation'
+                  : 'Enforce Layer 2 port quarantine on the target host'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
             disabled={isLoading}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-md text-[#9AA8B2] hover:text-[#E7ECEF] hover:bg-[#202D36] transition-colors cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Modal Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {!canPerform && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center gap-2 text-xs text-rose-300">
-              <Lock className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>Permission Denied: Your role lacks the required capability ({requiredCapability}).</span>
+            <div className="p-3 bg-[#DF857C]/15 border border-[#DF857C]/30 rounded-lg flex items-center gap-2 text-xs text-[#DF857C] font-sans">
+              <Lock className="w-4 h-4 shrink-0" />
+              <span>Permission Denied: Missing capability ({requiredCapability}).</span>
             </div>
           )}
 
-          {/* Target Info Matrix */}
-          <div className="bg-slate-950/60 p-4 rounded-lg border border-slate-800 space-y-2 font-mono text-xs">
+          {/* Target Info */}
+          <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944] space-y-1.5 font-mono text-xs">
             <div className="flex justify-between items-center">
-              <span className="text-slate-400">TARGET ASSET IP:</span>
-              <span className="font-bold text-cyan-400">{targetIp || 'Unknown IP'}</span>
+              <span className="text-[#9AA8B2]">TARGET ASSET IP:</span>
+              <span className="font-bold text-[#E7ECEF]">{targetIp || 'Unknown IP'}</span>
             </div>
             {targetMac && (
               <div className="flex justify-between items-center">
-                <span className="text-slate-400">TARGET MAC:</span>
-                <span className="text-slate-300">{targetMac}</span>
+                <span className="text-[#9AA8B2]">TARGET MAC:</span>
+                <span className="text-[#E7ECEF]">{targetMac}</span>
               </div>
             )}
             <div className="flex justify-between items-center">
-              <span className="text-slate-400">ENFORCEMENT LAYER:</span>
-              <span className="font-bold text-purple-300">
+              <span className="text-[#9AA8B2]">ENFORCEMENT LAYER:</span>
+              <span className="font-bold text-[#7895B2]">
                 {initialAction.toLowerCase().includes('quarantine')
                   ? 'Layer 2 (SDN Host Quarantine)'
                   : 'Layer 1 (Perimeter Firewall Block)'}
@@ -102,19 +101,17 @@ export const ResponseActionDialog = ({
           </div>
 
           {/* High-Stakes Warning Box */}
-          <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div className="text-xs text-amber-200/90 leading-relaxed">
-              <p className="font-semibold text-amber-300 mb-0.5">Operational Consequence Warning</p>
+          <div className="p-3 bg-[#D3A35D]/10 border border-[#D3A35D]/30 rounded-lg flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-[#D3A35D] shrink-0 mt-0.5" />
+            <div className="text-xs text-[#E7ECEF]/90 leading-relaxed font-sans">
+              <p className="font-semibold text-[#D3A35D] mb-0.5">Operational Impact</p>
               {isReverse ? (
                 <span>
-                  Releasing quarantine or unblocking will re-admit this target host to normal network routing.
-                  Ensure the threat is fully mitigated and audited.
+                  Releasing quarantine will re-admit this target host to normal network routing.
                 </span>
               ) : (
                 <span>
-                  Enforcing quarantine will instruct the SDN controller to drop all host packets and cut network
-                  connectivity immediately.
+                  Enforcing quarantine cuts host network connectivity immediately.
                 </span>
               )}
             </div>
@@ -122,69 +119,64 @@ export const ResponseActionDialog = ({
 
           {/* Reason Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1">
               Audit Justification / Operator Reason
             </label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder={
-                isReverse
-                  ? 'e.g. Threat verified resolved; malware host remediated and clean.'
-                  : 'e.g. Manual operator quarantine triggered following anomalous traffic burst.'
-              }
+              placeholder="Operator rationale for audit ledger..."
               rows={2}
-              className="w-full text-xs bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-500 transition-colors"
+              className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] placeholder-[#687883] focus:outline-none focus:border-[#71A99D] font-sans transition-colors"
             />
           </div>
 
-          {/* Explicit Confirmation Checkbox */}
+          {/* Confirmation Checkbox */}
           <label className="flex items-center gap-2 cursor-pointer pt-1">
             <input
               type="checkbox"
               checked={confirmedRisk}
               onChange={(e) => setConfirmedRisk(e.target.checked)}
-              className="rounded border-slate-700 bg-slate-950 text-cyan-600 focus:ring-0 focus:ring-offset-0"
+              className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
             />
-            <span className="text-xs text-slate-300 select-none">
-              I have reviewed the target asset and confirm this enforcement action.
+            <span className="text-xs text-[#9AA8B2] select-none font-sans">
+              I have reviewed the target asset and confirm this action.
             </span>
           </label>
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#2A3944]">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isLoading}
-              className="text-xs border-slate-700 hover:bg-slate-800"
+              className="text-xs border-[#2A3944] bg-[#101820] hover:bg-[#202D36] text-[#E7ECEF]"
             >
               Cancel
             </Button>
-            <Button
+            <button
               type="submit"
               disabled={!canPerform || !confirmedRisk || isLoading}
-              variant={isReverse ? 'default' : 'destructive'}
-              className={`text-xs font-semibold flex items-center gap-1.5 ${
-                isReverse ? 'bg-amber-600 hover:bg-amber-500 text-white' : ''
+              className={`text-xs font-sans font-semibold h-9 px-4 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 ${
+                isReverse
+                  ? 'bg-[#7895B2] hover:bg-[#67839e] text-[#101820]'
+                  : 'bg-[#DF857C] hover:bg-[#cf746b] text-[#101820]'
               }`}
             >
               {isLoading ? (
-                <>
-                  <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin mr-1" />
-                  Dispatching Action...
-                </>
+                <span>Dispatching...</span>
               ) : (
                 <>
-                  <Check className="w-4 h-4" />
-                  {isReverse ? 'Confirm & Reverse Action' : 'Confirm & Quarantine Host'}
+                  <Check className="w-3.5 h-3.5" />
+                  <span>{isReverse ? 'Confirm Reversal' : 'Confirm Quarantine'}</span>
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
     </div>
   );
 };
+export default ResponseActionDialog;

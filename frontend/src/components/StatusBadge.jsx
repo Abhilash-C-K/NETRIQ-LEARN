@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, Search, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Search, CheckCircle2 } from 'lucide-react';
 
 export const StatusBadge = ({ status = 'active', className = '' }) => {
   const normStatus = (status || 'active').toLowerCase();
@@ -7,9 +7,9 @@ export const StatusBadge = ({ status = 'active', className = '' }) => {
   if (normStatus === 'investigating') {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono tracking-wide bg-amber-500/15 text-amber-400 border border-amber-500/30 ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium tracking-wide bg-[#D0A05C]/15 text-[#D0A05C] border border-[#D0A05C]/30 ${className}`}
       >
-        <Search className="w-3 h-3 animate-spin text-amber-400" style={{ animationDuration: '3s' }} />
+        <Search className="w-3 h-3 text-[#D0A05C]" />
         INVESTIGATING
       </span>
     );
@@ -18,21 +18,22 @@ export const StatusBadge = ({ status = 'active', className = '' }) => {
   if (normStatus === 'resolved') {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono tracking-wide bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium tracking-wide bg-[#9AAA78]/15 text-[#9AAA78] border border-[#9AAA78]/30 ${className}`}
       >
-        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+        <CheckCircle2 className="w-3 h-3 text-[#9AAA78]" />
         RESOLVED
       </span>
     );
   }
 
-  // Default: 'active' or 'open'
+  // Default: 'active' or 'open' - formatted as critical state #C95F5F per design spec
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold font-mono tracking-wide bg-rose-500/15 text-rose-400 border border-rose-500/30 ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium tracking-wide bg-[#C95F5F]/15 text-[#C95F5F] border border-[#C95F5F]/30 ${className}`}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping inline-block" />
+      <span className="w-1.5 h-1.5 rounded-full bg-[#C95F5F] inline-block" />
       ACTIVE
     </span>
   );
 };
+export default StatusBadge;

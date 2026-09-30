@@ -4,26 +4,32 @@ import { ShieldCheck, ShieldAlert, AlertTriangle, Flame } from 'lucide-react';
 export const SeverityBadge = ({ severity = 'LOW', size = 'medium', showIcon = true }) => {
   const normSeverity = String(severity).toUpperCase();
 
+  // Security states: Healthy (#9AAA78), Low (#8CA4B8), Medium (#D0A05C), High (#D27C62), Critical (#C95F5F)
   const styles = {
-    LOW: {
-      bg: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-glow-low',
+    HEALTHY: {
+      bg: 'bg-[#9AAA78]/15 text-[#9AAA78] border-[#9AAA78]/30',
       icon: ShieldCheck,
-      dot: 'bg-emerald-500',
+      dot: 'bg-[#9AAA78]',
+    },
+    LOW: {
+      bg: 'bg-[#8CA4B8]/15 text-[#8CA4B8] border-[#8CA4B8]/30',
+      icon: ShieldCheck,
+      dot: 'bg-[#8CA4B8]',
     },
     MEDIUM: {
-      bg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+      bg: 'bg-[#D0A05C]/15 text-[#D0A05C] border-[#D0A05C]/30',
       icon: AlertTriangle,
-      dot: 'bg-amber-500',
+      dot: 'bg-[#D0A05C]',
     },
     HIGH: {
-      bg: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+      bg: 'bg-[#D27C62]/15 text-[#D27C62] border-[#D27C62]/30',
       icon: ShieldAlert,
-      dot: 'bg-orange-500',
+      dot: 'bg-[#D27C62]',
     },
     CRITICAL: {
-      bg: 'bg-rose-500/15 text-rose-400 border-rose-500/40 shadow-glow-rose',
+      bg: 'bg-[#C95F5F]/15 text-[#C95F5F] border-[#C95F5F]/30',
       icon: Flame,
-      dot: 'bg-rose-500 animate-pulse',
+      dot: 'bg-[#C95F5F]',
     },
   };
 
@@ -31,18 +37,19 @@ export const SeverityBadge = ({ severity = 'LOW', size = 'medium', showIcon = tr
   const Icon = currentStyle.icon;
 
   const sizeClasses = {
-    small: 'text-[10px] px-2 py-0.5 font-mono gap-1',
-    medium: 'text-xs px-2.5 py-1 font-mono gap-1.5',
-    large: 'text-sm px-3.5 py-1.5 font-mono gap-2 font-semibold',
+    small: 'text-[10px] px-2 py-0.5 gap-1',
+    medium: 'text-xs px-2.5 py-0.5 gap-1.5',
+    large: 'text-xs px-3 py-1 gap-1.5 font-semibold',
   };
 
   return (
     <span
-      className={`inline-flex items-center rounded-full border font-semibold tracking-wider uppercase ${currentStyle.bg} ${sizeClasses[size]}`}
+      className={`inline-flex items-center rounded-md border font-medium tracking-wide uppercase ${currentStyle.bg} ${sizeClasses[size]}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${currentStyle.dot}`} />
-      {showIcon && <Icon className="w-3.5 h-3.5 shrink-0" />}
+      {showIcon && <Icon className="w-3 h-3 shrink-0" />}
       <span>{normSeverity}</span>
     </span>
   );
 };
+export default SeverityBadge;

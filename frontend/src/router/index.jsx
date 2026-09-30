@@ -1,7 +1,8 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 import { AppLayout } from '../layouts/AppLayout';
+import { Splash } from '../pages/Splash';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
 import { Monitoring } from '../pages/Monitoring';
@@ -17,34 +18,36 @@ import { NotFound } from '../pages/NotFound';
 export const AppRouter = () => {
   return (
     <Routes>
+      {/* Root Route: Fullscreen Splash Screen (redirects to /login if dismissed this session) */}
+      <Route path="/" element={<Splash />} />
+
+      {/* Authentication Route */}
       <Route path="/login" element={<Login />} />
 
-      {/* Authenticated Dashboard Routes */}
+      {/* Authenticated Application Routes (Protected via AppLayout) */}
       <Route
-        path="/"
         element={
           <ProtectedRoute>
             <AppLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route
-          path="dashboard"
+          path="/dashboard"
           element={
             <ProtectedRoute requiredCapability="VIEW_SMART_SUMMARY">
               <Dashboard />
             </ProtectedRoute>
           }
         />
-        <Route path="monitoring" element={<Monitoring />} />
-        <Route path="incidents" element={<Incidents />} />
-        <Route path="history" element={<History />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="ai-performance" element={<AIPerformance />} />
+        <Route path="/monitoring" element={<Monitoring />} />
+        <Route path="/incidents" element={<Incidents />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/ai-performance" element={<AIPerformance />} />
         <Route
-          path="users"
+          path="/users"
           element={
             <ProtectedRoute requiredCapability="MANAGE_USERS">
               <Users />
@@ -52,7 +55,7 @@ export const AppRouter = () => {
           }
         />
         <Route
-          path="settings"
+          path="/settings"
           element={
             <ProtectedRoute requiredCapability="MANAGE_SETTINGS">
               <Settings />
@@ -61,7 +64,10 @@ export const AppRouter = () => {
         />
       </Route>
 
+      {/* 404 Fallback */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
+
+export default AppRouter;

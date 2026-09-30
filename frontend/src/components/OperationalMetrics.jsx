@@ -2,74 +2,62 @@ import React from 'react';
 import { Card, CardContent } from './ui/card';
 import { AlertOctagon, Filter, Cpu } from 'lucide-react';
 import { NumberTicker } from './ui/NumberTicker';
-import { GlowHover } from './ui/GlowHover';
 
 export const OperationalMetrics = ({ metrics }) => {
   const queueDrops = metrics?.queue_drop_count || 0;
   const nonIpCount = metrics?.non_ip_count || 0;
   const malformedCount = metrics?.malformed_ip_count || 0;
 
-  const items = [
-    {
-      id: 'queue-drops',
-      element: (
-        <Card className={`border backdrop-blur-md shadow-md transition-all flex-1 min-w-[240px] ${queueDrops > 0 ? 'bg-rose-950/40 border-rose-800 text-rose-200' : 'bg-slate-900/90 border-slate-800 text-slate-200'}`}>
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Queue Overflow Drops</p>
-              <p className={`text-2xl font-mono font-bold mt-1 ${queueDrops > 0 ? 'text-rose-400 animate-pulse' : 'text-slate-100'}`}>
-                <NumberTicker value={queueDrops} />
-              </p>
-              <p className="text-[11px] text-slate-400 mt-1">Packets dropped when consumer queue limit (10k) was hit</p>
-            </div>
-            <div className={`p-3 rounded-xl border ${queueDrops > 0 ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : 'bg-slate-800/80 border-slate-700/80 text-slate-400'}`}>
-              <AlertOctagon className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-      ),
-    },
-    {
-      id: 'non-ip',
-      element: (
-        <Card className="bg-slate-900/90 border-slate-800 text-slate-200 backdrop-blur-md shadow-md flex-1 min-w-[240px]">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Non-IP Filtered (Case A)</p>
-              <p className="text-2xl font-mono font-bold text-sky-400 mt-1">
-                <NumberTicker value={nonIpCount} />
-              </p>
-              <p className="text-[11px] text-slate-400 mt-1">Non-IPv4/v6 frames filtered out (ARP, LLDP, STP)</p>
-            </div>
-            <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
-              <Filter className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-      ),
-    },
-    {
-      id: 'malformed',
-      element: (
-        <Card className="bg-slate-900/90 border-slate-800 text-slate-200 backdrop-blur-md shadow-md flex-1 min-w-[240px]">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Malformed Traffic (Case B)</p>
-              <p className="text-2xl font-mono font-bold text-amber-400 mt-1">
-                <NumberTicker value={malformedCount} />
-              </p>
-              <p className="text-[11px] text-slate-400 mt-1">Corrupted packets evaluated via HeuristicFallback engine</p>
-            </div>
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-              <Cpu className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-      ),
-    },
-  ];
-
   return (
-    <GlowHover items={items} className="flex flex-wrap gap-4" glowIntensity={0.2} maskSize={350} />
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {/* Queue Overflow Drops */}
+      <Card className="bg-[#1E2021] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg">
+        <CardContent className="p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#A4A5A0]">Queue Drops</p>
+            <p className={`text-xl font-mono font-bold mt-1 ${queueDrops > 0 ? 'text-[#C95F5F]' : 'text-[#F1F0EA]'}`}>
+              <NumberTicker value={queueDrops} />
+            </p>
+            <p className="text-[11px] text-[#70736F] mt-0.5 font-sans">Drops when consumer queue limit (10k) hit</p>
+          </div>
+          <div className="p-2.5 rounded-lg border border-[#303334] bg-[#141516] text-[#A4A5A0]">
+            <AlertOctagon className="w-5 h-5" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Non-IP Filtered (Case A) */}
+      <Card className="bg-[#1E2021] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg">
+        <CardContent className="p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#A4A5A0]">Non-IP Filtered</p>
+            <p className="text-xl font-mono font-bold text-[#F1F0EA] mt-1">
+              <NumberTicker value={nonIpCount} />
+            </p>
+            <p className="text-[11px] text-[#70736F] mt-0.5 font-sans">Frames filtered (ARP, LLDP, STP)</p>
+          </div>
+          <div className="p-2.5 rounded-lg border border-[#303334] bg-[#141516] text-[#8CA4B8]">
+            <Filter className="w-5 h-5" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Malformed Traffic (Case B) */}
+      <Card className="bg-[#1E2021] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg">
+        <CardContent className="p-4 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#A4A5A0]">Malformed (Case B)</p>
+            <p className="text-xl font-mono font-bold text-[#D0A05C] mt-1">
+              <NumberTicker value={malformedCount} />
+            </p>
+            <p className="text-[11px] text-[#70736F] mt-0.5 font-sans">Evaluated via Heuristic engine</p>
+          </div>
+          <div className="p-2.5 rounded-lg border border-[#303334] bg-[#141516] text-[#D0A05C]">
+            <Cpu className="w-5 h-5" />
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
+export default OperationalMetrics;

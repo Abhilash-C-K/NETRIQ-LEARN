@@ -8,68 +8,117 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        corpta: ['"Corpta"', 'sans-serif'],
+        syncopate: ['"Syncopate"', 'sans-serif'],
+        cinzel: ['"Cinzel"', 'serif'],
+        syne: ['"Syne"', 'sans-serif'],
+        marcellus: ['"Marcellus"', 'serif'],
+        orbitron: ['"Orbitron"', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Consolas', 'monospace'],
+      },
+      borderRadius: {
+        lg: '8px',
+        xl: '10px',
+        '2xl': '12px',
       },
       colors: {
-        // Deep Space Blue-Black palette
+        // NetrIQ Industrial/Editorial Design System: Graphite + Warm White + Olive
+        netriq: {
+          bg: '#141516',         // App background (warm charcoal)
+          sidebar: '#17191A',    // Sidebar
+          card: '#1E2021',       // Cards (neutral surface)
+          raised: '#252728',     // Raised card
+          border: '#303334',     // Border (1px solid)
+          primary: '#F1F0EA',    // Main text (warm white)
+          secondary: '#A4A5A0',  // Secondary text
+          muted: '#70736F',      // Muted text
+          accent: '#9AAA78',     // NetrIQ accent (Olive)
+          accentHover: '#A9B989',// Accent hover
+          info: '#8CA4B8',       // Information / Steel blue
+          healthy: '#9AAA78',    // Healthy state
+          low: '#8CA4B8',        // Low risk
+          medium: '#D0A05C',     // Medium risk (Amber)
+          high: '#D27C62',       // High risk (Rust/Orange)
+          critical: '#C95F5F',   // Critical state (Muted Crimson)
+        },
+        // Slate mapping: Neutralized to Graphite / Warm White
         slate: {
-          50: '#f8fafc',
-          100: '#eef2f7',  // Primary warm off-white text
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#8896ab',  // Secondary metadata text
-          500: '#64748b',
-          600: '#475569',
-          700: '#223046',  // Active/hover borders
-          800: '#1a2436',  // Subtle dividers & borders
-          850: '#0d1421',  // Card surface
-          900: '#0d1421',  // Card surface
-          950: '#050810',  // Canvas background
+          50: '#F8F9FA',
+          100: '#F1F0EA',  // Main text
+          200: '#E4E3DC',
+          300: '#C5C6BF',
+          400: '#A4A5A0',  // Secondary text
+          500: '#70736F',  // Muted text
+          600: '#4D5051',
+          700: '#303334',  // Active/hover borders
+          800: '#303334',  // Standard border
+          850: '#252728',  // Raised card surface
+          900: '#1E2021',  // Card surface
+          950: '#141516',  // App canvas background
         },
-        // Single cohesive Accent Family: Teal / Cyan (replaces cyan + purple clash)
+        // Brand Olive Palette
+        olive: {
+          DEFAULT: '#9AAA78',
+          hover: '#A9B989',
+          light: '#BDCBA0',
+          dark: '#7A895A',
+        },
+        // Compatibility Aliases for Teal (mapped to Olive)
         teal: {
-          DEFAULT: '#14b8c4',
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',  // Lighter glow variant
-          400: '#2dd4bf',
-          500: '#14b8c4',  // Primary teal-cyan
-          600: '#0891a3',  // Deeper variant
-          700: '#0e7490',
-          800: '#155e75',
-          900: '#164e63',
-          950: '#042f2e',
+          DEFAULT: '#9AAA78',
+          50: '#F4F6EE',
+          100: '#E5EAD9',
+          200: '#D0D9BD',
+          300: '#B6C49E',
+          400: '#9AAA78',
+          500: '#9AAA78',
+          600: '#839263',
+          700: '#68754E',
+          800: '#4F593A',
+          900: '#2C3220',
+          950: '#17191A',
         },
+        // Compatibility Aliases for Cyan/Purple (mapped to Information/Steel #8CA4B8)
         cyan: {
-          300: '#5eead4',  // Lighter glow variant
-          400: '#14b8c4',  // Primary teal-cyan
-          450: '#0891a3',  // Deeper variant
-          500: '#14b8c4',  // Primary teal-cyan
-          600: '#0891a3',  // Deeper variant
-          950: '#042f2e',
+          DEFAULT: '#8CA4B8',
+          300: '#AFC3D3',
+          400: '#8CA4B8',
+          450: '#7993A8',
+          500: '#8CA4B8',
+          600: '#6B8398',
+          950: '#17191A',
         },
-        // Harmonize legacy purple AI badges into the unified teal accent family
         purple: {
-          300: '#5eead4',
-          400: '#14b8c4',
-          500: '#0891a3',
-          900: '#082f38',
-          950: '#041f24',
+          300: '#AFC3D3',
+          400: '#8CA4B8',
+          500: '#7993A8',
+          900: '#1E2021',
+          950: '#141516',
         },
-        // Standard functional SOC Severity scale (preserved exactly)
+        // SOC Functional Severity scale matching NetrIQ specifications
         risk: {
-          low: '#10b981',      // Emerald
-          medium: '#f59e0b',   // Amber
-          high: '#f97316',     // Orange
-          critical: '#f43f5e', // Rose
+          healthy: '#9AAA78',
+          low: '#8CA4B8',
+          medium: '#D0A05C',
+          high: '#D27C62',
+          critical: '#C95F5F',
+        },
+        status: {
+          healthy: '#9AAA78',
+          low: '#8CA4B8',
+          medium: '#D0A05C',
+          high: '#D27C62',
+          critical: '#C95F5F',
         }
       },
       boxShadow: {
-        'glow-cyan': '0 0 15px -3px rgba(20, 184, 196, 0.35)',
-        'glow-teal': '0 0 15px -3px rgba(20, 184, 196, 0.35)',
-        'glow-rose': '0 0 15px -3px rgba(244, 63, 94, 0.35)',
+        none: 'none',
+        subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.25)',
+        card: '0 2px 8px -2px rgba(0, 0, 0, 0.3)',
+        'glow-cyan': 'none',
+        'glow-teal': 'none',
+        'glow-rose': 'none',
       }
     },
   },

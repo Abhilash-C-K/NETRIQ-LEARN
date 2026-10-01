@@ -11,7 +11,11 @@ logger = get_logger(__name__)
 # Canonical feature list: must exactly match FeatureExtractor.extract_features() output keys and order.
 # Training and inference both use this list — no padding or truncation is performed at runtime.
 # If FeatureExtractor adds/removes features, retrain the IsolationForest and update this list together.
+# 78-feature contract — must exactly match the trained RandomForest and IsolationForest models.
+# Derived from model.feature_names_in_ (models/network_traffic_RandomForest.joblib).
+# Do NOT edit manually; regenerate by inspecting model.feature_names_in_ after retraining.
 EXPECTED_FEATURE_NAMES = [
+    'Destination Port',
     'Flow Duration', 'Total Fwd Packets', 'Total Backward Packets', 'Total Length of Fwd Packets',
     'Total Length of Bwd Packets', 'Fwd Packet Length Max', 'Fwd Packet Length Min', 'Fwd Packet Length Mean',
     'Fwd Packet Length Std', 'Bwd Packet Length Max', 'Bwd Packet Length Min', 'Bwd Packet Length Mean',
@@ -21,9 +25,11 @@ EXPECTED_FEATURE_NAMES = [
     'Fwd PSH Flags', 'Bwd PSH Flags', 'Fwd URG Flags', 'Bwd URG Flags', 'Fwd Header Length',
     'Bwd Header Length', 'Fwd Packets/s', 'Bwd Packets/s', 'Min Packet Length', 'Max Packet Length',
     'Packet Length Mean', 'Packet Length Std', 'Packet Length Variance', 'FIN Flag Count', 'SYN Flag Count',
-    'RST Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'URG Flag Count', 'CWR Flag Count',
+    'RST Flag Count', 'PSH Flag Count', 'ACK Flag Count', 'URG Flag Count', 'CWE Flag Count',
     'ECE Flag Count', 'Down/Up Ratio', 'Average Packet Size', 'Avg Fwd Segment Size', 'Avg Bwd Segment Size',
-    'Fwd Header Length.1', 'Subflow Fwd Packets', 'Subflow Fwd Bytes', 'Subflow Bwd Packets',
+    'Fwd Header Length.1', 'Fwd Avg Bytes/Bulk', 'Fwd Avg Packets/Bulk', 'Fwd Avg Bulk Rate',
+    'Bwd Avg Bytes/Bulk', 'Bwd Avg Packets/Bulk', 'Bwd Avg Bulk Rate',
+    'Subflow Fwd Packets', 'Subflow Fwd Bytes', 'Subflow Bwd Packets',
     'Subflow Bwd Bytes', 'Init_Win_bytes_forward', 'Init_Win_bytes_backward', 'act_data_pkt_fwd',
     'min_seg_size_forward', 'Active Mean', 'Active Std', 'Active Max', 'Active Min', 'Idle Mean',
     'Idle Std', 'Idle Max', 'Idle Min'
@@ -90,6 +96,8 @@ class AnomalyDetector:
         """Loads Isolation Forest artifact and calibration parameters from models directory."""
         try:
             model_path = os.path.join(self._models_dir, "network_traffic_IsolationForest.joblib")
+            if not os.path.exists(model_path):
+                model_path = os.path.join(self._models_dir, "isolation_forest.joblib")
             metadata_path = os.path.join(self._models_dir, "metadata.json")
 
             if not os.path.exists(model_path):
@@ -104,15 +112,14 @@ class AnomalyDetector:
             self._model = joblib.load(model_path)
             logger.info(f"[AnomalyDetector] Isolation Forest loaded successfully from {model_path}")
 
-            # Schema consistency check: warn loudly if trained shape doesn't match expected
-            trained_n = getattr(self._model, "n_features_in_", None)
-            expected_n = len(EXPECTED_FEATURE_NAMES)
-            if trained_n is not None and trained_n != expected_n:
-                logger.warning(
-                    f"[AnomalyDetector][SCHEMA_MISMATCH] Model trained on {trained_n} features, "
-                    f"but EXPECTED_FEATURE_NAMES has {expected_n}. "
-                    f"Retrain with scripts/train_anomaly_detector.py before deploying."
-                )
+            # Schema consistency check: use model's feature_names_in_ if available, else EXPECTED_FEATURE_NAMES
+            if hasattr(self._model, "feature_names_in_"):
+                self._feature_names = list(self._model.feature_names_in_)
+            else:
+                self._feature_names = EXPECTED_FEATURE_NAMES
+
+            trained_n = getattr(self._model, "n_features_in_", len(self._feature_names))
+            expected_n = len(self._feature_names)
 
             if os.path.exists(metadata_path):
                 with open(metadata_path, 'r') as f:
@@ -147,22 +154,17 @@ class AnomalyDetector:
             return 0.0
 
         try:
-            # Extract values in canonical EXPECTED_FEATURE_NAMES order.
-            # FeatureExtractor always emits all 71 keys (stat_summary returns 0.0 for empty lists,
-            # so even single-packet flows produce complete output). Missing keys are therefore not
-            # expected from the live pipeline — they indicate a partial dict from a manual caller
-            # or a future FeatureExtractor schema change. Logged at DEBUG level (not WARNING) since
-            # this is a non-critical fallback; 0.0 is the correct statistical default for absent features.
-            missing = [k for k in EXPECTED_FEATURE_NAMES if k not in features]
+            # Extract values in canonical feature_names order.
+            feature_names = getattr(self, "_feature_names", EXPECTED_FEATURE_NAMES)
+            missing = [k for k in feature_names if k not in features]
             if missing:
                 logger.debug(
                     f"[AnomalyDetector][MISSING_FEATURE] {len(missing)} feature(s) absent from input dict, "
-                    f"defaulting to 0.0: {missing}. Expected from manual callers only — "
-                    f"FeatureExtractor always emits all {len(EXPECTED_FEATURE_NAMES)} keys."
+                    f"defaulting to 0.0: {missing}."
                 )
-            numeric_features = [float(features.get(k, 0.0)) for k in EXPECTED_FEATURE_NAMES]
+            numeric_features = [float(features.get(k, 0.0)) for k in feature_names]
 
-            X = np.array([numeric_features])
+            X = np.array([numeric_features], dtype=np.float32)
 
             # Scikit-learn's decision_function returns negative values for anomalies and positive for inliers.
             # Inverting sign so higher value = higher anomaly severity.

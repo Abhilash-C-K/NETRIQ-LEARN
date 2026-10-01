@@ -355,8 +355,8 @@ class PredictService:
                 pass
 
         features_meta = metadata.get("features", {})
-        canonical_count = features_meta.get("canonical_count", 71)
-        feature_names = features_meta.get("feature_names", [])
+        feature_names = features_meta.get("network", [])  # 78-col network model feature list
+        canonical_count = len(feature_names) if feature_names else 78
 
         calibration = metadata.get("calibration", {}).get("isolation_forest", {})
         trained_at = calibration.get("trained_at", "2026-09-24 16:12:28")

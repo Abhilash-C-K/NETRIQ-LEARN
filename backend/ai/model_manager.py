@@ -60,6 +60,12 @@ class ModelManager:
                         os.path.join(self._models_dir, "system_logs_LightGBM.joblib")
                     )
                     
+                    vec_path = os.path.join(self._models_dir, "system_logs_vectorizer.joblib")
+                    if os.path.exists(vec_path):
+                        self._vectorizer = joblib.load(vec_path)
+                    else:
+                        self._vectorizer = None
+                    
                     self._validate_metadata()
                     logger.info("All models loaded and validated successfully.")
                 else:
@@ -121,6 +127,19 @@ class ModelManager:
     def get_encoder(self) -> Any:
         self.load_models()
         return self._encoder
+
+    def get_vectorizer(self) -> Any:
+        self.load_models()
+        return getattr(self, "_vectorizer", None)
+
+    def get_metadata(self) -> Dict[str, Any]:
+        self.load_models()
+        return self._metadata
+
+    def get_threshold(self, traffic_type: TrafficType) -> float:
+        self.load_models()
+        thresholds = self._metadata.get("thresholds", {})
+        return float(thresholds.get(traffic_type.value, 0.5))
         
     def get_model_name(self, traffic_type: TrafficType) -> str:
         self.load_models()

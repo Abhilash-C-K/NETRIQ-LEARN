@@ -10,11 +10,32 @@ build/
 *.egg-info/
 
 # Datasets and Large Data Files
+data/
+dataset/
 datasets/
+archive/
+netriq CORRECT DATASET/
+training/firewall/
+training/network/
+training/system/
 *.csv
+*.tsv
 *.parquet
 *.paraquet
 *.pcap
+*.pcapng
+*.npz
+*.npy
+*.h5
+*.hdf5
+*.feather
+*.arrow
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
 
 # Trained AI Models & Binary Serialized Artifacts
 models/

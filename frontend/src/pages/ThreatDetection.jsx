@@ -32,8 +32,6 @@ export const ThreatDetection = () => {
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [quarantining, setQuarantining] = useState(false);
-  const [shapViewMode, setShapViewMode] = useState('analyst'); // 'analyst' | 'waterfall' | 'raw'
-  const [showShapGuide, setShowShapGuide] = useState(false);
 
   // Load real incidents & threats from MongoDB
   const loadThreats = async () => {
@@ -317,14 +315,6 @@ export const ThreatDetection = () => {
         {/* Filter Controls & Refresh */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setShowShapGuide(!showShapGuide)}
-            className="px-3 py-1.5 rounded-xl border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            <span>{showShapGuide ? 'Hide SHAP Guide' : 'What is SHAP?'}</span>
-          </button>
-
-          <button
             onClick={() => loadThreats()}
             className="px-3 py-1.5 rounded-xl border border-[#dbe6f5] hover:bg-[#f0f5fc] text-xs font-semibold text-[#0a1c3d] flex items-center gap-1.5 cursor-pointer transition-colors"
           >
@@ -362,33 +352,6 @@ export const ThreatDetection = () => {
           </div>
         </div>
       </div>
-
-      {/* Educational SHAP Explainer Card (Toggleable) */}
-      {showShapGuide && (
-        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-[#021338] text-white p-5 rounded-2xl shadow-md border border-blue-700/50 space-y-3 animate-in fade-in">
-          <div className="flex items-center gap-2.5">
-            <Brain className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-sm font-bold text-white">How SHAP Explains Machine Learning Decisions</h2>
-          </div>
-          <p className="text-xs text-blue-100 leading-relaxed">
-            In cybersecurity, AI models must not be black boxes. <strong>SHAP (SHapley Additive exPlanations)</strong> is a game-theoretic method that reverse-engineers the decision of models like <em>Random Forest</em> and <em>LightGBM</em>. It calculates how much each individual network flow metric (e.g. packet frequency, SYN flag ratios, byte entropy) pushed the AI's final probability score up towards a <strong>Malicious Verdict</strong> or down towards <strong>Normal Traffic</strong>.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-[11px]">
-            <div className="bg-white/10 backdrop-blur p-3 rounded-xl border border-white/10">
-              <span className="font-bold text-cyan-300 block mb-1">1. Baseline Starting Risk (~5%)</span>
-              <p className="text-blue-100">Every packet starts with a normal background probability of being benign or malicious.</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur p-3 rounded-xl border border-white/10">
-              <span className="font-bold text-red-300 block mb-1">2. Risk Drivers (Red +SHAP)</span>
-              <p className="text-blue-100">Abnormal spikes (e.g. 96% unconfirmed connection handshakes) add positive mathematical weight towards an attack verdict.</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur p-3 rounded-xl border border-white/10">
-              <span className="font-bold text-emerald-300 block mb-1">3. Normalizing Factors (Green -SHAP)</span>
-              <p className="text-blue-100">Standard behaviors (e.g. standard RFC header formatting) pull the probability back down towards benign.</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Threat Grid: Threat List on Left, SHAP Detail Panel on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -515,7 +478,7 @@ export const ThreatDetection = () => {
 
               {/* PLAIN ENGLISH "WHY DID THE AI FLAG THIS?" EXPLANATION CARD */}
               {plainDiagnosis && (
-                <div className="bg-[#f0f6fd] border border-[#bfdbfe] rounded-2xl p-5 space-y-3">
+                <div className="bg-[#f0f6fd] border border-[#bfdbfe] rounded-2xl p-5 space-y-3.5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Zap className="w-4 h-4 text-blue-600" />
@@ -528,7 +491,7 @@ export const ThreatDetection = () => {
                     </span>
                   </div>
 
-                  <div className="text-xs font-bold text-blue-950">
+                  <div className="text-sm font-bold text-blue-950">
                     {plainDiagnosis.headline}
                   </div>
 
@@ -536,188 +499,21 @@ export const ThreatDetection = () => {
                     {plainDiagnosis.rootCause}
                   </p>
 
-                  <div className="p-3 bg-white rounded-xl border border-blue-200/60 text-xs text-[#1e293b] space-y-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-blue-900 text-[11px]">
+                  <div className="p-3.5 bg-white rounded-xl border border-blue-200/60 text-xs text-[#1e293b] space-y-2">
+                    <div className="flex items-center gap-1.5 font-bold text-blue-900 text-xs">
                       <Info className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Mathematical Root Cause (SHAP Finding):</span>
+                      <span>Mathematical Root Cause (SHAP Attribution):</span>
                     </div>
-                    <p className="text-[11px] text-[#475569] leading-relaxed">
+                    <p className="text-xs text-[#475569] leading-relaxed">
                       {plainDiagnosis.whyAiFlagged}
                     </p>
-                    <div className="text-[10px] font-mono text-blue-700 pt-1 border-t border-slate-100">
-                      📊 Baseline Deviation: <strong>{plainDiagnosis.baselineComparison}</strong>
+                    <div className="text-xs font-mono text-blue-700 pt-1.5 border-t border-slate-100 flex items-center justify-between">
+                      <span>Baseline Deviation: <strong>{plainDiagnosis.baselineComparison}</strong></span>
+                      <span className="text-[11px] font-bold text-red-600">Decision Confidence: {(activeThreat.confidence * 100).toFixed(0)}%</span>
                     </div>
                   </div>
                 </div>
               )}
-
-              {/* SHAP EXPLAINABILITY BREAKDOWN CONTROLS */}
-              <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 gap-2">
-                  <div className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-blue-600" />
-                    <span className="text-xs font-bold text-[#0a1c3d]">
-                      SHAP Decision Attribution Breakdown
-                    </span>
-                  </div>
-
-                  {/* Mode switcher tabs */}
-                  <div className="flex items-center bg-[#f0f5fc] p-1 rounded-xl border border-[#dbe6f5] text-[11px] font-medium">
-                    <button
-                      onClick={() => setShapViewMode('analyst')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                        shapViewMode === 'analyst'
-                          ? 'bg-white text-[#0a1c3d] font-bold shadow-xs'
-                          : 'text-[#687d9a] hover:text-[#0a1c3d]'
-                      }`}
-                    >
-                      Analyst Explanations
-                    </button>
-                    <button
-                      onClick={() => setShapViewMode('waterfall')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                        shapViewMode === 'waterfall'
-                          ? 'bg-white text-[#0a1c3d] font-bold shadow-xs'
-                          : 'text-[#687d9a] hover:text-[#0a1c3d]'
-                      }`}
-                    >
-                      Risk Waterfall
-                    </button>
-                    <button
-                      onClick={() => setShapViewMode('raw')}
-                      className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                        shapViewMode === 'raw'
-                          ? 'bg-white text-[#0a1c3d] font-bold shadow-xs'
-                          : 'text-[#687d9a] hover:text-[#0a1c3d]'
-                      }`}
-                    >
-                      Raw Feature Vector
-                    </button>
-                  </div>
-                </div>
-
-                {/* VIEW MODE 1: ANALYST EXPLANATIONS */}
-                {shapViewMode === 'analyst' && (
-                  <div className="space-y-3 mt-3">
-                    {activeThreat.shap_features.map((feat, idx) => {
-                      const isPositive = feat.impact > 0;
-                      const absPercent = Math.min(100, Math.round(Math.abs(feat.impact) * 160));
-
-                      return (
-                        <div key={idx} className="p-4 rounded-xl border border-[#e2eaf4] bg-white shadow-2xs space-y-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-[#0a1c3d]">{feat.plainTitle}</span>
-                                <span className="font-mono text-[10px] text-[#687d9a] bg-[#f8fafc] px-1.5 py-0.5 rounded border border-[#e2eaf4]">
-                                  {feat.feature}
-                                </span>
-                              </div>
-                              <div className="text-[11px] text-[#475569] mt-0.5">
-                                Observed: <strong className="font-mono text-red-600">{feat.value}</strong> · Normal baseline: <span className="font-mono text-[#687d9a]">{feat.baseline}</span>
-                              </div>
-                            </div>
-
-                            <span
-                              className={`font-mono font-bold text-xs px-2 py-0.5 rounded ${
-                                isPositive ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                              }`}
-                            >
-                              {isPositive ? `+${(feat.impact * 100).toFixed(0)}% Risk Pushed` : `${(feat.impact * 100).toFixed(0)}% Normalizing`}
-                            </span>
-                          </div>
-
-                          {/* Visual Contribution Bar */}
-                          <div className="w-full h-2 bg-[#f1f5f9] rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all ${
-                                isPositive
-                                  ? 'bg-gradient-to-r from-orange-500 to-red-600'
-                                  : 'bg-emerald-500'
-                              }`}
-                              style={{ width: `${absPercent}%` }}
-                            />
-                          </div>
-
-                          <div className="text-[11px] text-[#687d9a] leading-relaxed">
-                            💡 <strong>Why this matters:</strong> {feat.explanation}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* VIEW MODE 2: RISK WATERFALL (GAME THEORY CUMULATIVE SCORE) */}
-                {shapViewMode === 'waterfall' && (
-                  <div className="p-4 rounded-xl border border-[#e2eaf4] bg-[#f8fafc] space-y-3 mt-3">
-                    <div className="flex items-center justify-between text-xs pb-2 border-b border-[#e2eaf4]">
-                      <span className="font-bold text-[#0a1c3d]">Mathematical Risk Accumulation</span>
-                      <span className="font-mono text-[#687d9a] text-[11px]">TreeExplainer Base Value: 0.05</span>
-                    </div>
-
-                    <div className="space-y-2 text-xs">
-                      {/* Step 0: Baseline Normal */}
-                      <div className="flex items-center justify-between p-2 rounded-lg bg-white border border-[#e2eaf4]">
-                        <span className="text-[#687d9a]">Expected Normal Network Baseline (Base Risk)</span>
-                        <span className="font-mono font-bold text-[#0a1c3d]">5.0%</span>
-                      </div>
-
-                      {/* Positive Drivers */}
-                      {activeThreat.shap_features.map((feat, idx) => (
-                        <div
-                          key={idx}
-                          className={`flex items-center justify-between p-2 rounded-lg border ${
-                            feat.impact > 0 ? 'bg-red-50/50 border-red-200 text-red-900' : 'bg-emerald-50/50 border-emerald-200 text-emerald-900'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            {feat.impact > 0 ? <ArrowUpRight className="w-3.5 h-3.5 text-red-600" /> : <ArrowDownRight className="w-3.5 h-3.5 text-emerald-600" />}
-                            <span className="font-medium text-[11px]">{feat.plainTitle}</span>
-                          </div>
-                          <span className="font-mono font-bold text-xs">
-                            {feat.impact > 0 ? `+${(feat.impact * 100).toFixed(1)}%` : `${(feat.impact * 100).toFixed(1)}%`}
-                          </span>
-                        </div>
-                      ))}
-
-                      {/* Final Result */}
-                      <div className="flex items-center justify-between p-3 rounded-xl bg-[#0a1c3d] text-white font-bold mt-2">
-                        <span>Final Model Verdict Confidence</span>
-                        <span className="font-mono text-sm text-cyan-400">{(activeThreat.confidence * 100).toFixed(1)}% MALICIOUS</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* VIEW MODE 3: RAW CICIDS-2017 FEATURE VECTOR */}
-                {shapViewMode === 'raw' && (
-                  <div className="overflow-x-auto border border-[#e2eaf4] rounded-xl mt-3">
-                    <table className="w-full text-left text-xs">
-                      <thead className="bg-[#f8fafc] border-b border-[#e2eaf4] text-[10px] text-[#687d9a] uppercase">
-                        <tr>
-                          <th className="p-2.5">Feature Key</th>
-                          <th className="p-2.5">Observed Value</th>
-                          <th className="p-2.5">Baseline</th>
-                          <th className="p-2.5 text-right">SHAP Value</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[#edf2f9] font-mono text-[11px]">
-                        {activeThreat.shap_features.map((feat, idx) => (
-                          <tr key={idx} className="hover:bg-[#f8fafc]">
-                            <td className="p-2.5 text-[#0a1c3d] font-bold">{feat.feature}</td>
-                            <td className="p-2.5 text-[#334155]">{feat.value}</td>
-                            <td className="p-2.5 text-[#687d9a]">{feat.baseline}</td>
-                            <td className={`p-2.5 text-right font-bold ${feat.impact > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                              {feat.impact > 0 ? `+${feat.impact.toFixed(4)}` : feat.impact.toFixed(4)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
 
               {/* RECOMMENDED SOC PLAYBOOK ACTION */}
               {plainDiagnosis && (

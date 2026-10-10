@@ -9,6 +9,7 @@ import sys
 import time
 import asyncio
 from datetime import datetime, timedelta
+from typing import Dict, Any, List
 from dotenv import load_dotenv
 
 # Ensure root directory is in sys.path
@@ -19,7 +20,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", "backend", ".env"))
 from backend.database.database import DatabaseManager
 
 # Realistic test device profiles
-DEVICES = {
+DEVICES: Dict[str, Any] = {
     "192.168.1.105": {
         "role": "Eng Workstation (Compromised / C2 beaconing)",
         "flows": [
@@ -233,9 +234,11 @@ async def run_injection():
     print("[Sandbox] Seeding multi-day device telemetry flows into 'threats' collection...")
     for ip, data in DEVICES.items():
         src_port_base = 51000
-        for f in data["flows"]:
-            flow_ts = now - (f["offset_hours"] * 3600)
-            src_port = src_port_base + int(f["offset_hours"] * 10) % 5000
+        flows: List[Dict[str, Any]] = data.get("flows", [])
+        for f in flows:
+            offset_hours = float(f.get("offset_hours", 0.0))
+            flow_ts = now - (offset_hours * 3600)
+            src_port = src_port_base + int(offset_hours * 10) % 5000
             
             doc = {
                 "timestamp": flow_ts,

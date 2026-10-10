@@ -15,7 +15,7 @@ class IncidentService:
     @staticmethod
     def _generate_incident_code(item_id: str, index: int = 0) -> str:
         try:
-            val = int(str(item_id)[-4:], 16) % 900 + 100
+            val = int(item_id[-4:], 16) % 900 + 100
             return f"INC-{val}"
         except Exception:
             return f"INC-{101 + index}"

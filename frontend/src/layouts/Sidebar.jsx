@@ -176,13 +176,8 @@ export const Sidebar = () => {
             />
           </div>
 
-          <div>
-            <div className="font-extrabold text-xl text-white tracking-tight flex items-center">
-              NetriQ
-            </div>
-            <div className="text-[11px] text-cyan-200/80 font-normal leading-tight">
-              Adaptive Network Security
-            </div>
+          <div className="font-extrabold text-2xl text-white tracking-tight flex items-center">
+            NetrIQ
           </div>
         </div>
 

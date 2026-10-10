@@ -15,9 +15,6 @@ export const Navbar = () => {
         <h1 className="text-2xl font-extrabold text-[#0a1c3d] tracking-tight">
           Welcome, {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Admin'}
         </h1>
-        <p className="text-xs text-[#687d9a] mt-0.5 font-medium">
-          Real-time network monitoring and intelligent threat response
-        </p>
       </div>
 
       {/* Right: Search, Notification Bell, User Avatar */}

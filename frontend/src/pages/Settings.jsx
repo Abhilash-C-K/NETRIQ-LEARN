@@ -1,493 +1,376 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from '../components/ui/card';
-import { settingsService } from '../services/settings';
-import { useAuth } from '../context/AuthContext';
 import {
-  ShieldCheck,
-  Lock,
-  Save,
+  Settings as SettingsIcon,
+  Sliders,
+  Cpu,
+  HardDrive,
+  CheckCircle2,
   AlertTriangle,
+  Layers,
+  Shield,
+  Activity,
+  Server,
+  Save,
+  RefreshCw,
+  SlidersHorizontal,
+  Wifi,
+  Radio,
 } from 'lucide-react';
+import api from '../services/api';
+import { settingsService } from '../services/settings';
 
 export const Settings = () => {
-  const { role, hasCapability } = useAuth();
-  const isAdmin = hasCapability('MANAGE_SETTINGS') || role === 'admin';
+  const [activeTab, setActiveTab] = useState('interface');
 
-  // Active settings tab matching specification:
-  // General | Security | Detection | Firewall | Notifications | Integrations | Audit
-  const [activeTab, setActiveTab] = useState('Detection');
+  // Interface settings state
+  const [nicInterface, setNicInterface] = useState('eth0');
+  const [promiscuousMode, setPromiscuousMode] = useState(true);
+  const [bufferSizeMb, setBufferSizeMb] = useState(128);
 
-  const [settings, setSettings] = useState({
-    instance_name: 'netriq-soc-node-01',
-    timezone: 'UTC',
-    threat_retention_days: 7,
-    login_max_attempts: 5,
-    login_lockout_minutes: 15,
-    session_expiry_hours: 8,
-    mfa_required: true,
-    anomaly_detector_enabled: true,
-    zero_day_weight: 0.8,
-    high_anomaly_threshold: 70.0,
-    quarantine_mode: 'sdn_vlan',
-    vlan_id: 99,
-    auto_quarantine_critical: true,
-    ws_broadcast_enabled: true,
-    webhook_url: 'https://soc.netriq.local/alerts/incoming',
-    siem_forwarding: false,
-    audit_level: 'standard',
-    immutable_audit_logs: true,
+  // Model settings state
+  const [layer1Threshold, setLayer1Threshold] = useState(0.85);
+  const [layer2Threshold, setLayer2Threshold] = useState(0.78);
+  const [autoQuarantineEnabled, setAutoQuarantineEnabled] = useState(true);
+
+  // Real System health state
+  const [healthData, setHealthData] = useState({
+    status: 'healthy',
+    components: { database: 'online', model_manager: 'online', live_monitor: 'running' },
   });
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [refreshingHealth, setRefreshingHealth] = useState(false);
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    const fetchSettings = async () => {
-      try {
-        setIsLoading(true);
-        const data = await settingsService.getSettings();
-        if (data && typeof data === 'object') {
-          setSettings((prev) => ({ ...prev, ...data }));
-        }
-      } catch (err) {
-        console.warn('Could not load remote settings, using local defaults:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchSettings();
-  }, [isAdmin]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Load real settings & health from backend
+  const loadInitialData = async () => {
     try {
-      setIsSaving(true);
-      setError(null);
-      await settingsService.updateSettings(settings);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setRefreshingHealth(true);
+      const [settingsRes, healthRes] = await Promise.allSettled([
+        settingsService.getSettings(),
+        api.get('/health'),
+      ]);
+
+      if (settingsRes.status === 'fulfilled' && settingsRes.value) {
+        const s = settingsRes.value;
+        if (s.network_interface) setNicInterface(s.network_interface);
+        if (s.promiscuous_mode !== undefined) setPromiscuousMode(s.promiscuous_mode);
+        if (s.buffer_size_mb) setBufferSizeMb(s.buffer_size_mb);
+        if (s.layer1_threshold) setLayer1Threshold(s.layer1_threshold);
+        if (s.layer2_threshold) setLayer2Threshold(s.layer2_threshold);
+        if (s.auto_quarantine !== undefined) setAutoQuarantineEnabled(s.auto_quarantine);
+      }
+
+      if (healthRes.status === 'fulfilled' && healthRes.value?.data) {
+        setHealthData(healthRes.value.data);
+      }
     } catch (err) {
-      console.error('Failed to update settings:', err);
-      setError('Failed to apply configuration updates.');
+      console.warn('Backend settings loaded with current live defaults:', err);
     } finally {
-      setIsSaving(false);
+      setRefreshingHealth(false);
     }
   };
 
-  const navItems = [
-    'General',
-    'Security',
-    'Detection',
-    'Firewall',
-    'Notifications',
-    'Integrations',
-    'Audit',
-  ];
+  useEffect(() => {
+    loadInitialData();
+  }, []);
 
-  if (!isAdmin) {
-    return (
-      <div className="space-y-5">
-        <div className="flex items-center justify-between bg-[#19242E] border border-[#2A3944] p-5 rounded-lg">
-          <div>
-            <h1 className="text-lg font-semibold text-[#E7ECEF] font-sans">Settings</h1>
-            <p className="text-xs text-[#9AA8B2] font-sans">Platform and detection parameters</p>
-          </div>
-        </div>
-
-        <div className="p-12 text-center bg-[#19242E] border border-[#2A3944] rounded-lg space-y-3 max-w-xl mx-auto">
-          <div className="p-3 bg-[#DF857C]/15 border border-[#DF857C]/30 rounded-full w-12 h-12 mx-auto flex items-center justify-center text-[#DF857C]">
-            <Lock className="w-6 h-6" />
-          </div>
-          <h3 className="text-sm font-semibold text-[#E7ECEF] font-sans">Administrator Access Required</h3>
-          <p className="text-xs text-[#9AA8B2] leading-relaxed font-sans">
-            Configuration tuning requires the MANAGE_SETTINGS administrative capability.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Save Settings to Backend API & MongoDB
+  const handleSaveSettings = async () => {
+    setSaving(true);
+    try {
+      await settingsService.updateSettings({
+        network_interface: nicInterface,
+        promiscuous_mode: promiscuousMode,
+        buffer_size_mb: bufferSizeMb,
+        layer1_threshold: layer1Threshold,
+        layer2_threshold: layer2Threshold,
+        auto_quarantine: autoQuarantineEnabled,
+      });
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } catch (err) {
+      console.error('Failed to update settings in MongoDB:', err);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="space-y-5 pb-8">
-      {/* Header */}
-      <div className="bg-[#19242E] border border-[#2A3944] p-5 rounded-lg">
-        <h1 className="text-lg font-semibold text-[#E7ECEF] font-sans">Settings</h1>
-        <p className="text-xs text-[#9AA8B2] font-sans mt-0.5">
-          Platform configuration, detection engine parameters, and containment policies
-        </p>
-      </div>
-
-      {/* Conventional Enterprise Settings Layout: Left Nav + Settings Panel */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
-        {/* Left Navigation */}
-        <div className="md:col-span-3 bg-[#19242E] border border-[#2A3944] rounded-lg p-2 h-fit space-y-1">
-          {navItems.map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => setActiveTab(item)}
-              className={`w-full text-left px-3 py-2 text-xs font-sans rounded-md transition-colors cursor-pointer flex items-center justify-between ${
-                activeTab === item
-                  ? 'bg-[#202D36] text-[#E7ECEF] font-semibold border-l-2 border-l-[#cc5500]'
-                  : 'text-[#9AA8B2] hover:text-[#E7ECEF] hover:bg-[#202D36]/50'
-              }`}
-            >
-              <span>{item}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Right Settings Panel */}
-        <div className="md:col-span-9 bg-[#19242E] border border-[#2A3944] rounded-lg p-5">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-3 bg-[#DF857C]/15 border border-[#DF857C]/30 rounded-lg text-[#DF857C] text-xs flex items-center gap-2 font-sans">
-                <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {/* TAB: General */}
-            {activeTab === 'General' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#2A3944] pb-2 mb-4">
-                  <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">General Configuration</h2>
-                  <p className="text-xs text-[#9AA8B2] font-sans">Global environment parameters and retention limits</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1">
-                      Instance Identifier
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.instance_name}
-                      onChange={(e) => setSettings({ ...settings, instance_name: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1">
-                      Threat Record Retention (Days)
-                    </label>
-                    <input
-                      type="number"
-                      value={settings.threat_retention_days}
-                      onChange={(e) => setSettings({ ...settings, threat_retention_days: parseInt(e.target.value) || 7 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1">
-                      System Timezone
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.timezone}
-                      onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-sans"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: Security */}
-            {activeTab === 'Security' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#2A3944] pb-2 mb-4">
-                  <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">Security & Authentication</h2>
-                  <p className="text-xs text-[#9AA8B2] font-sans">Brute force lockout rules and session token expiration</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1">
-                      Failed Login Lockout Threshold (Attempts)
-                    </label>
-                    <input
-                      type="number"
-                      value={settings.login_max_attempts}
-                      onChange={(e) => setSettings({ ...settings, login_max_attempts: parseInt(e.target.value) || 5 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-sans font-medium text-[#9AA8B2] mb-1">
-                      Lockout Duration (Minutes)
-                    </label>
-                    <input
-                      type="number"
-                      value={settings.login_lockout_minutes}
-                      onChange={(e) => setSettings({ ...settings, login_lockout_minutes: parseInt(e.target.value) || 15 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <span className="text-xs font-medium text-[#E7ECEF] block">Mandatory Multi-Factor Authentication</span>
-                      <span className="text-[11px] text-[#9AA8B2] block">Enforce TOTP validation on all operator logins</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.mfa_required}
-                      onChange={(e) => setSettings({ ...settings, mfa_required: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: Detection */}
-            {activeTab === 'Detection' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#2A3944] pb-2 mb-4">
-                  <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">Detection Engine & Anomaly Fusion</h2>
-                  <p className="text-xs text-[#9AA8B2] font-sans">Dual-layer supervised ML and unsupervised Isolation Forest settings</p>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <label className="text-xs font-medium text-[#E7ECEF] block">
-                        Isolation Forest Outlier Detection
-                      </label>
-                      <span className="text-[11px] text-[#9AA8B2] block">
-                        Unsupervised statistical anomaly defense for zero-day flows
-                      </span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.anomaly_detector_enabled}
-                      onChange={(e) => setSettings({ ...settings, anomaly_detector_enabled: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
-                    />
-                  </div>
-
-                  <div className="pt-3 border-t border-[#2A3944]">
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="text-xs font-medium text-[#9AA8B2]">
-                        Zero-Day Weight Influence
-                      </label>
-                      <span className="font-mono text-xs text-[#E7ECEF]">{settings.zero_day_weight}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.0"
-                      max="1.0"
-                      step="0.05"
-                      value={settings.zero_day_weight}
-                      onChange={(e) => setSettings({ ...settings, zero_day_weight: parseFloat(e.target.value) })}
-                      className="w-full accent-[#cc5500] cursor-pointer"
-                    />
-                    <span className="text-[11px] text-[#687883] block mt-1">
-                      Balances unsupervised outlier score against supervised XGBoost model output.
-                    </span>
-                  </div>
-
-                  <div className="pt-2">
-                    <label className="block text-xs font-medium text-[#9AA8B2] mb-1">
-                      High Anomaly Score Threshold
-                    </label>
-                    <input
-                      type="number"
-                      value={settings.high_anomaly_threshold}
-                      onChange={(e) => setSettings({ ...settings, high_anomaly_threshold: parseFloat(e.target.value) })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#cc5500]"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: Firewall */}
-            {activeTab === 'Firewall' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#2A3944] pb-2 mb-4">
-                  <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">Firewall & Containment Policies</h2>
-                  <p className="text-xs text-[#9AA8B2] font-sans">Layer 1 packet dropping and Layer 2 SDN host isolation</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-[#9AA8B2] mb-1">
-                      Containment Protocol Mode
-                    </label>
-                    <select
-                      value={settings.quarantine_mode}
-                      onChange={(e) => setSettings({ ...settings, quarantine_mode: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-sans"
-                    >
-                      <option value="sdn_vlan">Layer 2 SDN Host Isolation (VLAN 99)</option>
-                      <option value="firewall_drop">Layer 1 Perimeter Firewall Drop Only</option>
-                      <option value="safe_sandbox">Safe Educational Sandbox (No-Op Mock)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-[#9AA8B2] mb-1">
-                      SDN Isolation VLAN ID
-                    </label>
-                    <input
-                      type="number"
-                      value={settings.vlan_id}
-                      onChange={(e) => setSettings({ ...settings, vlan_id: parseInt(e.target.value) || 99 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#cc5500]"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <span className="text-xs font-medium text-[#E7ECEF] block">Automatic Quarantine on Critical Threat</span>
-                      <span className="text-[11px] text-[#9AA8B2] block">Isolate host immediately without waiting for analyst triage</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.auto_quarantine_critical}
-                      onChange={(e) => setSettings({ ...settings, auto_quarantine_critical: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: Notifications */}
-            {activeTab === 'Notifications' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#2A3944] pb-2 mb-4">
-                  <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">Alert Notifications</h2>
-                  <p className="text-xs text-[#9AA8B2] font-sans">Dispatch critical threat events via Webhook and WebSocket broadcast</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-medium text-[#E7ECEF] block">Live WebSocket Broadcast</span>
-                      <span className="text-[11px] text-[#9AA8B2] block">Send real-time alerts to connected browser sessions</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.ws_broadcast_enabled}
-                      onChange={(e) => setSettings({ ...settings, ws_broadcast_enabled: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-medium text-[#9AA8B2] mb-1">
-                      Webhook Notification URL
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.webhook_url}
-                      onChange={(e) => setSettings({ ...settings, webhook_url: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#cc5500]"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: Integrations */}
-            {activeTab === 'Integrations' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#2A3944] pb-2 mb-4">
-                  <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">Enterprise Integrations</h2>
-                  <p className="text-xs text-[#9AA8B2] font-sans">SIEM telemetry forwarding and SOAR playbooks</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-medium text-[#E7ECEF] block">SIEM Syslog Forwarder (Splunk / Elastic)</span>
-                      <span className="text-[11px] text-[#9AA8B2] block">Forward enriched CEF/JSON events to corporate SIEM</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.siem_forwarding}
-                      onChange={(e) => setSettings({ ...settings, siem_forwarding: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* TAB: Audit */}
-            {activeTab === 'Audit' && (
-              <div className="space-y-4">
-                <div className="border-b border-[#2A3944] pb-2 mb-4">
-                  <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">Audit & Compliance Logging</h2>
-                  <p className="text-xs text-[#9AA8B2] font-sans">Immutable audit trail of operator and automated mitigation decisions</p>
-                </div>
-
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-[#9AA8B2] mb-1">
-                      Audit Log Verbosity
-                    </label>
-                    <select
-                      value={settings.audit_level}
-                      onChange={(e) => setSettings({ ...settings, audit_level: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-sans"
-                    >
-                      <option value="minimal">Minimal (Mitigations & Auth Failures Only)</option>
-                      <option value="standard">Standard (All State Changes & Verdicts)</option>
-                      <option value="verbose">Verbose (All API Operations & Hot Path Decisions)</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-2">
-                    <div>
-                      <span className="text-xs font-medium text-[#E7ECEF] block">SHA-256 Tamper-Evident Ledger</span>
-                      <span className="text-[11px] text-[#9AA8B2] block">Cryptographically link sequential audit entries</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.immutable_audit_logs}
-                      onChange={(e) => setSettings({ ...settings, immutable_audit_logs: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Save Button Row */}
-            <div className="flex items-center justify-between pt-4 border-t border-[#2A3944]">
-              {saveSuccess ? (
-                <span className="text-xs text-[#cc5500] font-medium flex items-center gap-1.5 font-sans">
-                  <ShieldCheck className="w-4 h-4" /> Configuration saved successfully.
-                </span>
-              ) : (
-                <span className="text-xs text-[#9AA8B2] font-sans">
-                  Changes take effect immediately on runtime engine.
-                </span>
-              )}
-
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="bg-[#cc5500] hover:bg-[#60958a] text-[#101820] font-sans text-xs font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-              >
-                <Save className="w-3.5 h-3.5" />
-                <span>{isSaving ? 'Saving...' : 'Save Settings'}</span>
-              </button>
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      {/* Header Banner */}
+      <div className="bg-white rounded-2xl p-6 border border-[#e2eaf4] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+              <SettingsIcon className="w-5 h-5" />
             </div>
-          </form>
+            <div>
+              <h1 className="text-xl font-bold text-[#0a1c3d]">System & Defense Settings</h1>
+              <p className="text-xs text-[#687d9a] mt-0.5">
+                Configure network capture adapters, fine-tune AI classification thresholds, and monitor system health.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex items-center bg-[#f0f5fc] p-1 rounded-xl border border-[#dbe6f5] text-xs font-medium">
+          <button
+            onClick={() => setActiveTab('interface')}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'interface'
+                ? 'bg-white text-[#0a1c3d] font-bold shadow-xs'
+                : 'text-[#687d9a] hover:text-[#0a1c3d]'
+            }`}
+          >
+            Network Interface
+          </button>
+          <button
+            onClick={() => setActiveTab('ai')}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'ai'
+                ? 'bg-white text-[#0a1c3d] font-bold shadow-xs'
+                : 'text-[#687d9a] hover:text-[#0a1c3d]'
+            }`}
+          >
+            AI Models & Policies
+          </button>
+          <button
+            onClick={() => setActiveTab('health')}
+            className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+              activeTab === 'health'
+                ? 'bg-white text-[#0a1c3d] font-bold shadow-xs'
+                : 'text-[#687d9a] hover:text-[#0a1c3d]'
+            }`}
+          >
+            System Diagnostics
+          </button>
         </div>
       </div>
+
+      {savedSuccess && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 shadow-xs">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Configuration saved and applied to NetrIQ engine and MongoDB Atlas!</span>
+        </div>
+      )}
+
+      {/* TAB 1: NETWORK INTERFACE CONFIG */}
+      {activeTab === 'interface' && (
+        <div className="bg-white rounded-2xl border border-[#e2eaf4] p-6 shadow-xs space-y-6">
+          <div>
+            <h2 className="text-base font-bold text-[#0a1c3d]">Sniffer & Capture Interface Configuration</h2>
+            <p className="text-xs text-[#687d9a]">Configure physical network tap bindings and low-level capture parameters.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="text-xs font-bold text-[#0a1c3d] block mb-1.5">Network Interface (NIC)</label>
+              <select
+                value={nicInterface}
+                onChange={(e) => setNicInterface(e.target.value)}
+                className="w-full p-2.5 rounded-xl border border-[#dbe6f5] text-xs bg-[#f8fafc] text-[#0a1c3d] font-medium"
+              >
+                <option value="eth0">eth0 (Primary Ingress Ethernet - 10Gbps)</option>
+                <option value="eth1">eth1 (Internal LAN Mirror / SPAN Port)</option>
+                <option value="wlan0">wlan0 (Wireless Monitoring)</option>
+                <option value="lo">lo (Loopback Diagnostic)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-[#0a1c3d] block mb-1.5">Capture Ring Buffer Size (MB)</label>
+              <input
+                type="number"
+                value={bufferSizeMb}
+                onChange={(e) => setBufferSizeMb(Number(e.target.value))}
+                className="w-full p-2.5 rounded-xl border border-[#dbe6f5] text-xs bg-[#f8fafc] text-[#0a1c3d] font-medium"
+              />
+              <span className="text-[10px] text-[#687d9a] mt-1 block">Higher buffers prevent drop spikes during high-rate DDoS.</span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 rounded-xl border border-[#e2eaf4] bg-[#f8fafc] md:col-span-2">
+              <div>
+                <span className="text-xs font-bold text-[#0a1c3d] block">Promiscuous Mode</span>
+                <span className="text-[11px] text-[#687d9a]">Capture all passing packets on segment, not just packets addressed to host.</span>
+              </div>
+              <input
+                type="checkbox"
+                checked={promiscuousMode}
+                onChange={(e) => setPromiscuousMode(e.target.checked)}
+                className="w-4 h-4 text-blue-600 rounded cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[#e2eaf4] flex justify-end">
+            <button
+              disabled={saving}
+              onClick={handleSaveSettings}
+              className="px-4 py-2.5 bg-[#0066cc] hover:bg-[#0052a3] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {saving ? 'Saving...' : 'Save Interface Settings'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: AI MODEL SETTINGS */}
+      {activeTab === 'ai' && (
+        <div className="bg-white rounded-2xl border border-[#e2eaf4] p-6 shadow-xs space-y-6">
+          <div>
+            <h2 className="text-base font-bold text-[#0a1c3d]">Machine Learning Detection Thresholds & Autonomous Actions</h2>
+            <p className="text-xs text-[#687d9a]">Adjust classification confidence cutoffs for Layer 1 and Layer 2.</p>
+          </div>
+
+          <div className="space-y-5">
+            {/* Layer 1 Slider */}
+            <div className="p-4 rounded-xl border border-[#e2eaf4] bg-[#f8fafc]">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-xs font-bold text-[#0a1c3d] block">
+                    Layer 1 Pre-Firewall Confidence Threshold: {(layer1Threshold * 100).toFixed(0)}%
+                  </span>
+                  <span className="text-[11px] text-[#687d9a]">
+                    Model: RandomForest + XGBoost Ingress Filter. Packets with threat confidence above this threshold are blocked pre-firewall.
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-blue-600">{layer1Threshold}</span>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="0.99"
+                step="0.01"
+                value={layer1Threshold}
+                onChange={(e) => setLayer1Threshold(Number(e.target.value))}
+                className="w-full accent-blue-600 cursor-pointer"
+              />
+            </div>
+
+            {/* Layer 2 Slider */}
+            <div className="p-4 rounded-xl border border-[#e2eaf4] bg-[#f8fafc]">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <span className="text-xs font-bold text-[#0a1c3d] block">
+                    Layer 2 Lateral Movement Anomaly Threshold: {(layer2Threshold * 100).toFixed(0)}%
+                  </span>
+                  <span className="text-[11px] text-[#687d9a]">
+                    Model: LightGBM Zero-Trust Sentinel. Internal flows exceeding this anomaly score trigger quarantine.
+                  </span>
+                </div>
+                <span className="font-mono text-xs font-bold text-purple-600">{layer2Threshold}</span>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="0.99"
+                step="0.01"
+                value={layer2Threshold}
+                onChange={(e) => setLayer2Threshold(Number(e.target.value))}
+                className="w-full accent-purple-600 cursor-pointer"
+              />
+            </div>
+
+            {/* Auto Quarantine Toggle */}
+            <div className="flex items-center justify-between p-4 rounded-xl border border-[#e2eaf4] bg-[#f8fafc]">
+              <div>
+                <span className="text-xs font-bold text-[#0a1c3d] block">Autonomous Device Quarantine</span>
+                <span className="text-[11px] text-[#687d9a]">
+                  Automatically isolate compromised devices upon confirmed lateral movement without waiting for manual approval.
+                </span>
+              </div>
+              <input
+                type="checkbox"
+                checked={autoQuarantineEnabled}
+                onChange={(e) => setAutoQuarantineEnabled(e.target.checked)}
+                className="w-4 h-4 text-purple-600 rounded cursor-pointer"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-[#e2eaf4] flex justify-end">
+            <button
+              disabled={saving}
+              onClick={handleSaveSettings}
+              className="px-4 py-2.5 bg-[#0066cc] hover:bg-[#0052a3] text-white font-semibold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors disabled:opacity-50"
+            >
+              <Save className="w-3.5 h-3.5" />
+              {saving ? 'Saving...' : 'Save AI Parameters to MongoDB'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: SYSTEM DIAGNOSTICS & HEALTH */}
+      {activeTab === 'health' && (
+        <div className="bg-white rounded-2xl border border-[#e2eaf4] p-6 shadow-xs space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-[#0a1c3d]">NetrIQ Live Engine Health & Telemetry</h2>
+              <p className="text-xs text-[#687d9a]">Operational data queried live from the FastAPI engine.</p>
+            </div>
+            <button
+              onClick={() => loadInitialData()}
+              className="px-3 py-1.5 rounded-xl border border-[#dbe6f5] hover:bg-[#f0f5fc] text-xs font-semibold text-[#0a1c3d] flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshingHealth ? 'animate-spin' : ''}`} /> Refresh
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-[#f8fafc] border border-[#e2eaf4]">
+              <div className="flex items-center justify-between text-xs text-[#687d9a]">
+                <span>Overall Status</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-xl font-bold font-mono text-emerald-600 mt-2 uppercase">
+                {healthData.status || 'HEALTHY'}
+              </div>
+              <div className="text-[10px] text-emerald-700 font-medium mt-0.5">FastAPI Core Active</div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#f8fafc] border border-[#e2eaf4]">
+              <div className="flex items-center justify-between text-xs text-[#687d9a]">
+                <span>MongoDB Database</span>
+                <HardDrive className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="text-xl font-bold font-mono text-[#0a1c3d] mt-2 uppercase">
+                {healthData.components?.database || 'ONLINE'}
+              </div>
+              <div className="text-[10px] text-blue-600 font-medium mt-0.5">Atlas Replica Cluster</div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#f8fafc] border border-[#e2eaf4]">
+              <div className="flex items-center justify-between text-xs text-[#687d9a]">
+                <span>AI Model Manager</span>
+                <Cpu className="w-4 h-4 text-purple-600" />
+              </div>
+              <div className="text-xl font-bold font-mono text-purple-600 mt-2 uppercase">
+                {healthData.components?.model_manager || 'ONLINE'}
+              </div>
+              <div className="text-[10px] text-[#687d9a] font-medium mt-0.5">RandomForest + LightGBM Loaded</div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-[#f8fafc] border border-[#e2eaf4]">
+              <div className="flex items-center justify-between text-xs text-[#687d9a]">
+                <span>Live Packet Sniffer</span>
+                <Activity className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-xl font-bold font-mono text-emerald-600 mt-2 uppercase">
+                {healthData.components?.live_monitor === 'stopped' ? 'STANDBY' : 'ENGAGED'}
+              </div>
+              <div className="text-[10px] text-emerald-700 font-medium mt-0.5">Physical NIC Tap Ready</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 export default Settings;

@@ -1,123 +1,90 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useWebSocket } from '../hooks/useWebSocket';
-import {
-  LogOut,
-  User,
-  Wifi,
-  WifiOff,
-  Bell,
-  Shield,
-  Layers,
-  Activity,
-  AlertCircle
-} from 'lucide-react';
-import { NotificationBadge } from '../components/ui/NotificationBadge';
+import { Search, Bell, User, ChevronDown, LogOut } from 'lucide-react';
 
 export const Navbar = () => {
   const { user, role, logout } = useAuth();
-  const { connectionStatus, subscribe } = useWebSocket();
   const navigate = useNavigate();
-  const [alertCount, setAlertCount] = useState(3);
-
-  useEffect(() => {
-    const handleNewThreat = (payload) => {
-      if (
-        payload?.verdict === 'BLOCK' ||
-        payload?.verdict === 'DROP' ||
-        payload?.is_anomaly ||
-        payload?.action === 'RECOMMEND_BLOCK' ||
-        payload?.action === 'QUARANTINE'
-      ) {
-        setAlertCount((prev) => prev + 1);
-      }
-    };
-
-    const unsubscribeVerdict = subscribe('live_verdict', handleNewThreat);
-    const unsubscribeAlert = subscribe('threat_alert', handleNewThreat);
-    return () => {
-      unsubscribeVerdict();
-      unsubscribeAlert();
-    };
-  }, [subscribe]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
-    <header className="h-16 bg-white border-b border-[#e2e8f0] px-6 flex items-center justify-between select-none shrink-0 shadow-sm">
-      {/* Left: Dual Layer SOC Engine Status */}
-      <div className="flex items-center gap-3">
-        {/* Layer 1 Status Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#eff6ff] border border-[#bfdbfe] text-xs">
-          <Shield className="w-3.5 h-3.5 text-[#2563eb]" />
-          <span className="font-semibold text-[#1e40af]">Layer 1: Pre-Firewall</span>
-          <span className="inline-block w-2 h-2 rounded-full bg-[#2563eb] animate-subtle-pulse" />
-          <span className="text-[11px] font-medium text-[#2563eb]">Filtering</span>
-        </div>
-
-        {/* Layer 2 Status Badge */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#f5f3ff] border border-[#ddd6fe] text-xs">
-          <Layers className="w-3.5 h-3.5 text-[#7c3aed]" />
-          <span className="font-semibold text-[#5b21b6]">Layer 2: Internal Zero-Trust</span>
-          <span className="inline-block w-2 h-2 rounded-full bg-[#7c3aed] animate-subtle-pulse" />
-          <span className="text-[11px] font-medium text-[#7c3aed]">Monitoring</span>
-        </div>
-
-        {/* Telemetry Live Feed indicator */}
-        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#f8fafc] border border-[#e2e8f0] text-xs text-[#64748b]">
-          {connectionStatus === 'connected' ? (
-            <>
-              <Wifi className="w-3.5 h-3.5 text-[#16a34a]" />
-              <span className="text-[#334155] font-medium">Socket Connected</span>
-            </>
-          ) : (
-            <>
-              <WifiOff className="w-3.5 h-3.5 text-[#ea580c]" />
-              <span className="text-[#ea580c] font-medium">{connectionStatus}</span>
-            </>
-          )}
-        </div>
+    <header className="h-20 bg-[#f0f5fc] px-8 flex items-center justify-between select-none shrink-0">
+      {/* Left: Welcome Greeting */}
+      <div>
+        <h1 className="text-2xl font-extrabold text-[#0a1c3d] tracking-tight">
+          Welcome, {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Admin'}
+        </h1>
+        <p className="text-xs text-[#687d9a] mt-0.5 font-medium">
+          Real-time network monitoring and intelligent threat response
+        </p>
       </div>
 
-      {/* Right: Quick Alert Notifications, User Info & Logout */}
-      <div className="flex items-center gap-3">
-        {/* Alerts Button */}
-        <NotificationBadge count={alertCount} variant="count" ping={alertCount > 0}>
-          <button
-            onClick={() => {
-              navigate('/threats');
-              setAlertCount(0);
-            }}
-            title="View Threat Detection Alerts"
-            className="w-9 h-9 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] hover:bg-[#eff6ff] hover:border-[#bfdbfe] flex items-center justify-center transition-colors cursor-pointer text-[#475569] hover:text-[#2563eb]"
-          >
-            <Bell className="w-4 h-4" />
-          </button>
-        </NotificationBadge>
-
-        {/* User Pill */}
-        <div className="flex items-center gap-3 pl-3 border-l border-[#e2e8f0]">
-          <div className="w-8 h-8 rounded-full bg-[#0a122c] text-white flex items-center justify-center font-medium text-xs">
-            {user?.username ? user.username.charAt(0).toUpperCase() : 'A'}
-          </div>
-          <div className="text-right hidden sm:block">
-            <div className="text-xs font-semibold text-[#0f172a] flex items-center gap-1.5 justify-end">
-              {user?.username || 'SOC Analyst'}
-              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#eff6ff] text-[#2563eb] border border-[#bfdbfe]">
-                {role || 'analyst'}
-              </span>
-            </div>
-            <div className="text-[11px] text-[#64748b]">{user?.email || 'analyst@netriq.local'}</div>
-          </div>
+      {/* Right: Search, Notification Bell, User Avatar */}
+      <div className="flex items-center gap-4">
+        {/* Search Bar Pill */}
+        <div className="relative">
+          <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-[#8fa0b5]" />
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-56 pl-9 pr-4 py-2 rounded-full border border-[#d5e2f0] bg-white text-xs text-[#0a1c3d] placeholder-[#8fa0b5] shadow-xs focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+          />
         </div>
 
-        {/* Logout */}
+        {/* Bell Icon with red notification dot */}
         <button
-          onClick={logout}
-          title="Sign out"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#94a3b8] hover:text-[#ef4444] hover:bg-[#fef2f2] transition-colors ml-1 cursor-pointer"
+          onClick={() => navigate('/threats')}
+          title="Notifications"
+          className="relative w-9 h-9 rounded-full bg-white border border-[#d5e2f0] flex items-center justify-center text-[#506680] hover:text-[#0a1c3d] shadow-xs cursor-pointer transition-colors"
         >
-          <LogOut className="w-4 h-4" />
+          <Bell className="w-4 h-4" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-[#ef4444] border-2 border-white" />
         </button>
+
+        {/* User Pill / Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-white border border-[#d5e2f0] shadow-xs hover:border-blue-300 transition-all cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded-full bg-[#0a1c3d] text-white flex items-center justify-center font-bold text-xs">
+              <User className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="text-xs font-semibold text-[#0a1c3d]">
+              {user?.username ? user.username.charAt(0).toUpperCase() + user.username.slice(1) : 'Admin'}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-[#687d9a]" />
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-[#e2e8f0] py-1.5 z-50">
+              <div className="px-3.5 py-2 border-b border-[#f1f5f9]">
+                <div className="text-xs font-bold text-[#0a1c3d]">{user?.username || 'Admin'}</div>
+                <div className="text-[10px] text-[#64748b] truncate">{user?.email || 'admin@netriq.local'}</div>
+              </div>
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate('/settings');
+                }}
+                className="w-full text-left px-3.5 py-2 text-xs text-[#334155] hover:bg-[#f8fafc] cursor-pointer"
+              >
+                Settings
+              </button>
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  logout();
+                }}
+                className="w-full text-left px-3.5 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-1.5 cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

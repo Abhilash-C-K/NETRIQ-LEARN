@@ -1,17 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Shield,
+  LayoutDashboard,
   Activity,
-  Network,
   AlertTriangle,
-  Lock,
-  Sliders,
-  Radio,
+  Monitor,
+  ShieldAlert,
   FileText,
-  Server,
-  Layers,
-  CheckCircle2,
+  Settings,
 } from 'lucide-react';
 
 export const Sidebar = () => {
@@ -22,60 +18,47 @@ export const Sidebar = () => {
     {
       id: 'dashboard',
       path: '/dashboard',
-      label: '01. Dashboard',
-      subtitle: 'SOC Control Center',
-      icon: Shield,
-      badge: 'Main',
-      badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
     },
     {
-      id: 'traffic-layer1',
+      id: 'live-traffic',
       path: '/traffic-layer1',
       aliases: ['/monitoring'],
-      label: '02. Live Traffic',
-      subtitle: 'Layer 1 Pre-Firewall',
+      label: 'Live Traffic',
       icon: Activity,
-      badge: 'L1',
-      badgeColor: 'bg-blue-600/25 text-blue-300 border-blue-500/40',
     },
     {
-      id: 'network-layer2',
-      path: '/network-layer2',
-      aliases: ['/analytics'],
-      label: '03. Internal Network',
-      subtitle: 'Layer 2 Topology',
-      icon: Network,
-      badge: 'L2 Flow',
-      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
-    },
-    {
-      id: 'threats',
+      id: 'threat-detection',
       path: '/threats',
       aliases: ['/incidents'],
-      label: '04. Threat Detection',
-      subtitle: 'Alerts & SHAP Insights',
+      label: 'Threat Detection',
       icon: AlertTriangle,
-      badge: 'Alerts',
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+    },
+    {
+      id: 'system-status',
+      path: '/network-layer2',
+      aliases: ['/analytics', '/internal-network'],
+      label: 'System Status',
+      icon: Monitor,
     },
     {
       id: 'quarantine',
       path: '/quarantine',
-      label: '05. Device Quarantine',
-      subtitle: 'Layer 2 Isolation & Audit',
-      icon: Lock,
-      badge: 'Isolation',
-      badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
+      label: 'Quarantine',
+      icon: ShieldAlert,
     },
     {
-      id: 'reports-settings',
-      path: '/reports-settings',
-      aliases: ['/reports', '/settings'],
-      label: '06. Reports & Settings',
-      subtitle: 'Configs, AI & Health',
-      icon: Sliders,
-      badge: 'Admin',
-      badgeColor: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+      id: 'reports',
+      path: '/reports',
+      label: 'Reports',
+      icon: FileText,
+    },
+    {
+      id: 'settings',
+      path: '/settings',
+      label: 'Settings',
+      icon: Settings,
     },
   ];
 
@@ -86,32 +69,119 @@ export const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 bg-[#0a122c] border-r border-[#1a2650] flex flex-col justify-between select-none shrink-0 text-white z-20">
-      {/* Brand Header */}
-      <div>
-        <div className="p-5 border-b border-[#1a2650] flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 shadow-md flex items-center justify-center">
-            <div className="w-full h-full bg-[#0a122c] rounded-[10px] flex items-center justify-center">
-              <Shield className="w-5 h-5 text-blue-400" />
-            </div>
+    <aside className="w-64 bg-gradient-to-b from-[#021338] via-[#041a4a] to-[#010e2b] flex flex-col justify-between select-none shrink-0 text-white z-20 relative overflow-hidden border-r border-[#0a2761]">
+      {/* Ambient background waves matching screenshot - clearly visible & layered */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Soft radial glow points */}
+        <div
+          className="absolute -bottom-10 -left-10 w-72 h-72 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(14,165,233,0.22) 0%, rgba(2,132,199,0.08) 50%, transparent 75%)',
+          }}
+        />
+        <div
+          className="absolute bottom-40 -right-20 w-64 h-64 rounded-full pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(37,99,235,0.25) 0%, transparent 70%)',
+          }}
+        />
+
+        {/* High-definition flowing wave curves */}
+        <svg
+          className="w-full h-full absolute inset-0"
+          viewBox="0 0 256 900"
+          fill="none"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0284c7" stopOpacity="0.45" />
+              <stop offset="60%" stopColor="#082f6e" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#021438" stopOpacity="0.85" />
+            </linearGradient>
+
+            <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="80%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.3" />
+              <stop offset="45%" stopColor="#0b387e" stopOpacity="0.55" />
+              <stop offset="100%" stopColor="#010e2b" stopOpacity="0.9" />
+            </linearGradient>
+
+            <linearGradient id="waveGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#02428f" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#031640" stopOpacity="0.1" />
+            </linearGradient>
+
+            <linearGradient id="crestGlow1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.75" />
+              <stop offset="50%" stopColor="#0284c7" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.1" />
+            </linearGradient>
+
+            <linearGradient id="crestGlow2" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.6" />
+              <stop offset="70%" stopColor="#0284c7" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#031640" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+
+          {/* Deep upper wave */}
+          <path
+            d="M -40 370 C 50 430, 90 290, 260 360 L 260 900 L -40 900 Z"
+            fill="url(#waveGrad3)"
+          />
+
+          {/* Mid prominent flowing wave with glowing crest */}
+          <path
+            d="M -50 510 C 30 440, 110 580, 270 490 L 270 900 L -50 900 Z"
+            fill="url(#waveGrad1)"
+            stroke="url(#crestGlow1)"
+            strokeWidth="1.8"
+          />
+
+          {/* Lower front wave curving across bottom card */}
+          <path
+            d="M -40 680 C 60 570, 130 760, 270 610 L 270 900 L -40 900 Z"
+            fill="url(#waveGrad2)"
+            stroke="url(#crestGlow2)"
+            strokeWidth="1.5"
+          />
+
+          {/* Bottom subtle secondary ripple */}
+          <path
+            d="M -30 790 C 80 730, 160 840, 270 760 L 270 900 L -30 900 Z"
+            fill="#031b4d"
+            fillOpacity="0.5"
+            stroke="#38bdf8"
+            strokeOpacity="0.25"
+            strokeWidth="1"
+          />
+        </svg>
+      </div>
+
+      {/* Top Branding & Nav Items */}
+      <div className="relative z-10">
+        {/* Brand Header with official NetrIQ Logo Image */}
+        <div className="p-6 pb-6 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-[#020b24] border border-cyan-400/40 p-1 flex items-center justify-center shadow-lg shadow-cyan-500/25 shrink-0 overflow-hidden group">
+            <img
+              src="/logo.jpeg"
+              alt="NetrIQ Logo"
+              className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(56,189,248,0.6)] group-hover:scale-105 transition-transform"
+            />
           </div>
+
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold tracking-wider text-base text-white">NETRIQ</span>
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                SOC
-              </span>
+            <div className="font-extrabold text-xl text-white tracking-tight flex items-center">
+              NetriQ
             </div>
-            <p className="text-[11px] text-slate-400 font-medium">Dual-Layer Cyber Defense</p>
+            <div className="text-[11px] text-cyan-200/80 font-normal leading-tight">
+              Adaptive Network Security
+            </div>
           </div>
         </div>
 
-        {/* Navigation Section */}
-        <div className="px-3 py-4 space-y-1">
-          <div className="px-3 pb-2 text-[10px] uppercase font-bold tracking-wider text-slate-400">
-            Control Center Pages
-          </div>
-
+        {/* Nav Links */}
+        <div className="px-4 space-y-1.5 mt-2">
           {navItems.map((item) => {
             const active = isCurrentActive(item);
             const Icon = item.icon;
@@ -120,65 +190,37 @@ export const Sidebar = () => {
               <button
                 key={item.id}
                 onClick={() => navigate(item.path)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between transition-all group cursor-pointer ${
+                className={`w-full text-left px-4 py-3 rounded-xl flex items-center gap-3.5 transition-all cursor-pointer font-medium text-sm ${
                   active
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40 font-semibold'
-                    : 'text-slate-300 hover:bg-[#142047] hover:text-white'
+                    ? 'bg-[#1872eb] text-white font-semibold shadow-lg shadow-blue-600/30'
+                    : 'text-slate-300 hover:text-white hover:bg-white/[0.06]'
                 }`}
               >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                      active ? 'bg-white/15 text-white' : 'bg-[#142047] text-slate-400 group-hover:text-blue-400'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs leading-tight font-semibold">{item.label}</div>
-                    <div
-                      className={`text-[10px] leading-tight ${
-                        active ? 'text-blue-100 font-normal' : 'text-slate-400 group-hover:text-slate-300'
-                      }`}
-                    >
-                      {item.subtitle}
-                    </div>
-                  </div>
-                </div>
-
-                {item.badge && (
-                  <span
-                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${
-                      active ? 'bg-white/20 text-white border-white/30' : item.badgeColor
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                )}
+                <Icon
+                  className={`w-4 h-4 shrink-0 transition-colors ${
+                    active ? 'text-white' : 'text-slate-400 group-hover:text-white'
+                  }`}
+                />
+                <span className="leading-none">{item.label}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Footer System Status Card */}
-      <div className="p-4 border-t border-[#1a2650]">
-        <div className="p-3 rounded-lg bg-[#0f1738] border border-[#1a2650] space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-subtle-pulse" />
-              NIDS Defense Core
-            </span>
-            <span className="text-[10px] font-bold text-emerald-400 uppercase">ACTIVE</span>
+      {/* Bottom Status Card matching screenshot */}
+      <div className="p-4 relative z-10">
+        <div className="bg-[#05235f]/80 backdrop-blur border border-[#0d3b8f] rounded-2xl p-4 shadow-lg">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm shadow-emerald-400/50 animate-pulse" />
+            <span className="text-xs font-semibold text-white">System Online</span>
           </div>
-          <div className="text-[10px] text-slate-400 flex justify-between">
-            <span>Pre-Firewall (L1):</span>
-            <span className="text-blue-400 font-mono">ENFORCING</span>
-          </div>
-          <div className="text-[10px] text-slate-400 flex justify-between">
-            <span>Zero-Trust (L2):</span>
-            <span className="text-purple-400 font-mono">ISOLATING</span>
-          </div>
+          <p className="text-[11px] text-slate-300 mt-1">All systems operational</p>
+        </div>
+
+        <div className="mt-3 px-1 text-[11px] text-slate-400">
+          <div className="text-slate-400 text-[10px]">Last Updated</div>
+          <div className="text-slate-300 font-medium">Oct 1, 2026 10:24 AM</div>
         </div>
       </div>
     </aside>

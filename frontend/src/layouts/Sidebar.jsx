@@ -70,90 +70,96 @@ export const Sidebar = () => {
 
   return (
     <aside className="w-64 bg-gradient-to-b from-[#021338] via-[#041a4a] to-[#010e2b] flex flex-col justify-between select-none shrink-0 text-white z-20 relative overflow-hidden border-r border-[#0a2761]">
-      {/* Ambient background waves matching screenshot - clearly visible & layered */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {/* Soft radial glow points */}
+      {/* Ambient background waves matching screenshot - seamlessly blended with soft gradients & blur */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden select-none">
+        {/* Soft glowing ambient lighting orbs for deep luminous blend */}
         <div
-          className="absolute -bottom-10 -left-10 w-72 h-72 rounded-full pointer-events-none"
+          className="absolute -bottom-16 -left-16 w-80 h-80 rounded-full pointer-events-none blur-3xl opacity-40"
           style={{
-            background: 'radial-gradient(circle, rgba(14,165,233,0.22) 0%, rgba(2,132,199,0.08) 50%, transparent 75%)',
+            background: 'radial-gradient(circle, #0284c7 0%, #0369a1 40%, transparent 70%)',
           }}
         />
         <div
-          className="absolute bottom-40 -right-20 w-64 h-64 rounded-full pointer-events-none"
+          className="absolute top-1/2 -left-20 w-72 h-72 rounded-full pointer-events-none blur-3xl opacity-25"
           style={{
-            background: 'radial-gradient(circle, rgba(37,99,235,0.25) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, #1e40af 0%, #0c4a6e 50%, transparent 75%)',
+          }}
+        />
+        <div
+          className="absolute bottom-28 -right-20 w-64 h-64 rounded-full pointer-events-none blur-2xl opacity-30"
+          style={{
+            background: 'radial-gradient(circle, #0284c7 0%, #1e3a8a 60%, transparent 80%)',
           }}
         />
 
-        {/* High-definition flowing wave curves */}
+        {/* Soft blended flowing waves - zero hard strokes, purely smooth gradient transitions */}
         <svg
-          className="w-full h-full absolute inset-0"
+          className="w-full h-full absolute inset-0 pointer-events-none"
           viewBox="0 0 256 900"
           fill="none"
           preserveAspectRatio="none"
         >
           <defs>
-            <linearGradient id="waveGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#0284c7" stopOpacity="0.45" />
-              <stop offset="60%" stopColor="#082f6e" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#021438" stopOpacity="0.85" />
+            {/* Filter for silky soft edges */}
+            <filter id="softWaveBlur" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="8" />
+            </filter>
+            <filter id="deepWaveBlur" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="14" />
+            </filter>
+
+            {/* Subtle blended gradients that melt seamlessly into midnight navy */}
+            <linearGradient id="blendWave1" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0369a1" stopOpacity="0.4" />
+              <stop offset="45%" stopColor="#072a6b" stopOpacity="0.25" />
+              <stop offset="85%" stopColor="#021438" stopOpacity="0.05" />
+              <stop offset="100%" stopColor="#021438" stopOpacity="0" />
             </linearGradient>
 
-            <linearGradient id="waveGrad2" x1="0%" y1="0%" x2="100%" y2="80%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.3" />
-              <stop offset="45%" stopColor="#0b387e" stopOpacity="0.55" />
-              <stop offset="100%" stopColor="#010e2b" stopOpacity="0.9" />
+            <linearGradient id="blendWave2" x1="0%" y1="30%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#0284c7" stopOpacity="0.32" />
+              <stop offset="50%" stopColor="#093175" stopOpacity="0.18" />
+              <stop offset="90%" stopColor="#010d2b" stopOpacity="0" />
             </linearGradient>
 
-            <linearGradient id="waveGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#02428f" stopOpacity="0.35" />
-              <stop offset="100%" stopColor="#031640" stopOpacity="0.1" />
+            <linearGradient id="blendWave3" x1="20%" y1="0%" x2="90%" y2="100%">
+              <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0.22" />
+              <stop offset="40%" stopColor="#03459c" stopOpacity="0.12" />
+              <stop offset="80%" stopColor="#010d2b" stopOpacity="0" />
             </linearGradient>
 
-            <linearGradient id="crestGlow1" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.75" />
-              <stop offset="50%" stopColor="#0284c7" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0.1" />
-            </linearGradient>
-
-            <linearGradient id="crestGlow2" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#67e8f9" stopOpacity="0.6" />
-              <stop offset="70%" stopColor="#0284c7" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#031640" stopOpacity="0" />
+            <linearGradient id="blendWave4" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#0369a1" stopOpacity="0.35" />
+              <stop offset="60%" stopColor="#05245c" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#010d2b" stopOpacity="0" />
             </linearGradient>
           </defs>
 
-          {/* Deep upper wave */}
+          {/* Deep atmospheric wave layer */}
           <path
-            d="M -40 370 C 50 430, 90 290, 260 360 L 260 900 L -40 900 Z"
-            fill="url(#waveGrad3)"
+            d="M -60 340 C 40 410, 80 270, 270 340 L 270 920 L -60 920 Z"
+            fill="url(#blendWave1)"
+            filter="url(#deepWaveBlur)"
           />
 
-          {/* Mid prominent flowing wave with glowing crest */}
+          {/* Mid organic wave flowing across Quarantine & Reports */}
           <path
-            d="M -50 510 C 30 440, 110 580, 270 490 L 270 900 L -50 900 Z"
-            fill="url(#waveGrad1)"
-            stroke="url(#crestGlow1)"
-            strokeWidth="1.8"
+            d="M -50 490 C 40 430, 110 570, 280 470 L 280 920 L -50 920 Z"
+            fill="url(#blendWave2)"
+            filter="url(#softWaveBlur)"
           />
 
-          {/* Lower front wave curving across bottom card */}
+          {/* Lower organic wave swelling gently behind the bottom card */}
           <path
-            d="M -40 680 C 60 570, 130 760, 270 610 L 270 900 L -40 900 Z"
-            fill="url(#waveGrad2)"
-            stroke="url(#crestGlow2)"
-            strokeWidth="1.5"
+            d="M -40 640 C 70 540, 130 730, 280 590 L 280 920 L -40 920 Z"
+            fill="url(#blendWave3)"
+            filter="url(#softWaveBlur)"
           />
 
-          {/* Bottom subtle secondary ripple */}
+          {/* Base foundation wave curving from bottom left */}
           <path
-            d="M -30 790 C 80 730, 160 840, 270 760 L 270 900 L -30 900 Z"
-            fill="#031b4d"
-            fillOpacity="0.5"
-            stroke="#38bdf8"
-            strokeOpacity="0.25"
-            strokeWidth="1"
+            d="M -40 760 C 60 700, 150 810, 280 730 L 280 920 L -40 920 Z"
+            fill="url(#blendWave4)"
           />
         </svg>
       </div>

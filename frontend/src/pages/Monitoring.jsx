@@ -118,13 +118,13 @@ export const Monitoring = () => {
       {/* 4. Live Stream Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2A3944] pb-3 pt-2">
         <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-[#71A99D]" />
+          <Activity className="w-4 h-4 text-[#cc5500]" />
           <h2 className="text-sm font-semibold text-[#E7ECEF] font-sans">
             Live Stream Feed
           </h2>
           {isRunning && (
-            <span className="flex items-center gap-1.5 text-xs font-sans text-[#71A99D] bg-[#71A99D]/15 px-2 py-0.5 rounded border border-[#71A99D]/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#71A99D]" />
+            <span className="flex items-center gap-1.5 text-xs font-sans text-[#cc5500] bg-[#cc5500]/15 px-2 py-0.5 rounded border border-[#cc5500]/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#cc5500]" />
               SNIFFING ACTIVE
             </span>
           )}

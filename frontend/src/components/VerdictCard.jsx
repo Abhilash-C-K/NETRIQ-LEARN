@@ -54,28 +54,28 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
   };
 
   const actionBadgeStyles = {
-    QUARANTINE: 'bg-[#C95F5F]/15 text-[#C95F5F] border-[#C95F5F]/40', // Muted crimson
-    RECOMMEND_BLOCK: 'bg-[#D27C62]/15 text-[#D27C62] border-[#D27C62]/40', // High risk rust
-    NOTIFY: 'bg-[#252728] text-[#A4A5A0] border-[#303334]',
-    PASS: 'bg-[#9AAA78]/15 text-[#9AAA78] border-[#9AAA78]/30',
+    QUARANTINE: 'bg-[#b83a2e]/15 text-[#b83a2e] border-[#b83a2e]/40', // Muted crimson
+    RECOMMEND_BLOCK: 'bg-[#cc5500]/15 text-[#cc5500] border-[#cc5500]/40', // High risk rust
+    NOTIFY: 'bg-[#5c3d38] text-[#d4bfb0] border-[#6b4c45]',
+    PASS: 'bg-[#cc5500]/15 text-[#cc5500] border-[#cc5500]/30',
   };
 
   return (
-    <Card className="relative overflow-hidden transition-colors bg-[#1E2021] hover:bg-[#252728] border border-[#303334] rounded-lg shadow-none">
+    <Card className="relative overflow-hidden transition-colors bg-[#4a3330] hover:bg-[#5c3d38] border border-[#6b4c45] rounded-lg shadow-none">
       {/* Primary Card Summary Row */}
       <div className="p-4 flex flex-wrap items-center justify-between gap-4">
         {/* Connection & Target Identifier */}
         <div className="flex items-center gap-3 min-w-[280px]">
-          <div className="w-9 h-9 rounded-lg bg-[#141516] border border-[#303334] flex items-center justify-center text-[#8CA4B8] shrink-0">
-            {sni ? <Globe className="w-4 h-4 text-[#8CA4B8]" /> : <Terminal className="w-4 h-4 text-[#A4A5A0]" />}
+          <div className="w-9 h-9 rounded-lg bg-[#3b2a27] border border-[#6b4c45] flex items-center justify-center text-[#c4956a] shrink-0">
+            {sni ? <Globe className="w-4 h-4 text-[#c4956a]" /> : <Terminal className="w-4 h-4 text-[#d4bfb0]" />}
           </div>
           <div>
-            <div className="flex items-center gap-2 font-mono text-sm font-semibold text-[#F1F0EA]">
+            <div className="flex items-center gap-2 font-mono text-sm font-semibold text-[#f8f4e7]">
               {onSelectDevice ? (
                 <button
                   type="button"
                   onClick={() => onSelectDevice(src_ip)}
-                  className="hover:text-[#9AAA78] hover:underline cursor-pointer focus:outline-none"
+                  className="hover:text-[#cc5500] hover:underline cursor-pointer focus:outline-none"
                   title={`View device activity trail for ${src_ip}`}
                 >
                   {src_ip}
@@ -83,11 +83,11 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
               ) : (
                 <span>{src_ip}</span>
               )}
-              <ArrowRight className="w-3.5 h-3.5 text-[#70736F]" />
-              <span className="text-[#A4A5A0]">{sni || `${dst_ip}:${dst_port}`}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-[#a08070]" />
+              <span className="text-[#d4bfb0]">{sni || `${dst_ip}:${dst_port}`}</span>
             </div>
-            <div className="text-xs text-[#70736F] font-mono flex items-center gap-2 mt-0.5">
-              <span className="text-[#9AAA78] font-semibold bg-[#141516] px-1.5 py-0.2 rounded border border-[#303334]">
+            <div className="text-xs text-[#a08070] font-mono flex items-center gap-2 mt-0.5">
+              <span className="text-[#cc5500] font-semibold bg-[#3b2a27] px-1.5 py-0.2 rounded border border-[#6b4c45]">
                 {effectivePredictionId ? `#ALERT-${String(effectivePredictionId).slice(-4).toUpperCase()}` : '#ALERT-101'}
               </span>
               <span>•</span>
@@ -115,9 +115,9 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
           </span>
 
           {/* Confidence Score Pill */}
-          <div className="hidden sm:flex flex-col items-end pl-2 border-l border-[#303334]">
-            <span className="text-[10px] uppercase font-mono text-[#70736F]">Confidence</span>
-            <span className="text-xs font-mono font-bold text-[#F1F0EA]">
+          <div className="hidden sm:flex flex-col items-end pl-2 border-l border-[#6b4c45]">
+            <span className="text-[10px] uppercase font-mono text-[#a08070]">Confidence</span>
+            <span className="text-xs font-mono font-bold text-[#f8f4e7]">
               {confidencePercent}%
             </span>
           </div>
@@ -127,7 +127,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
             variant="outline"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-1 text-xs border-[#303334] bg-[#141516] hover:bg-[#252728] text-[#A4A5A0] hover:text-[#F1F0EA] flex items-center gap-1.5 h-8 px-2.5 font-sans"
+            className="ml-1 text-xs border-[#6b4c45] bg-[#3b2a27] hover:bg-[#5c3d38] text-[#d4bfb0] hover:text-[#f8f4e7] flex items-center gap-1.5 h-8 px-2.5 font-sans"
           >
             <span>{isExpanded ? 'Hide' : 'Explain'}</span>
             {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -137,15 +137,15 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
 
       {/* Human-Readable Sentence Translation */}
       <div className="px-4 pb-3 pt-0">
-        <p className="text-xs text-[#A4A5A0] font-sans flex items-center gap-2 bg-[#141516]/60 px-3 py-2 rounded border border-[#303334]/60">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#9AAA78] shrink-0" />
+        <p className="text-xs text-[#d4bfb0] font-sans flex items-center gap-2 bg-[#3b2a27]/60 px-3 py-2 rounded border border-[#6b4c45]/60">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#cc5500] shrink-0" />
           <span className="line-clamp-1">{getSummarySentence()}</span>
         </p>
       </div>
 
       {/* Expandable Technical Explanations Panel */}
       {isExpanded && (
-        <div className="border-t border-[#303334] bg-[#141516] p-4">
+        <div className="border-t border-[#6b4c45] bg-[#3b2a27] p-4">
           <ExplanationPanel
             predictionId={effectivePredictionId}
             viewMode={viewMode}

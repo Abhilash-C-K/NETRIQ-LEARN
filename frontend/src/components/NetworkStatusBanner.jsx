@@ -40,24 +40,24 @@ export const NetworkStatusBanner = ({ isPending = false }) => {
       aria-live="polite"
       className="fixed top-4 right-4 z-50 pointer-events-none transition-all duration-200"
     >
-      <div className="pointer-events-auto flex items-center gap-2.5 px-3.5 py-2 rounded-lg border shadow-lg text-xs font-sans font-medium bg-[#1E2021] text-[#F1F0EA] border-[#303334]">
+      <div className="pointer-events-auto flex items-center gap-2.5 px-3.5 py-2 rounded-lg border shadow-lg text-xs font-sans font-medium bg-[#4a3330] text-[#f8f4e7] border-[#6b4c45]">
         {!isOnline ? (
           <>
-            <WifiOff className="w-4 h-4 text-[#C95F5F] shrink-0" aria-hidden="true" />
+            <WifiOff className="w-4 h-4 text-[#b83a2e] shrink-0" aria-hidden="true" />
             <span>You're offline. Reconnecting...</span>
           </>
         ) : isPending ? (
           <>
             {prefersReducedMotion ? (
-              <CircleDot className="w-4 h-4 text-[#8CA4B8] shrink-0" aria-hidden="true" />
+              <CircleDot className="w-4 h-4 text-[#c4956a] shrink-0" aria-hidden="true" />
             ) : (
-              <Loader2 className="w-4 h-4 text-[#8CA4B8] shrink-0 animate-spin" aria-hidden="true" />
+              <Loader2 className="w-4 h-4 text-[#c4956a] shrink-0 animate-spin" aria-hidden="true" />
             )}
             <span>Network sync in progress...</span>
           </>
         ) : showRestored ? (
           <>
-            <Wifi className="w-4 h-4 text-[#9AAA78] shrink-0" aria-hidden="true" />
+            <Wifi className="w-4 h-4 text-[#cc5500] shrink-0" aria-hidden="true" />
             <span>Connection restored</span>
           </>
         ) : null}

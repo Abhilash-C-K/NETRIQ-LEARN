@@ -262,7 +262,7 @@ export const Incidents = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by IP, ID, or threat..."
-              className="w-full bg-[#101820] border border-[#2A3944] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#E7ECEF] placeholder-[#687883] focus:outline-none focus:border-[#71A99D] transition-colors font-sans"
+              className="w-full bg-[#101820] border border-[#2A3944] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#E7ECEF] placeholder-[#687883] focus:outline-none focus:border-[#cc5500] transition-colors font-sans"
             />
           </div>
 
@@ -308,7 +308,7 @@ export const Incidents = () => {
       {/* Incident List Content */}
       {isLoading ? (
         <div className="p-12 text-center text-[#9AA8B2] space-y-3">
-          <div className="w-7 h-7 border-2 border-[#2A3944] border-t-[#71A99D] rounded-full animate-spin mx-auto" />
+          <div className="w-7 h-7 border-2 border-[#2A3944] border-t-[#cc5500] rounded-full animate-spin mx-auto" />
           <p className="text-xs font-sans">Loading active incidents...</p>
         </div>
       ) : error ? (
@@ -318,7 +318,7 @@ export const Incidents = () => {
         </div>
       ) : filteredIncidents.length === 0 ? (
         <div className="p-12 text-center bg-[#19242E] border border-[#2A3944] rounded-lg space-y-2">
-          <ShieldCheck className="w-7 h-7 text-[#71A99D] mx-auto" />
+          <ShieldCheck className="w-7 h-7 text-[#cc5500] mx-auto" />
           <h4 className="text-sm font-semibold text-[#E7ECEF] font-sans">No Incidents Found</h4>
           <p className="text-xs text-[#9AA8B2] max-w-sm mx-auto font-sans">
             There are currently no incidents matching the selected filter criteria.

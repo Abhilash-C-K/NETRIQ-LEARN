@@ -5,16 +5,16 @@ const Button = React.forwardRef(
   ({ className, variant = 'default', size = 'default', ...props }, ref) => {
     const variants = {
       default:
-        'bg-[#9AAA78] text-[#141516] font-semibold hover:bg-[#A9B989] transition-colors',
+        'bg-[#cc5500] text-[#3b2a27] font-semibold hover:bg-[#e06010] transition-colors',
       primary:
-        'bg-[#9AAA78] text-[#141516] font-semibold hover:bg-[#A9B989] transition-colors',
+        'bg-[#cc5500] text-[#3b2a27] font-semibold hover:bg-[#e06010] transition-colors',
       steel:
-        'bg-[#8CA4B8] text-[#141516] font-semibold hover:bg-[#7a93a7] transition-colors',
+        'bg-[#c4956a] text-[#3b2a27] font-semibold hover:bg-[#7a93a7] transition-colors',
       destructive:
-        'bg-[#C95F5F]/15 text-[#C95F5F] border border-[#C95F5F]/40 hover:bg-[#C95F5F]/25 transition-colors',
+        'bg-[#b83a2e]/15 text-[#b83a2e] border border-[#b83a2e]/40 hover:bg-[#b83a2e]/25 transition-colors',
       outline:
-        'border border-[#303334] bg-[#1E2021] text-[#F1F0EA] hover:bg-[#252728] hover:text-white transition-colors',
-      ghost: 'hover:bg-[#252728] text-[#A4A5A0] hover:text-[#F1F0EA] transition-colors',
+        'border border-[#6b4c45] bg-[#4a3330] text-[#f8f4e7] hover:bg-[#5c3d38] hover:text-white transition-colors',
+      ghost: 'hover:bg-[#5c3d38] text-[#d4bfb0] hover:text-[#f8f4e7] transition-colors',
     };
 
     const sizes = {
@@ -28,7 +28,7 @@ const Button = React.forwardRef(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#9AAA78] disabled:pointer-events-none disabled:opacity-40 select-none cursor-pointer',
+          'inline-flex items-center justify-center rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#cc5500] disabled:pointer-events-none disabled:opacity-40 select-none cursor-pointer',
           variants[variant] || variants.default,
           sizes[size] || sizes.default,
           className

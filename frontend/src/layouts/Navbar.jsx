@@ -2,7 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useWebSocket } from '../hooks/useWebSocket';
-import { LogOut, User, Wifi, WifiOff, Bell } from 'lucide-react';
+import {
+  LogOut,
+  User,
+  Wifi,
+  WifiOff,
+  Bell,
+  Shield,
+  Layers,
+  Activity,
+  AlertCircle
+} from 'lucide-react';
 import { NotificationBadge } from '../components/ui/NotificationBadge';
 
 export const Navbar = () => {
@@ -13,7 +23,13 @@ export const Navbar = () => {
 
   useEffect(() => {
     const handleNewThreat = (payload) => {
-      if (payload?.verdict || payload?.is_anomaly || payload?.action === 'RECOMMEND_BLOCK' || payload?.action === 'QUARANTINE') {
+      if (
+        payload?.verdict === 'BLOCK' ||
+        payload?.verdict === 'DROP' ||
+        payload?.is_anomaly ||
+        payload?.action === 'RECOMMEND_BLOCK' ||
+        payload?.action === 'QUARANTINE'
+      ) {
         setAlertCount((prev) => prev + 1);
       }
     };
@@ -26,78 +42,79 @@ export const Navbar = () => {
     };
   }, [subscribe]);
 
-  const roleBadges = {
-    admin: 'bg-[#8CA4B8]/15 text-[#8CA4B8] border-[#8CA4B8]/40',
-    analyst: 'bg-[#9AAA78]/15 text-[#9AAA78] border-[#9AAA78]/40',
-    viewer: 'bg-[#252728] text-[#A4A5A0] border-[#303334]',
-  };
-
   return (
-    <header className="h-14 bg-[#17191A] border-b border-[#303334] px-6 flex items-center justify-between select-none shrink-0">
-      {/* Search / Context Status */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2 text-xs font-sans bg-[#1E2021] border border-[#303334] px-3 py-1 rounded-md">
+    <header className="h-16 bg-white border-b border-[#e2e8f0] px-6 flex items-center justify-between select-none shrink-0 shadow-sm">
+      {/* Left: Dual Layer SOC Engine Status */}
+      <div className="flex items-center gap-3">
+        {/* Layer 1 Status Badge */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#eff6ff] border border-[#bfdbfe] text-xs">
+          <Shield className="w-3.5 h-3.5 text-[#2563eb]" />
+          <span className="font-semibold text-[#1e40af]">Layer 1: Pre-Firewall</span>
+          <span className="inline-block w-2 h-2 rounded-full bg-[#2563eb] animate-subtle-pulse" />
+          <span className="text-[11px] font-medium text-[#2563eb]">Filtering</span>
+        </div>
+
+        {/* Layer 2 Status Badge */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-[#f5f3ff] border border-[#ddd6fe] text-xs">
+          <Layers className="w-3.5 h-3.5 text-[#7c3aed]" />
+          <span className="font-semibold text-[#5b21b6]">Layer 2: Internal Zero-Trust</span>
+          <span className="inline-block w-2 h-2 rounded-full bg-[#7c3aed] animate-subtle-pulse" />
+          <span className="text-[11px] font-medium text-[#7c3aed]">Monitoring</span>
+        </div>
+
+        {/* Telemetry Live Feed indicator */}
+        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#f8fafc] border border-[#e2e8f0] text-xs text-[#64748b]">
           {connectionStatus === 'connected' ? (
             <>
-              <Wifi className="w-3.5 h-3.5 text-[#9AAA78]" />
-              <span className="text-[#F1F0EA] font-medium">Live Telemetry</span>
-              <span className="text-[10px] text-[#9AAA78] font-semibold uppercase px-1.5 py-0.2 bg-[#9AAA78]/15 rounded">
-                Connected
-              </span>
+              <Wifi className="w-3.5 h-3.5 text-[#16a34a]" />
+              <span className="text-[#334155] font-medium">Socket Connected</span>
             </>
           ) : (
             <>
-              <WifiOff className="w-3.5 h-3.5 text-[#D0A05C]" />
-              <span className="text-[#A4A5A0]">Telemetry Feed</span>
-              <span className="text-[10px] text-[#D0A05C] font-semibold uppercase px-1.5 py-0.2 bg-[#D0A05C]/15 rounded">
-                {connectionStatus}
-              </span>
+              <WifiOff className="w-3.5 h-3.5 text-[#ea580c]" />
+              <span className="text-[#ea580c] font-medium">{connectionStatus}</span>
             </>
           )}
         </div>
       </div>
 
-      {/* User Actions & Session Info */}
+      {/* Right: Quick Alert Notifications, User Info & Logout */}
       <div className="flex items-center gap-3">
-        {/* Notification Icon with Alert Count Badge */}
+        {/* Alerts Button */}
         <NotificationBadge count={alertCount} variant="count" ping={alertCount > 0}>
           <button
             onClick={() => {
-              navigate('/incidents');
+              navigate('/threats');
               setAlertCount(0);
             }}
-            title="View Live Incidents"
-            className="w-8 h-8 rounded-lg border border-[#303334] bg-[#1E2021] hover:bg-[#252728] flex items-center justify-center transition-colors cursor-pointer"
+            title="View Threat Detection Alerts"
+            className="w-9 h-9 rounded-lg border border-[#e2e8f0] bg-[#f8fafc] hover:bg-[#eff6ff] hover:border-[#bfdbfe] flex items-center justify-center transition-colors cursor-pointer text-[#475569] hover:text-[#2563eb]"
           >
-            <Bell className="w-4 h-4 text-[#D0A05C]" />
+            <Bell className="w-4 h-4" />
           </button>
         </NotificationBadge>
 
-        {/* User Identity Pill */}
-        <div className="flex items-center gap-2.5 pl-2 border-l border-[#303334]">
-          <div className="w-7 h-7 rounded-full bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#A4A5A0]">
-            <User className="w-3.5 h-3.5" />
+        {/* User Pill */}
+        <div className="flex items-center gap-3 pl-3 border-l border-[#e2e8f0]">
+          <div className="w-8 h-8 rounded-full bg-[#0a122c] text-white flex items-center justify-center font-medium text-xs">
+            {user?.username ? user.username.charAt(0).toUpperCase() : 'A'}
           </div>
           <div className="text-right hidden sm:block">
-            <div className="text-xs font-medium text-[#F1F0EA] flex items-center gap-2 justify-end">
+            <div className="text-xs font-semibold text-[#0f172a] flex items-center gap-1.5 justify-end">
               {user?.username || 'SOC Analyst'}
-              <span
-                className={`text-[10px] px-1.5 py-0.2 rounded border uppercase font-medium ${
-                  roleBadges[role] || roleBadges.viewer
-                }`}
-              >
-                {role}
+              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-[#eff6ff] text-[#2563eb] border border-[#bfdbfe]">
+                {role || 'analyst'}
               </span>
             </div>
-            <div className="text-[10px] text-[#A4A5A0]">{user?.email || 'analyst@netriq.local'}</div>
+            <div className="text-[11px] text-[#64748b]">{user?.email || 'analyst@netriq.local'}</div>
           </div>
         </div>
 
         {/* Logout */}
         <button
           onClick={logout}
-          title="Logout of session"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#A4A5A0] hover:text-[#C95F5F] hover:bg-[#C95F5F]/10 transition-colors ml-1 cursor-pointer"
+          title="Sign out"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-[#94a3b8] hover:text-[#ef4444] hover:bg-[#fef2f2] transition-colors ml-1 cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
         </button>
@@ -105,4 +122,5 @@ export const Navbar = () => {
     </header>
   );
 };
+
 export default Navbar;

@@ -44,10 +44,10 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
               <CardTitle className="text-base font-semibold text-[#E7ECEF] font-sans">
                 NIDS Packet Capture Engine
               </CardTitle>
-              {/* Small top status indicator with #71A99D */}
+              {/* Small top status indicator with #cc5500 */}
               {isRunning ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-[#71A99D] bg-[#71A99D]/15 px-2 py-0.5 rounded border border-[#71A99D]/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#71A99D]" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-[#cc5500] bg-[#cc5500]/15 px-2 py-0.5 rounded border border-[#cc5500]/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#cc5500]" />
                   SNIFFING ACTIVE
                 </span>
               ) : (
@@ -86,7 +86,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
             <button
               onClick={onStart}
               disabled={!isAdmin || isLoading}
-              className="bg-[#71A99D] hover:bg-[#60958a] text-[#101820] font-sans text-xs font-semibold h-8 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              className="bg-[#cc5500] hover:bg-[#60958a] text-[#101820] font-sans text-xs font-semibold h-8 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Start Capture

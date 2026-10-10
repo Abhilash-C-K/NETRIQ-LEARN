@@ -147,7 +147,7 @@ export const History = () => {
           <button
             onClick={handleExportCSV}
             disabled={logs.length === 0}
-            className="text-xs bg-[#71A99D] hover:bg-[#60958a] text-[#101820] font-sans font-semibold h-8 px-3 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+            className="text-xs bg-[#cc5500] hover:bg-[#60958a] text-[#101820] font-sans font-semibold h-8 px-3 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
           >
             <Download className="w-3.5 h-3.5" />
             Export CSV
@@ -211,7 +211,7 @@ export const History = () => {
       {/* Clean Table Content: Only severity badge gets color */}
       {isLoading ? (
         <div className="p-12 text-center text-[#9AA8B2] space-y-3">
-          <div className="w-7 h-7 border-2 border-[#2A3944] border-t-[#71A99D] rounded-full animate-spin mx-auto" />
+          <div className="w-7 h-7 border-2 border-[#2A3944] border-t-[#cc5500] rounded-full animate-spin mx-auto" />
           <p className="text-xs font-sans">Querying historical flow records...</p>
         </div>
       ) : error ? (
@@ -220,7 +220,7 @@ export const History = () => {
         </div>
       ) : logs.length === 0 ? (
         <div className="p-12 text-center bg-[#19242E] border border-[#2A3944] rounded-lg space-y-2">
-          <ShieldCheck className="w-7 h-7 text-[#71A99D] mx-auto" />
+          <ShieldCheck className="w-7 h-7 text-[#cc5500] mx-auto" />
           <h4 className="text-sm font-semibold text-[#E7ECEF] font-sans">No Records Found</h4>
           <p className="text-xs text-[#9AA8B2] font-sans">No flow logs match the active filter criteria.</p>
         </div>
@@ -251,7 +251,7 @@ export const History = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedDeviceIp(log.src_ip)}
-                        className="text-left font-mono hover:text-[#71A99D] hover:underline transition-colors focus:outline-none cursor-pointer"
+                        className="text-left font-mono hover:text-[#cc5500] hover:underline transition-colors focus:outline-none cursor-pointer"
                         title={`View device activity trail for ${log.src_ip}`}
                       >
                         <span>{log.src_ip}</span>
@@ -262,12 +262,12 @@ export const History = () => {
                     )}
                   </td>
 
-                  {/* Destination: sage/steel (#7895B2 / #71A99D) */}
+                  {/* Destination: sage/steel (#7895B2 / #cc5500) */}
                   <td className="py-3 px-4 font-mono text-[11px] whitespace-nowrap">
                     <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
                     <span className="text-[#687883]">{log.dst_port ? `:${log.dst_port}` : ''}</span>
                     {log.sni && (
-                      <span className="block text-[10px] text-[#71A99D] font-sans">
+                      <span className="block text-[10px] text-[#cc5500] font-sans">
                         {log.sni}
                       </span>
                     )}

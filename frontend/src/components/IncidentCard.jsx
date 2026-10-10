@@ -23,55 +23,55 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
 
   const normSeverity = String(incident.severity || 'LOW').toUpperCase();
 
-  // Left severity indicator lines: High (#D27C62), Critical (#C95F5F), Medium (#D0A05C), Low (#8CA4B8)
+  // Left severity indicator lines: High (#cc5500), Critical (#b83a2e), Medium (#cc8833), Low (#c4956a)
   const severityIndicatorStyles = {
-    CRITICAL: 'border-l-[3px] border-l-[#C95F5F]',
-    HIGH: 'border-l-[3px] border-l-[#D27C62]',
-    MEDIUM: 'border-l-[3px] border-l-[#D0A05C]',
-    LOW: 'border-l-[3px] border-l-[#8CA4B8]',
+    CRITICAL: 'border-l-[3px] border-l-[#b83a2e]',
+    HIGH: 'border-l-[3px] border-l-[#cc5500]',
+    MEDIUM: 'border-l-[3px] border-l-[#cc8833]',
+    LOW: 'border-l-[3px] border-l-[#c4956a]',
   };
 
   return (
     <Card
       onClick={() => onSelect && onSelect(incident)}
-      className={`bg-[#1E2021] hover:bg-[#252728] border border-[#303334] ${
+      className={`bg-[#4a3330] hover:bg-[#5c3d38] border border-[#6b4c45] ${
         severityIndicatorStyles[normSeverity] || severityIndicatorStyles.LOW
-      } text-[#F1F0EA] shadow-none rounded-lg cursor-pointer transition-colors duration-150`}
+      } text-[#f8f4e7] shadow-none rounded-lg cursor-pointer transition-colors duration-150`}
     >
       <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Left Info */}
         <div className="flex items-start gap-3.5">
-          <div className="p-2 rounded-lg bg-[#141516] border border-[#303334] text-[#A4A5A0] mt-0.5 shrink-0">
+          <div className="p-2 rounded-lg bg-[#3b2a27] border border-[#6b4c45] text-[#d4bfb0] mt-0.5 shrink-0">
             <ShieldAlert className="w-4 h-4" />
           </div>
 
           <div className="space-y-1.5">
             {/* Header Badges Row */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs font-bold text-[#F1F0EA] bg-[#141516] px-2 py-0.5 rounded border border-[#303334]">
+              <span className="font-mono text-xs font-bold text-[#f8f4e7] bg-[#3b2a27] px-2 py-0.5 rounded border border-[#6b4c45]">
                 {incident.incident_code || (incident.id ? `INC-${incident.id.slice(-4).toUpperCase()}` : 'INC-101')}
               </span>
               <StatusBadge status={incident.status} />
               <SeverityBadge severity={incident.severity} size="small" />
 
-              {/* Quarantine: dark red outline #C95F5F */}
+              {/* Quarantine: dark red outline #b83a2e */}
               {incident.response_action && (
-                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-[#C95F5F]/10 text-[#C95F5F] border border-[#C95F5F]/60">
+                <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded bg-[#b83a2e]/10 text-[#b83a2e] border border-[#b83a2e]/60">
                   {incident.response_action}
                 </span>
               )}
             </div>
 
-            {/* Main incident text: Warm White #F1F0EA */}
-            <p className="text-sm font-medium text-[#F1F0EA] font-sans line-clamp-1 max-w-xl">
+            {/* Main incident text: Warm White #f8f4e7 */}
+            <p className="text-sm font-medium text-[#f8f4e7] font-sans line-clamp-1 max-w-xl">
               {incident.description || incident.title || 'Security incident flagged by detection engine'}
             </p>
 
             {/* Real Network Flow: Source IP:Port -> Destination IP:Port */}
-            <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#A4A5A0] font-mono pt-1">
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#d4bfb0] font-mono pt-1">
               {/* Origin IP */}
-              <div className="flex items-center gap-1.5 bg-[#141516] px-2 py-0.5 rounded border border-[#303334]">
-                <Server className="w-3 h-3 text-[#8CA4B8]" />
+              <div className="flex items-center gap-1.5 bg-[#3b2a27] px-2 py-0.5 rounded border border-[#6b4c45]">
+                <Server className="w-3 h-3 text-[#c4956a]" />
                 {incident.src_ip || incident.affected_assets?.[0] ? (
                   onSelectDevice ? (
                     <button
@@ -80,35 +80,35 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
                         e.stopPropagation();
                         onSelectDevice(incident.src_ip || incident.affected_assets[0]);
                       }}
-                      className="text-[#F1F0EA] hover:text-[#9AAA78] hover:underline font-mono font-semibold cursor-pointer"
+                      className="text-[#f8f4e7] hover:text-[#cc5500] hover:underline font-mono font-semibold cursor-pointer"
                       title="View host activity trail"
                     >
                       {incident.src_ip || incident.affected_assets[0]}
-                      {incident.src_port ? <span className="text-[#70736F] font-normal">:{incident.src_port}</span> : ''}
+                      {incident.src_port ? <span className="text-[#a08070] font-normal">:{incident.src_port}</span> : ''}
                     </button>
                   ) : (
-                    <span className="text-[#F1F0EA] font-semibold">
+                    <span className="text-[#f8f4e7] font-semibold">
                       {incident.src_ip || incident.affected_assets[0]}
                       {incident.src_port ? `:${incident.src_port}` : ''}
                     </span>
                   )
                 ) : (
-                  <span className="text-[#70736F]">Protected Host</span>
+                  <span className="text-[#a08070]">Protected Host</span>
                 )}
               </div>
 
               {/* Direction Indicator */}
-              <div className="flex items-center gap-1 text-[#70736F]">
+              <div className="flex items-center gap-1 text-[#a08070]">
                 <ArrowRight className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-mono uppercase bg-[#141516] px-1 rounded text-[#8CA4B8]">
+                <span className="text-[10px] font-mono uppercase bg-[#3b2a27] px-1 rounded text-[#c4956a]">
                   {incident.protocol || 'TCP'}
                 </span>
               </div>
 
               {/* Destination Target IP */}
               {incident.dst_ip && (
-                <div className="flex items-center gap-1 bg-[#141516] px-2 py-0.5 rounded border border-[#303334] text-[#A4A5A0]">
-                  <span className="text-[#8CA4B8] font-mono font-medium">
+                <div className="flex items-center gap-1 bg-[#3b2a27] px-2 py-0.5 rounded border border-[#6b4c45] text-[#d4bfb0]">
+                  <span className="text-[#c4956a] font-mono font-medium">
                     {incident.dst_ip}
                     {incident.dst_port ? `:${incident.dst_port}` : ''}
                   </span>
@@ -116,8 +116,8 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
               )}
 
               {/* Created Timestamp */}
-              <span className="flex items-center gap-1 text-[#70736F]">
-                <Clock className="w-3 h-3 text-[#70736F]" />
+              <span className="flex items-center gap-1 text-[#a08070]">
+                <Clock className="w-3 h-3 text-[#a08070]" />
                 {formatTimestamp(incident.created_at)}
               </span>
             </div>
@@ -125,7 +125,7 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
           </div>
         </div>
 
-        {/* Right Actions: Reverse (neutral #303334) + Details */}
+        {/* Right Actions: Reverse (neutral #6b4c45) + Details */}
         <div className="flex items-center gap-2 self-end md:self-center shrink-0">
           {canModify && incident.response_action && (
             <Button
@@ -139,7 +139,7 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
                   initialAction: incident.response_action,
                 });
               }}
-              className="text-xs border-[#303334] bg-[#141516] hover:bg-[#252728] text-[#A4A5A0] hover:text-[#F1F0EA] flex items-center gap-1.5 h-8 font-sans font-medium"
+              className="text-xs border-[#6b4c45] bg-[#3b2a27] hover:bg-[#5c3d38] text-[#d4bfb0] hover:text-[#f8f4e7] flex items-center gap-1.5 h-8 font-sans font-medium"
             >
               <Undo2 className="w-3.5 h-3.5" />
               Reverse
@@ -151,10 +151,10 @@ export const IncidentCard = ({ incident, onSelect, onOpenResponseDialog, onSelec
               e.stopPropagation();
               onSelect(incident);
             }}
-            className="text-xs font-sans font-medium bg-[#141516] hover:bg-[#252728] border border-[#303334] text-[#A4A5A0] hover:text-[#F1F0EA] flex items-center gap-1.5 h-8 px-3 rounded-lg transition-colors cursor-pointer"
+            className="text-xs font-sans font-medium bg-[#3b2a27] hover:bg-[#5c3d38] border border-[#6b4c45] text-[#d4bfb0] hover:text-[#f8f4e7] flex items-center gap-1.5 h-8 px-3 rounded-lg transition-colors cursor-pointer"
             title="Inspect Incident Details"
           >
-            <Activity className="w-3.5 h-3.5 text-[#8CA4B8]" />
+            <Activity className="w-3.5 h-3.5 text-[#c4956a]" />
             <span>Details</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>

@@ -133,23 +133,23 @@ export const Reports = () => {
   return (
     <div className="space-y-6 pb-10">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#1E2021] border border-[#303334] p-5 rounded-lg shadow-none">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#4a3330] border border-[#6b4c45] p-5 rounded-lg shadow-none">
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-lg bg-[#141516] border border-[#303334] text-[#9AAA78]">
+          <div className="p-2.5 rounded-lg bg-[#3b2a27] border border-[#6b4c45] text-[#cc5500]">
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight text-[#F1F0EA] font-sans">
+            <h1 className="text-xl font-bold tracking-tight text-[#f8f4e7] font-sans">
               Compliance &amp; Audit Reports
             </h1>
-            <p className="text-xs text-[#A4A5A0] mt-1 font-sans">
+            <p className="text-xs text-[#d4bfb0] mt-1 font-sans">
               Generate cryptographic, enterprise-grade executive audit PDFs and compliance logs from live NIDS telemetry
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-sans text-[#9AAA78] bg-[#9AAA78]/15 border border-[#9AAA78]/30 px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5">
+          <span className="text-xs font-sans text-[#cc5500] bg-[#cc5500]/15 border border-[#cc5500]/30 px-2.5 py-1 rounded-md font-medium flex items-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5" />
             ReportLab PDF Engine Active
           </span>
@@ -158,10 +158,10 @@ export const Reports = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Left: Generator Form */}
-        <Card className="bg-[#1E2021] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg">
-          <CardHeader className="border-b border-[#303334] pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-[#F1F0EA] font-sans">
-              <FileCheck className="w-4 h-4 text-[#9AAA78]" />
+        <Card className="bg-[#4a3330] border border-[#6b4c45] text-[#f8f4e7] shadow-none rounded-lg">
+          <CardHeader className="border-b border-[#6b4c45] pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2 text-[#f8f4e7] font-sans">
+              <FileCheck className="w-4 h-4 text-[#cc5500]" />
               Generate Audit Report
             </CardTitle>
           </CardHeader>
@@ -175,7 +175,7 @@ export const Reports = () => {
               )}
 
               {successMsg && (
-                <div className="p-2.5 bg-[#1B2418] border border-[#2B3D23] rounded-lg text-[#9AAA78] text-xs flex items-center gap-2">
+                <div className="p-2.5 bg-[#1B2418] border border-[#2B3D23] rounded-lg text-[#cc5500] text-xs flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
                   <span>{successMsg}</span>
                 </div>
@@ -183,13 +183,13 @@ export const Reports = () => {
 
               {/* Report Scope */}
               <div>
-                <label className="block text-xs font-sans font-medium text-[#A4A5A0] mb-1.5">
+                <label className="block text-xs font-sans font-medium text-[#d4bfb0] mb-1.5">
                   Report Scope
                 </label>
                 <select
                   value={reportType}
                   onChange={(e) => setReportType(e.target.value)}
-                  className="w-full text-xs bg-[#141516] border border-[#303334] rounded-lg p-2.5 text-[#F1F0EA] focus:outline-none focus:border-[#9AAA78] font-sans"
+                  className="w-full text-xs bg-[#3b2a27] border border-[#6b4c45] rounded-lg p-2.5 text-[#f8f4e7] focus:outline-none focus:border-[#cc5500] font-sans"
                 >
                   <option value="incident_summary">Executive Threat &amp; Incident Mitigation</option>
                   <option value="sdn_audit">Layer 2 Host Isolation &amp; Quarantine Audit</option>
@@ -199,7 +199,7 @@ export const Reports = () => {
 
               {/* Audit Window */}
               <div>
-                <label className="block text-xs font-sans font-medium text-[#A4A5A0] mb-1.5">
+                <label className="block text-xs font-sans font-medium text-[#d4bfb0] mb-1.5">
                   Audit Window
                 </label>
                 <div className="grid grid-cols-3 gap-2 font-sans">
@@ -214,8 +214,8 @@ export const Reports = () => {
                       onClick={() => setTimeRange(t.id)}
                       className={`py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         timeRange === t.id
-                          ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334]'
-                          : 'bg-[#141516] border border-[#303334] text-[#A4A5A0] hover:text-[#F1F0EA]'
+                          ? 'bg-[#5c3d38] text-[#f8f4e7] border border-[#6b4c45]'
+                          : 'bg-[#3b2a27] border border-[#6b4c45] text-[#d4bfb0] hover:text-[#f8f4e7]'
                       }`}
                     >
                       {t.label}
@@ -226,7 +226,7 @@ export const Reports = () => {
 
               {/* Format */}
               <div>
-                <label className="block text-xs font-sans font-medium text-[#A4A5A0] mb-1.5">
+                <label className="block text-xs font-sans font-medium text-[#d4bfb0] mb-1.5">
                   Artifact Format
                 </label>
                 <div className="grid grid-cols-2 gap-2 font-sans">
@@ -240,8 +240,8 @@ export const Reports = () => {
                       onClick={() => setFormat(f.id)}
                       className={`py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
                         format === f.id
-                          ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334]'
-                          : 'bg-[#141516] border border-[#303334] text-[#A4A5A0] hover:text-[#F1F0EA]'
+                          ? 'bg-[#5c3d38] text-[#f8f4e7] border border-[#6b4c45]'
+                          : 'bg-[#3b2a27] border border-[#6b4c45] text-[#d4bfb0] hover:text-[#f8f4e7]'
                       }`}
                     >
                       {f.label}
@@ -254,7 +254,7 @@ export const Reports = () => {
               <button
                 type="submit"
                 disabled={isGenerating}
-                className="w-full text-xs font-sans font-semibold bg-[#9AAA78] hover:bg-[#A9B989] text-[#141516] py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 mt-2 flex items-center justify-center gap-2"
+                className="w-full text-xs font-sans font-semibold bg-[#cc5500] hover:bg-[#e06010] text-[#3b2a27] py-2.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 mt-2 flex items-center justify-center gap-2"
               >
                 {isGenerating ? (
                   <>
@@ -271,30 +271,30 @@ export const Reports = () => {
 
         {/* Right: Available Reports Repository */}
         <div className="lg:col-span-2 space-y-3">
-          <div className="flex items-center justify-between text-xs text-[#A4A5A0] font-sans px-1">
+          <div className="flex items-center justify-between text-xs text-[#d4bfb0] font-sans px-1">
             <span>AVAILABLE ARTIFACTS ({reportsList.length})</span>
             <span>AUDIT RETENTION: 7 DAYS</span>
           </div>
 
           {reportsList.map((rep) => (
-            <Card key={rep.id} className="bg-[#1E2021] hover:bg-[#252728] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg transition-colors">
+            <Card key={rep.id} className="bg-[#4a3330] hover:bg-[#5c3d38] border border-[#6b4c45] text-[#f8f4e7] shadow-none rounded-lg transition-colors">
               <CardContent className="p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2.5 rounded-lg bg-[#141516] border border-[#303334] text-[#9AAA78] shrink-0">
+                  <div className="p-2.5 rounded-lg bg-[#3b2a27] border border-[#6b4c45] text-[#cc5500] shrink-0">
                     <FileText className="w-4 h-4" />
                   </div>
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs font-semibold text-[#A4A5A0]">{rep.id}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#141516] text-[#A4A5A0] border border-[#303334]">
+                      <span className="font-mono text-xs font-semibold text-[#d4bfb0]">{rep.id}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#3b2a27] text-[#d4bfb0] border border-[#6b4c45]">
                         {rep.format}
                       </span>
-                      <span className="text-[10px] font-sans font-medium px-1.5 py-0.5 rounded bg-[#9AAA78]/15 text-[#9AAA78] border border-[#9AAA78]/30 flex items-center gap-1">
+                      <span className="text-[10px] font-sans font-medium px-1.5 py-0.5 rounded bg-[#cc5500]/15 text-[#cc5500] border border-[#cc5500]/30 flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" /> READY
                       </span>
                     </div>
-                    <h4 className="text-xs font-semibold text-[#F1F0EA] font-sans truncate">{rep.title}</h4>
-                    <p className="text-[11px] text-[#A4A5A0] font-mono">
+                    <h4 className="text-xs font-semibold text-[#f8f4e7] font-sans truncate">{rep.title}</h4>
+                    <p className="text-[11px] text-[#d4bfb0] font-mono">
                       {new Date(rep.created_at).toLocaleDateString()} • {rep.size}
                     </p>
                   </div>
@@ -305,7 +305,7 @@ export const Reports = () => {
                   variant="outline"
                   onClick={() => handleDownload(rep)}
                   disabled={downloadingId === rep.id}
-                  className="text-xs border-[#303334] bg-[#141516] hover:bg-[#252728] text-[#F1F0EA] flex items-center gap-1.5 shrink-0 h-8 font-sans cursor-pointer"
+                  className="text-xs border-[#6b4c45] bg-[#3b2a27] hover:bg-[#5c3d38] text-[#f8f4e7] flex items-center gap-1.5 shrink-0 h-8 font-sans cursor-pointer"
                 >
                   <Download className={`w-3.5 h-3.5 ${downloadingId === rep.id ? 'animate-bounce' : ''}`} />
                   {downloadingId === rep.id ? 'Downloading...' : 'Download PDF'}

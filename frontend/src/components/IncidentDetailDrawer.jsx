@@ -178,32 +178,32 @@ export const IncidentDetailDrawer = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 p-2 sm:p-4">
       {/* Outer Window Container */}
       <div
-        className={`flex flex-col bg-[#141516] border border-[#303334] rounded-lg shadow-2xl overflow-hidden transition-all duration-200 ${
+        className={`flex flex-col bg-[#3b2a27] border border-[#6b4c45] rounded-lg shadow-2xl overflow-hidden transition-all duration-200 ${
           isMaximized ? 'w-full h-full' : 'w-[96vw] max-w-[1340px] h-[92vh] max-h-[880px]'
         }`}
       >
         {/* ========================================================= */}
         {/* 1. TOP WINDOW TITLE BAR */}
         {/* ========================================================= */}
-        <div className="h-12 bg-[#1E2021] border-b border-[#303334] flex items-center justify-between px-4 shrink-0">
+        <div className="h-12 bg-[#4a3330] border-b border-[#6b4c45] flex items-center justify-between px-4 shrink-0">
           {/* Left: Code, Status, Severity */}
           <div className="flex items-center gap-3">
-            <span className="font-mono text-sm font-bold text-[#F1F0EA] bg-[#141516] px-2.5 py-0.5 rounded border border-[#303334]">
+            <span className="font-mono text-sm font-bold text-[#f8f4e7] bg-[#3b2a27] px-2.5 py-0.5 rounded border border-[#6b4c45]">
               {incidentCode}
             </span>
             <SeverityBadge severity={severity} size="medium" />
             <StatusBadge status={status} />
 
             {action && (
-              <span className="text-[11px] font-mono font-semibold uppercase px-2.5 py-0.5 rounded bg-[#C95F5F]/15 text-[#C95F5F] border border-[#C95F5F]/40">
+              <span className="text-[11px] font-mono font-semibold uppercase px-2.5 py-0.5 rounded bg-[#b83a2e]/15 text-[#b83a2e] border border-[#b83a2e]/40">
                 {action}
               </span>
             )}
           </div>
 
           {/* Center: Title / Summary */}
-          <div className="hidden md:flex items-center gap-2 text-xs font-sans text-[#A4A5A0] truncate max-w-md">
-            <span className="text-[#F1F0EA] font-medium truncate">
+          <div className="hidden md:flex items-center gap-2 text-xs font-sans text-[#d4bfb0] truncate max-w-md">
+            <span className="text-[#f8f4e7] font-medium truncate">
               {incident.description || incident.title}
             </span>
           </div>
@@ -212,7 +212,7 @@ export const IncidentDetailDrawer = ({
           <div className="flex items-center gap-1.5">
             {/* Status Switcher Dropdown */}
             {canModify && onUpdateStatus && (
-              <div className="flex items-center gap-1 mr-2 bg-[#141516] p-0.5 rounded border border-[#303334]">
+              <div className="flex items-center gap-1 mr-2 bg-[#3b2a27] p-0.5 rounded border border-[#6b4c45]">
                 {['active', 'investigating', 'resolved'].map((s) => (
                   <button
                     key={s}
@@ -220,8 +220,8 @@ export const IncidentDetailDrawer = ({
                     onClick={() => onUpdateStatus(incident.id, { status: s })}
                     className={`px-2 py-0.5 rounded text-[11px] font-sans font-medium uppercase transition-colors cursor-pointer ${
                       status === s
-                        ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334]'
-                        : 'text-[#70736F] hover:text-[#A4A5A0]'
+                        ? 'bg-[#5c3d38] text-[#f8f4e7] border border-[#6b4c45]'
+                        : 'text-[#a08070] hover:text-[#d4bfb0]'
                     }`}
                   >
                     {s}
@@ -232,14 +232,14 @@ export const IncidentDetailDrawer = ({
 
             <button
               onClick={() => setIsMaximized(!isMaximized)}
-              className="w-7 h-7 flex items-center justify-center text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728] rounded transition-colors"
+              className="w-7 h-7 flex items-center justify-center text-[#d4bfb0] hover:text-[#f8f4e7] hover:bg-[#5c3d38] rounded transition-colors"
               title={isMaximized ? 'Restore' : 'Maximize'}
             >
               <Square className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={onClose}
-              className="w-7 h-7 flex items-center justify-center text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#C95F5F] rounded transition-colors"
+              className="w-7 h-7 flex items-center justify-center text-[#d4bfb0] hover:text-[#f8f4e7] hover:bg-[#b83a2e] rounded transition-colors"
               title="Close"
             >
               <X className="w-4 h-4" />
@@ -252,21 +252,21 @@ export const IncidentDetailDrawer = ({
         {/* ========================================================= */}
         <div className="flex flex-1 overflow-hidden">
           {/* --- LEFT NAVIGATION SIDEBAR (Width: 240px) --- */}
-          <div className="w-[240px] bg-[#1E2021] border-r border-[#303334] p-3 flex flex-col gap-2 shrink-0">
+          <div className="w-[240px] bg-[#4a3330] border-r border-[#6b4c45] p-3 flex flex-col gap-2 shrink-0">
             {/* Tab 1: Threat Flow & Forensics (Primary) */}
             <button
               onClick={() => setActiveTab('incident_overview')}
               className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
                 activeTab === 'incident_overview'
-                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
-                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
+                  ? 'bg-[#5c3d38] text-[#f8f4e7] border border-[#6b4c45] shadow-sm'
+                  : 'text-[#d4bfb0] hover:text-[#f8f4e7] hover:bg-[#5c3d38]/50'
               }`}
             >
               <div className="flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-[#C95F5F]" />
+                <ShieldAlert className="w-4 h-4 text-[#b83a2e]" />
                 <span className="text-xs font-semibold font-sans">Threat Flow & Forensics</span>
               </div>
-              <div className="text-[11px] font-mono text-[#8CA4B8] truncate">
+              <div className="text-[11px] font-mono text-[#c4956a] truncate">
                 {srcIp} → {dstIp}
               </div>
             </button>
@@ -276,15 +276,15 @@ export const IncidentDetailDrawer = ({
               onClick={() => setActiveTab('ports')}
               className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
                 activeTab === 'ports'
-                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
-                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
+                  ? 'bg-[#5c3d38] text-[#f8f4e7] border border-[#6b4c45] shadow-sm'
+                  : 'text-[#d4bfb0] hover:text-[#f8f4e7] hover:bg-[#5c3d38]/50'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#8CA4B8]" />
+                <Layers className="w-4 h-4 text-[#c4956a]" />
                 <span className="text-xs font-semibold font-sans">Host Open Sockets</span>
               </div>
-              <span className="text-[11px] font-mono text-[#70736F]">
+              <span className="text-[11px] font-mono text-[#a08070]">
                 {summary.open_ports_count} active listening ports
               </span>
             </button>
@@ -294,17 +294,17 @@ export const IncidentDetailDrawer = ({
               onClick={() => setActiveTab('traffic')}
               className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
                 activeTab === 'traffic'
-                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
-                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
+                  ? 'bg-[#5c3d38] text-[#f8f4e7] border border-[#6b4c45] shadow-sm'
+                  : 'text-[#d4bfb0] hover:text-[#f8f4e7] hover:bg-[#5c3d38]/50'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#9AAA78]" />
+                <Activity className="w-4 h-4 text-[#cc5500]" />
                 <span className="text-xs font-semibold font-sans">Interface Bandwidth</span>
               </div>
               <div className="flex items-center gap-2 text-[10px] font-mono">
-                <span className="text-[#9AAA78]">↓ {summary.rx_rate_formatted}</span>
-                <span className="text-[#C95F5F]">↑ {summary.tx_rate_formatted}</span>
+                <span className="text-[#cc5500]">↓ {summary.rx_rate_formatted}</span>
+                <span className="text-[#b83a2e]">↑ {summary.tx_rate_formatted}</span>
               </div>
             </button>
 
@@ -313,130 +313,130 @@ export const IncidentDetailDrawer = ({
               onClick={() => setActiveTab('blocked')}
               className={`w-full text-left px-3 py-2.5 rounded-lg transition-all flex flex-col gap-1 cursor-pointer ${
                 activeTab === 'blocked'
-                  ? 'bg-[#252728] text-[#F1F0EA] border border-[#303334] shadow-sm'
-                  : 'text-[#A4A5A0] hover:text-[#F1F0EA] hover:bg-[#252728]/50'
+                  ? 'bg-[#5c3d38] text-[#f8f4e7] border border-[#6b4c45] shadow-sm'
+                  : 'text-[#d4bfb0] hover:text-[#f8f4e7] hover:bg-[#5c3d38]/50'
               }`}
             >
               <div className="flex items-center gap-2">
-                <Lock className="w-4 h-4 text-[#D27C62]" />
+                <Lock className="w-4 h-4 text-[#cc5500]" />
                 <span className="text-xs font-semibold font-sans">Contained Hosts</span>
               </div>
-              <span className="text-[11px] font-mono text-[#70736F]">
+              <span className="text-[11px] font-mono text-[#a08070]">
                 {blockedComputers.length} quarantined
               </span>
             </button>
 
             {/* Sidebar Incident Quick Fact */}
-            <div className="mt-auto p-3 rounded-lg bg-[#141516] border border-[#303334] space-y-1.5 text-xs font-sans">
-              <div className="text-[10px] uppercase font-mono tracking-wider text-[#70736F]">Incident Detection</div>
-              <div className="text-[#F1F0EA] font-semibold">{incidentCode}</div>
-              <div className="text-[11px] text-[#A4A5A0] leading-relaxed">
+            <div className="mt-auto p-3 rounded-lg bg-[#3b2a27] border border-[#6b4c45] space-y-1.5 text-xs font-sans">
+              <div className="text-[10px] uppercase font-mono tracking-wider text-[#a08070]">Incident Detection</div>
+              <div className="text-[#f8f4e7] font-semibold">{incidentCode}</div>
+              <div className="text-[11px] text-[#d4bfb0] leading-relaxed">
                 Created {formatTimestamp(incident.created_at)}
               </div>
             </div>
           </div>
 
           {/* --- RIGHT MAIN VIEW AREA --- */}
-          <div className="flex-1 flex flex-col bg-[#141516] overflow-hidden">
+          <div className="flex-1 flex flex-col bg-[#3b2a27] overflow-hidden">
             {/* ========================================================= */}
             {/* VIEW 1: THREAT FLOW & FORENSICS (PRIMARY VIEW) */}
             {/* ========================================================= */}
             {activeTab === 'incident_overview' && (
               <div className="flex-1 overflow-y-auto p-5 space-y-5">
                 {/* 1. VISUAL NETWORK FLOW ROUTE MAP */}
-                <div className="bg-[#1E2021] border border-[#303334] rounded-lg p-5 space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-[#303334]">
+                <div className="bg-[#4a3330] border border-[#6b4c45] rounded-lg p-5 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#6b4c45]">
                     <div className="flex items-center gap-2">
-                      <Server className="w-4 h-4 text-[#9AAA78]" />
-                      <h2 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                      <Server className="w-4 h-4 text-[#cc5500]" />
+                      <h2 className="text-xs font-bold uppercase tracking-wider text-[#f8f4e7] font-sans">
                         Network Traffic Origin & Target
                       </h2>
                     </div>
-                    <span className="text-xs font-mono text-[#A4A5A0]">
-                      Protocol: <strong className="text-[#F1F0EA]">{protocol}</strong> • Transferred: <strong className="text-[#9AAA78]">{dataKb} KB</strong> ({packetCount} pkts)
+                    <span className="text-xs font-mono text-[#d4bfb0]">
+                      Protocol: <strong className="text-[#f8f4e7]">{protocol}</strong> • Transferred: <strong className="text-[#cc5500]">{dataKb} KB</strong> ({packetCount} pkts)
                     </span>
                   </div>
 
                   {/* Flow Diagram: Origin IP -> Destination IP */}
                   <div className="grid grid-cols-1 md:grid-cols-11 gap-4 items-center">
                     {/* Origin / Source Node (5 Cols) */}
-                    <div className="md:col-span-5 p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-2">
+                    <div className="md:col-span-5 p-4 rounded-lg bg-[#3b2a27] border border-[#6b4c45] space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-mono uppercase font-semibold text-[#8CA4B8] tracking-wider">
+                        <span className="text-[11px] font-mono uppercase font-semibold text-[#c4956a] tracking-wider">
                           Originating Source Host
                         </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#C95F5F]/15 text-[#C95F5F] border border-[#C95F5F]/30">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#b83a2e]/15 text-[#b83a2e] border border-[#b83a2e]/30">
                           COMPROMISED HOST
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#8CA4B8]">
+                        <div className="w-10 h-10 rounded-lg bg-[#4a3330] border border-[#6b4c45] flex items-center justify-center text-[#c4956a]">
                           <Monitor className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="font-mono text-base font-bold text-[#F1F0EA]">
+                          <div className="font-mono text-base font-bold text-[#f8f4e7]">
                             {srcIp}
-                            <span className="text-xs text-[#70736F] font-normal">:{srcPort}</span>
+                            <span className="text-xs text-[#a08070] font-normal">:{srcPort}</span>
                           </div>
-                          <p className="text-xs text-[#A4A5A0] font-sans">
+                          <p className="text-xs text-[#d4bfb0] font-sans">
                             {incident.source_label || 'Internal Subnet Workstation'}
                           </p>
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-[#303334]/60 flex items-center justify-between">
+                      <div className="pt-2 border-t border-[#6b4c45]/60 flex items-center justify-between">
                         <button
                           type="button"
                           onClick={() => setSelectedDeviceActivityIp(srcIp)}
-                          className="text-xs text-[#9AAA78] hover:underline font-mono flex items-center gap-1 cursor-pointer"
+                          className="text-xs text-[#cc5500] hover:underline font-mono flex items-center gap-1 cursor-pointer"
                         >
                           <span>Inspect Activity Trail</span>
                           <ArrowRight className="w-3 h-3" />
                         </button>
-                        <span className="text-[10px] font-mono text-[#70736F]">VLAN 10 Subnet</span>
+                        <span className="text-[10px] font-mono text-[#a08070]">VLAN 10 Subnet</span>
                       </div>
                     </div>
 
                     {/* Vector Arrow & Flow Stats (1 Col) */}
                     <div className="md:col-span-1 flex flex-col items-center justify-center py-2">
-                      <div className="w-8 h-8 rounded-full bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#9AAA78] animate-pulse">
+                      <div className="w-8 h-8 rounded-full bg-[#4a3330] border border-[#6b4c45] flex items-center justify-center text-[#cc5500] animate-pulse">
                         <ArrowRight className="w-4 h-4" />
                       </div>
-                      <span className="text-[10px] font-mono font-bold text-[#9AAA78] mt-1 uppercase">
+                      <span className="text-[10px] font-mono font-bold text-[#cc5500] mt-1 uppercase">
                         {protocol}
                       </span>
                     </div>
 
                     {/* Destination / Remote Node (5 Cols) */}
-                    <div className="md:col-span-5 p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-2">
+                    <div className="md:col-span-5 p-4 rounded-lg bg-[#3b2a27] border border-[#6b4c45] space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-mono uppercase font-semibold text-[#D27C62] tracking-wider">
+                        <span className="text-[11px] font-mono uppercase font-semibold text-[#cc5500] tracking-wider">
                           Destination Remote Target
                         </span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#D27C62]/15 text-[#D27C62] border border-[#D27C62]/30">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#cc5500]/15 text-[#cc5500] border border-[#cc5500]/30">
                           THREAT TARGET
                         </span>
                       </div>
 
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-[#1E2021] border border-[#303334] flex items-center justify-center text-[#D27C62]">
+                        <div className="w-10 h-10 rounded-lg bg-[#4a3330] border border-[#6b4c45] flex items-center justify-center text-[#cc5500]">
                           <Globe className="w-5 h-5" />
                         </div>
                         <div>
-                          <div className="font-mono text-base font-bold text-[#F1F0EA]">
+                          <div className="font-mono text-base font-bold text-[#f8f4e7]">
                             {dstIp}
-                            <span className="text-xs text-[#70736F] font-normal">:{dstPort}</span>
+                            <span className="text-xs text-[#a08070] font-normal">:{dstPort}</span>
                           </div>
-                          <p className="text-xs text-[#A4A5A0] font-sans">
+                          <p className="text-xs text-[#d4bfb0] font-sans">
                             {incident.target_label || 'External Remote Host / C2 Server'}
                           </p>
                         </div>
                       </div>
 
-                      <div className="pt-2 border-t border-[#303334]/60 flex items-center justify-between text-[11px] text-[#A4A5A0]">
-                        <span>Destination Port: <strong className="font-mono text-[#F1F0EA]">{dstPort}</strong></span>
-                        <span className="font-mono text-[#D27C62]">QUARANTINE ENFORCED</span>
+                      <div className="pt-2 border-t border-[#6b4c45]/60 flex items-center justify-between text-[11px] text-[#d4bfb0]">
+                        <span>Destination Port: <strong className="font-mono text-[#f8f4e7]">{dstPort}</strong></span>
+                        <span className="font-mono text-[#cc5500]">QUARANTINE ENFORCED</span>
                       </div>
                     </div>
                   </div>
@@ -445,45 +445,45 @@ export const IncidentDetailDrawer = ({
                 {/* 2. DETECTION REASONING & ANALYST INVESTIGATION NOTES */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Left: AI Verdict Evidence */}
-                  <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] space-y-3">
+                  <div className="p-4 rounded-lg bg-[#4a3330] border border-[#6b4c45] space-y-3">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A4A5A0] font-sans flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-[#9AAA78]" />
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#d4bfb0] font-sans flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-[#cc5500]" />
                         Detection Intelligence & Verdict
                       </h3>
-                      <span className="text-xs font-mono font-bold text-[#9AAA78] bg-[#9AAA78]/15 px-2 py-0.5 rounded border border-[#9AAA78]/30">
+                      <span className="text-xs font-mono font-bold text-[#cc5500] bg-[#cc5500]/15 px-2 py-0.5 rounded border border-[#cc5500]/30">
                         {confidence}% AI Confidence
                       </span>
                     </div>
 
-                    <div className="p-3 rounded bg-[#141516] border border-[#303334] text-xs font-sans text-[#F1F0EA] leading-relaxed">
+                    <div className="p-3 rounded bg-[#3b2a27] border border-[#6b4c45] text-xs font-sans text-[#f8f4e7] leading-relaxed">
                       {incident.description || 'Behavioral anomaly detected on internal subnet. Persistent outbound flows matched threat signature profile.'}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-                      <div className="p-2.5 rounded bg-[#141516] border border-[#303334]">
-                        <span className="text-[#70736F] block text-[10px] uppercase">Inspection Engine</span>
-                        <span className="text-[#F1F0EA] font-semibold">DualLayerFusion Model</span>
+                      <div className="p-2.5 rounded bg-[#3b2a27] border border-[#6b4c45]">
+                        <span className="text-[#a08070] block text-[10px] uppercase">Inspection Engine</span>
+                        <span className="text-[#f8f4e7] font-semibold">DualLayerFusion Model</span>
                       </div>
-                      <div className="p-2.5 rounded bg-[#141516] border border-[#303334]">
-                        <span className="text-[#70736F] block text-[10px] uppercase">Enforcement Action</span>
-                        <span className="text-[#C95F5F] font-semibold">{action}</span>
+                      <div className="p-2.5 rounded bg-[#3b2a27] border border-[#6b4c45]">
+                        <span className="text-[#a08070] block text-[10px] uppercase">Enforcement Action</span>
+                        <span className="text-[#b83a2e] font-semibold">{action}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Right: SOC Analyst Notes */}
-                  <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] space-y-2 flex flex-col">
+                  <div className="p-4 rounded-lg bg-[#4a3330] border border-[#6b4c45] space-y-2 flex flex-col">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#A4A5A0] font-sans flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-[#8CA4B8]" />
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-[#d4bfb0] font-sans flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-[#c4956a]" />
                         SOC Analyst Notes & Containment Log
                       </h3>
                       {canModify && (
                         <button
                           onClick={handleSaveNotes}
                           disabled={isSavingNotes}
-                          className="text-xs font-sans font-semibold bg-[#9AAA78] hover:bg-[#A9B989] text-[#141516] px-2.5 py-0.5 rounded transition-colors cursor-pointer disabled:opacity-50"
+                          className="text-xs font-sans font-semibold bg-[#cc5500] hover:bg-[#e06010] text-[#3b2a27] px-2.5 py-0.5 rounded transition-colors cursor-pointer disabled:opacity-50"
                         >
                           {isSavingNotes ? 'Saving...' : 'Save Notes'}
                         </button>
@@ -495,41 +495,41 @@ export const IncidentDetailDrawer = ({
                       onChange={(e) => setNotesText(e.target.value)}
                       placeholder="Add investigation findings, triage steps, or host remediation actions..."
                       disabled={!canModify}
-                      className="flex-1 w-full bg-[#141516] border border-[#303334] text-[#F1F0EA] text-xs font-mono rounded p-2.5 placeholder-[#70736F] focus:outline-none focus:border-[#9AAA78] resize-none min-h-[90px]"
+                      className="flex-1 w-full bg-[#3b2a27] border border-[#6b4c45] text-[#f8f4e7] text-xs font-mono rounded p-2.5 placeholder-[#a08070] focus:outline-none focus:border-[#cc5500] resize-none min-h-[90px]"
                     />
                   </div>
                 </div>
 
                 {/* 3. 100% REAL EVALUATED TRAFFIC FLOWS FOR THIS HOST */}
-                <div className="bg-[#1E2021] border border-[#303334] rounded-lg overflow-hidden">
-                  <div className="p-4 border-b border-[#303334] flex items-center justify-between">
+                <div className="bg-[#4a3330] border border-[#6b4c45] rounded-lg overflow-hidden">
+                  <div className="p-4 border-b border-[#6b4c45] flex items-center justify-between">
                     <div>
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans flex items-center gap-2">
-                        <Activity className="w-4 h-4 text-[#9AAA78]" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-[#f8f4e7] font-sans flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-[#cc5500]" />
                         Associated Network Traffic Flows for {srcIp}
                       </h3>
-                      <p className="text-[11px] text-[#A4A5A0] font-sans mt-0.5">
+                      <p className="text-[11px] text-[#d4bfb0] font-sans mt-0.5">
                         Historical packet flows evaluated by detection pipeline stored in MongoDB
                       </p>
                     </div>
-                    <span className="text-xs font-mono text-[#A4A5A0] bg-[#141516] px-2 py-1 rounded border border-[#303334]">
+                    <span className="text-xs font-mono text-[#d4bfb0] bg-[#3b2a27] px-2 py-1 rounded border border-[#6b4c45]">
                       {deviceFlows.length} recorded flows
                     </span>
                   </div>
 
                   {isLoadingFlows ? (
-                    <div className="p-8 text-center text-[#A4A5A0] space-y-2">
-                      <div className="w-6 h-6 border-2 border-[#303334] border-t-[#9AAA78] rounded-full animate-spin mx-auto" />
+                    <div className="p-8 text-center text-[#d4bfb0] space-y-2">
+                      <div className="w-6 h-6 border-2 border-[#6b4c45] border-t-[#cc5500] rounded-full animate-spin mx-auto" />
                       <p className="text-xs font-sans">Querying real network flow records from database...</p>
                     </div>
                   ) : deviceFlows.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-[#A4A5A0] font-sans">
-                      No additional flows recorded for host <span className="font-mono text-[#F1F0EA]">{srcIp}</span>.
+                    <div className="p-8 text-center text-xs text-[#d4bfb0] font-sans">
+                      No additional flows recorded for host <span className="font-mono text-[#f8f4e7]">{srcIp}</span>.
                     </div>
                   ) : (
                     <div className="overflow-x-auto max-h-64 overflow-y-auto">
                       <table className="w-full text-left text-xs border-collapse font-sans">
-                        <thead className="bg-[#141516] text-[#A4A5A0] uppercase tracking-wider text-[10px] font-mono border-b border-[#303334] sticky top-0">
+                        <thead className="bg-[#3b2a27] text-[#d4bfb0] uppercase tracking-wider text-[10px] font-mono border-b border-[#6b4c45] sticky top-0">
                           <tr>
                             <th className="py-2.5 px-4">Time</th>
                             <th className="py-2.5 px-4">Source Endpoint</th>
@@ -539,7 +539,7 @@ export const IncidentDetailDrawer = ({
                             <th className="py-2.5 px-4 text-right">Action</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#303334]/50 font-mono text-[11px]">
+                        <tbody className="divide-y divide-[#6b4c45]/50 font-mono text-[11px]">
                           {deviceFlows.map((flow, idx) => {
                             const flowSrc = flow.src_ip || srcIp;
                             const flowDst = flow.dst_ip || dstIp;
@@ -550,25 +550,25 @@ export const IncidentDetailDrawer = ({
                             const flowAction = flow.action || 'NOTIFY';
 
                             return (
-                              <tr key={flow.id || idx} className="hover:bg-[#252728] transition-colors">
-                                <td className="py-2 px-4 text-[#A4A5A0]">
+                              <tr key={flow.id || idx} className="hover:bg-[#5c3d38] transition-colors">
+                                <td className="py-2 px-4 text-[#d4bfb0]">
                                   {formatTimestamp(flow.timestamp)}
                                 </td>
-                                <td className="py-2 px-4 text-[#F1F0EA] font-semibold">
+                                <td className="py-2 px-4 text-[#f8f4e7] font-semibold">
                                   {flowSrc}:{flowSrcPort}
                                 </td>
-                                <td className="py-2 px-4 text-[#8CA4B8]">
+                                <td className="py-2 px-4 text-[#c4956a]">
                                   {flowDst}:{flowDstPort}
-                                  {flow.sni && <span className="text-[10px] text-[#9AAA78] block">{flow.sni}</span>}
+                                  {flow.sni && <span className="text-[10px] text-[#cc5500] block">{flow.sni}</span>}
                                 </td>
-                                <td className="py-2 px-4 text-[#A4A5A0]">
+                                <td className="py-2 px-4 text-[#d4bfb0]">
                                   {flowProto}
                                 </td>
                                 <td className="py-2 px-4">
                                   <SeverityBadge severity={flowSev} size="small" />
                                 </td>
                                 <td className="py-2 px-4 text-right">
-                                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#141516] border border-[#303334] text-[#A4A5A0]">
+                                  <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-[#3b2a27] border border-[#6b4c45] text-[#d4bfb0]">
                                     {flowAction}
                                   </span>
                                 </td>
@@ -582,12 +582,12 @@ export const IncidentDetailDrawer = ({
                 </div>
 
                 {/* 4. SOC ENFORCEMENT & MITIGATION ACTIONS */}
-                <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] flex flex-wrap items-center justify-between gap-3">
+                <div className="p-4 rounded-lg bg-[#4a3330] border border-[#6b4c45] flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h4 className="text-xs font-bold text-[#F1F0EA] font-sans">
+                    <h4 className="text-xs font-bold text-[#f8f4e7] font-sans">
                       Enforcement Actions & Host Containment
                     </h4>
-                    <p className="text-[11px] text-[#A4A5A0] font-sans mt-0.5">
+                    <p className="text-[11px] text-[#d4bfb0] font-sans mt-0.5">
                       Dispatch network containment command to SDN controller or firewall
                     </p>
                   </div>
@@ -603,7 +603,7 @@ export const IncidentDetailDrawer = ({
                               initialAction: 'quarantine',
                             })
                           }
-                          className="bg-[#C95F5F]/15 hover:bg-[#C95F5F]/25 text-[#C95F5F] border border-[#C95F5F]/40 text-xs font-sans font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="bg-[#b83a2e]/15 hover:bg-[#b83a2e]/25 text-[#b83a2e] border border-[#b83a2e]/40 text-xs font-sans font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <Lock className="w-3.5 h-3.5" />
                           <span>Isolate Host ({srcIp})</span>
@@ -617,7 +617,7 @@ export const IncidentDetailDrawer = ({
                               initialAction: action,
                             })
                           }
-                          className="bg-[#141516] hover:bg-[#252728] text-[#A4A5A0] hover:text-[#F1F0EA] border border-[#303334] text-xs font-sans font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                          className="bg-[#3b2a27] hover:bg-[#5c3d38] text-[#d4bfb0] hover:text-[#f8f4e7] border border-[#6b4c45] text-xs font-sans font-medium px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
                         >
                           <Undo2 className="w-3.5 h-3.5" />
                           <span>Reverse Quarantine</span>
@@ -634,27 +634,27 @@ export const IncidentDetailDrawer = ({
             {/* ========================================================= */}
             {activeTab === 'ports' && (
               <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="h-12 border-b border-[#303334] px-4 flex items-center justify-between shrink-0 bg-[#1E2021]">
+                <div className="h-12 border-b border-[#6b4c45] px-4 flex items-center justify-between shrink-0 bg-[#4a3330]">
                   <div>
-                    <h2 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                    <h2 className="text-xs font-bold uppercase tracking-wider text-[#f8f4e7] font-sans">
                       Host Listening Sockets & Services
                     </h2>
                   </div>
                   <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-[#70736F] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                    <Search className="w-3.5 h-3.5 text-[#a08070] absolute left-2.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="text"
                       placeholder="Search port or process..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-48 bg-[#141516] border border-[#303334] text-[#F1F0EA] text-xs font-mono rounded pl-8 pr-2.5 py-1 focus:outline-none focus:border-[#9AAA78]"
+                      className="w-48 bg-[#3b2a27] border border-[#6b4c45] text-[#f8f4e7] text-xs font-mono rounded pl-8 pr-2.5 py-1 focus:outline-none focus:border-[#cc5500]"
                     />
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-[#141516] border-b border-[#303334] text-[#A4A5A0] uppercase font-mono text-[10px] sticky top-0">
+                    <thead className="bg-[#3b2a27] border-b border-[#6b4c45] text-[#d4bfb0] uppercase font-mono text-[10px] sticky top-0">
                       <tr>
                         <th className="py-2.5 px-4">Service / Process</th>
                         <th className="py-2.5 px-4">PID</th>
@@ -663,16 +663,16 @@ export const IncidentDetailDrawer = ({
                         <th className="py-2.5 px-4">Protocol</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#303334]/50 font-mono text-[11px]">
+                    <tbody className="divide-y divide-[#6b4c45]/50 font-mono text-[11px]">
                       {filteredPorts.map((p, idx) => (
-                        <tr key={idx} className="hover:bg-[#252728] transition-colors">
-                          <td className="py-2 px-4 text-[#F1F0EA] font-medium font-sans">
+                        <tr key={idx} className="hover:bg-[#5c3d38] transition-colors">
+                          <td className="py-2 px-4 text-[#f8f4e7] font-medium font-sans">
                             {p.process || 'Windows Service'}
                           </td>
-                          <td className="py-2 px-4 text-[#A4A5A0]">{p.pid}</td>
-                          <td className="py-2 px-4 font-bold text-[#9AAA78]">{p.port}</td>
-                          <td className="py-2 px-4 text-[#A4A5A0]">{p.ip || '0.0.0.0'}</td>
-                          <td className="py-2 px-4 uppercase text-[#8CA4B8]">{p.protocol || 'TCP'}</td>
+                          <td className="py-2 px-4 text-[#d4bfb0]">{p.pid}</td>
+                          <td className="py-2 px-4 font-bold text-[#cc5500]">{p.port}</td>
+                          <td className="py-2 px-4 text-[#d4bfb0]">{p.ip || '0.0.0.0'}</td>
+                          <td className="py-2 px-4 uppercase text-[#c4956a]">{p.protocol || 'TCP'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -686,31 +686,31 @@ export const IncidentDetailDrawer = ({
             {/* ========================================================= */}
             {activeTab === 'traffic' && (
               <div className="flex-1 p-6 overflow-y-auto space-y-4">
-                <div className="bg-[#1E2021] border border-[#303334] rounded-lg p-5 space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                <div className="bg-[#4a3330] border border-[#6b4c45] rounded-lg p-5 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#f8f4e7] font-sans">
                     Live Interface Bandwidth Utilization
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-1">
-                      <span className="text-[11px] font-mono text-[#A4A5A0] flex items-center gap-1.5">
-                        <ArrowDown className="w-3.5 h-3.5 text-[#9AAA78]" />
+                    <div className="p-4 rounded-lg bg-[#3b2a27] border border-[#6b4c45] space-y-1">
+                      <span className="text-[11px] font-mono text-[#d4bfb0] flex items-center gap-1.5">
+                        <ArrowDown className="w-3.5 h-3.5 text-[#cc5500]" />
                         Total Inbound (Rx)
                       </span>
-                      <div className="text-2xl font-bold font-mono text-[#F1F0EA]">
+                      <div className="text-2xl font-bold font-mono text-[#f8f4e7]">
                         {summary.total_rx_formatted}
                       </div>
-                      <span className="text-xs font-mono text-[#9AAA78]">Rate: {summary.rx_rate_formatted}</span>
+                      <span className="text-xs font-mono text-[#cc5500]">Rate: {summary.rx_rate_formatted}</span>
                     </div>
 
-                    <div className="p-4 rounded-lg bg-[#141516] border border-[#303334] space-y-1">
-                      <span className="text-[11px] font-mono text-[#A4A5A0] flex items-center gap-1.5">
-                        <ArrowUp className="w-3.5 h-3.5 text-[#C95F5F]" />
+                    <div className="p-4 rounded-lg bg-[#3b2a27] border border-[#6b4c45] space-y-1">
+                      <span className="text-[11px] font-mono text-[#d4bfb0] flex items-center gap-1.5">
+                        <ArrowUp className="w-3.5 h-3.5 text-[#b83a2e]" />
                         Total Outbound (Tx)
                       </span>
-                      <div className="text-2xl font-bold font-mono text-[#F1F0EA]">
+                      <div className="text-2xl font-bold font-mono text-[#f8f4e7]">
                         {summary.total_tx_formatted}
                       </div>
-                      <span className="text-xs font-mono text-[#C95F5F]">Rate: {summary.tx_rate_formatted}</span>
+                      <span className="text-xs font-mono text-[#b83a2e]">Rate: {summary.tx_rate_formatted}</span>
                     </div>
                   </div>
                 </div>
@@ -723,18 +723,18 @@ export const IncidentDetailDrawer = ({
             {activeTab === 'blocked' && (
               <div className="flex-1 p-6 overflow-y-auto">
                 <div className="max-w-2xl mx-auto space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-[#303334]">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#F1F0EA] font-sans">
+                  <div className="flex items-center justify-between pb-3 border-b border-[#6b4c45]">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#f8f4e7] font-sans">
                       Contained Subnet Hosts
                     </h3>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-[#1E2021] border border-[#303334] flex items-center justify-between">
+                  <div className="p-4 rounded-lg bg-[#4a3330] border border-[#6b4c45] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Lock className="w-5 h-5 text-[#C95F5F]" />
+                      <Lock className="w-5 h-5 text-[#b83a2e]" />
                       <div>
-                        <div className="font-mono text-sm font-bold text-[#F1F0EA]">{srcIp}</div>
-                        <div className="text-xs text-[#A4A5A0] font-sans">
+                        <div className="font-mono text-sm font-bold text-[#f8f4e7]">{srcIp}</div>
+                        <div className="text-xs text-[#d4bfb0] font-sans">
                           Quarantined under {incidentCode} • Status: {action}
                         </div>
                       </div>
@@ -748,7 +748,7 @@ export const IncidentDetailDrawer = ({
                             initialAction: action,
                           })
                         }
-                        className="text-xs font-sans font-semibold bg-[#141516] hover:bg-[#252728] border border-[#303334] text-[#A4A5A0] hover:text-[#F1F0EA] px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                        className="text-xs font-sans font-semibold bg-[#3b2a27] hover:bg-[#5c3d38] border border-[#6b4c45] text-[#d4bfb0] hover:text-[#f8f4e7] px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                       >
                         Restore Network Access
                       </button>

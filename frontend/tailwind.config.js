@@ -9,116 +9,67 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        corpta: ['"Corpta"', 'sans-serif'],
-        syncopate: ['"Syncopate"', 'sans-serif'],
-        cinzel: ['"Cinzel"', 'serif'],
-        syne: ['"Syne"', 'sans-serif'],
-        marcellus: ['"Marcellus"', 'serif'],
-        orbitron: ['"Orbitron"', 'sans-serif'],
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
       },
       borderRadius: {
         lg: '8px',
         xl: '10px',
-        '2xl': '12px',
+        '2xl': '14px',
       },
       colors: {
-        // NetrIQ Industrial/Editorial Design System: Graphite + Warm White + Olive
-        netriq: {
-          bg: '#141516',         // App background (warm charcoal)
-          sidebar: '#17191A',    // Sidebar
-          card: '#1E2021',       // Cards (neutral surface)
-          raised: '#252728',     // Raised card
-          border: '#303334',     // Border (1px solid)
-          primary: '#F1F0EA',    // Main text (warm white)
-          secondary: '#A4A5A0',  // Secondary text
-          muted: '#70736F',      // Muted text
-          accent: '#9AAA78',     // NetrIQ accent (Olive)
-          accentHover: '#A9B989',// Accent hover
-          info: '#8CA4B8',       // Information / Steel blue
-          healthy: '#9AAA78',    // Healthy state
-          low: '#8CA4B8',        // Low risk
-          medium: '#D0A05C',     // Medium risk (Amber)
-          high: '#D27C62',       // High risk (Rust/Orange)
-          critical: '#C95F5F',   // Critical state (Muted Crimson)
+        // SOC Professional Theme: Dark Navy Sidebar + Crisp Light Interface
+        soc: {
+          navy: {
+            950: '#060d1f',
+            900: '#0a122c',  // Deep Navy Sidebar
+            850: '#0f1738',  // Sidebar items
+            800: '#142047',  // Sidebar hover
+            700: '#1e2c5d',
+            border: '#1a2650',
+          },
+          bg: '#f4f7fb',     // Light crisp workspace background
+          surface: '#ffffff', // Card surface
+          muted: '#f8fafc',
+          border: '#e2e8f0',
+          borderSubtle: '#edf2f7',
+          text: {
+            primary: '#0f172a',
+            secondary: '#475569',
+            muted: '#94a3b8',
+          },
+          normal: {
+            DEFAULT: '#2563eb', // Blue for normal activity
+            light: '#eff6ff',
+            border: '#bfdbfe',
+            text: '#1d4ed8',
+          },
+          suspicious: {
+            DEFAULT: '#f97316', // Orange for suspicious activity
+            light: '#fff7ed',
+            border: '#fed7aa',
+            text: '#c2410c',
+          },
+          threat: {
+            DEFAULT: '#ef4444', // Red for confirmed threats
+            light: '#fef2f2',
+            border: '#fecaca',
+            text: '#b91c1c',
+          },
+          quarantine: {
+            DEFAULT: '#7c3aed',
+            light: '#f5f3ff',
+            border: '#ddd6fe',
+            text: '#6d28d9',
+          }
         },
-        // Slate mapping: Neutralized to Graphite / Warm White
-        slate: {
-          50: '#F8F9FA',
-          100: '#F1F0EA',  // Main text
-          200: '#E4E3DC',
-          300: '#C5C6BF',
-          400: '#A4A5A0',  // Secondary text
-          500: '#70736F',  // Muted text
-          600: '#4D5051',
-          700: '#303334',  // Active/hover borders
-          800: '#303334',  // Standard border
-          850: '#252728',  // Raised card surface
-          900: '#1E2021',  // Card surface
-          950: '#141516',  // App canvas background
-        },
-        // Brand Olive Palette
-        olive: {
-          DEFAULT: '#9AAA78',
-          hover: '#A9B989',
-          light: '#BDCBA0',
-          dark: '#7A895A',
-        },
-        // Compatibility Aliases for Teal (mapped to Olive)
-        teal: {
-          DEFAULT: '#9AAA78',
-          50: '#F4F6EE',
-          100: '#E5EAD9',
-          200: '#D0D9BD',
-          300: '#B6C49E',
-          400: '#9AAA78',
-          500: '#9AAA78',
-          600: '#839263',
-          700: '#68754E',
-          800: '#4F593A',
-          900: '#2C3220',
-          950: '#17191A',
-        },
-        // Compatibility Aliases for Cyan/Purple (mapped to Information/Steel #8CA4B8)
-        cyan: {
-          DEFAULT: '#8CA4B8',
-          300: '#AFC3D3',
-          400: '#8CA4B8',
-          450: '#7993A8',
-          500: '#8CA4B8',
-          600: '#6B8398',
-          950: '#17191A',
-        },
-        purple: {
-          300: '#AFC3D3',
-          400: '#8CA4B8',
-          500: '#7993A8',
-          900: '#1E2021',
-          950: '#141516',
-        },
-        // SOC Functional Severity scale matching NetrIQ specifications
-        risk: {
-          healthy: '#9AAA78',
-          low: '#8CA4B8',
-          medium: '#D0A05C',
-          high: '#D27C62',
-          critical: '#C95F5F',
-        },
-        status: {
-          healthy: '#9AAA78',
-          low: '#8CA4B8',
-          medium: '#D0A05C',
-          high: '#D27C62',
-          critical: '#C95F5F',
-        }
       },
       boxShadow: {
-        none: 'none',
-        subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.25)',
-        card: '0 2px 8px -2px rgba(0, 0, 0, 0.3)',
-        'glow-cyan': 'none',
-        'glow-teal': 'none',
-        'glow-rose': 'none',
+        subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+        card: '0 2px 6px -1px rgba(15, 23, 42, 0.06), 0 1px 4px -1px rgba(15, 23, 42, 0.04)',
+        elevated: '0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04)',
+        'blue-glow': '0 0 12px 1px rgba(37, 99, 235, 0.25)',
+        'red-glow': '0 0 12px 1px rgba(239, 68, 68, 0.25)',
+        'orange-glow': '0 0 12px 1px rgba(249, 115, 22, 0.25)',
       }
     },
   },

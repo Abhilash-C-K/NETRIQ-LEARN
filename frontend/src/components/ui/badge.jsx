@@ -3,19 +3,19 @@ import { cn } from '../../lib/utils';
 
 function Badge({ className, variant = 'default', ...props }) {
   const variants = {
-    default: 'border-[#303334] bg-[#252728] text-[#A4A5A0]',
-    outline: 'border-[#303334] bg-transparent text-[#A4A5A0]',
-    healthy: 'border-[#9AAA78]/40 bg-[#9AAA78]/15 text-[#9AAA78]',
-    info: 'border-[#8CA4B8]/40 bg-[#8CA4B8]/15 text-[#8CA4B8]',
-    warning: 'border-[#D0A05C]/40 bg-[#D0A05C]/15 text-[#D0A05C]',
-    critical: 'border-[#C95F5F]/40 bg-[#C95F5F]/15 text-[#C95F5F]',
+    default: 'border-[#6b4c45] bg-[#5c3d38] text-[#d4bfb0]',
+    outline: 'border-[#6b4c45] bg-transparent text-[#d4bfb0]',
+    healthy: 'border-[#cc5500]/40 bg-[#cc5500]/15 text-[#cc5500]',
+    info: 'border-[#c4956a]/40 bg-[#c4956a]/15 text-[#c4956a]',
+    warning: 'border-[#cc8833]/40 bg-[#cc8833]/15 text-[#cc8833]',
+    critical: 'border-[#b83a2e]/40 bg-[#b83a2e]/15 text-[#b83a2e]',
     // Backward compatibility aliases
-    cyan: 'border-[#8CA4B8]/40 bg-[#8CA4B8]/15 text-[#8CA4B8]',
-    emerald: 'border-[#9AAA78]/40 bg-[#9AAA78]/15 text-[#9AAA78]',
-    amber: 'border-[#D0A05C]/40 bg-[#D0A05C]/15 text-[#D0A05C]',
-    rose: 'border-[#C95F5F]/40 bg-[#C95F5F]/15 text-[#C95F5F]',
-    success: 'border-[#9AAA78]/40 bg-[#9AAA78]/15 text-[#9AAA78]',
-    destructive: 'border-[#C95F5F]/40 bg-[#C95F5F]/15 text-[#C95F5F]',
+    cyan: 'border-[#c4956a]/40 bg-[#c4956a]/15 text-[#c4956a]',
+    emerald: 'border-[#cc5500]/40 bg-[#cc5500]/15 text-[#cc5500]',
+    amber: 'border-[#cc8833]/40 bg-[#cc8833]/15 text-[#cc8833]',
+    rose: 'border-[#b83a2e]/40 bg-[#b83a2e]/15 text-[#b83a2e]',
+    success: 'border-[#cc5500]/40 bg-[#cc5500]/15 text-[#cc5500]',
+    destructive: 'border-[#b83a2e]/40 bg-[#b83a2e]/15 text-[#b83a2e]',
   };
 
   return (

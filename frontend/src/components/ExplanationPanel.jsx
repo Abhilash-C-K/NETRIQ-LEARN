@@ -104,11 +104,11 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (viewMode === 'raw' && !hasRawAccess) {
     return (
-      <div className="p-4 bg-[#141516] border border-[#DF857C]/30 rounded-lg text-xs text-[#F1F0EA] flex items-center gap-3 font-sans">
+      <div className="p-4 bg-[#3b2a27] border border-[#DF857C]/30 rounded-lg text-xs text-[#f8f4e7] flex items-center gap-3 font-sans">
         <Lock className="w-5 h-5 text-[#DF857C] shrink-0" />
         <div>
           <div className="font-semibold text-[#DF857C] uppercase tracking-wide">Access Restricted</div>
-          <div className="text-[11px] text-[#A4A5A0] mt-0.5">
+          <div className="text-[11px] text-[#d4bfb0] mt-0.5">
             Raw model feature metrics require Analyst or Admin capability.
           </div>
         </div>
@@ -118,14 +118,14 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (loading) {
     return (
-      <div className="p-4 bg-[#141516] border border-[#303334] rounded-lg space-y-3 animate-pulse">
+      <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg space-y-3 animate-pulse">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-[#1E2021] rounded" />
-          <div className="h-4 bg-[#1E2021] rounded w-1/3" />
+          <div className="w-4 h-4 bg-[#4a3330] rounded" />
+          <div className="h-4 bg-[#4a3330] rounded w-1/3" />
         </div>
         <div className="space-y-2 pt-2">
-          <div className="h-3 bg-[#1E2021] rounded w-5/6" />
-          <div className="h-3 bg-[#1E2021] rounded w-2/3" />
+          <div className="h-3 bg-[#4a3330] rounded w-5/6" />
+          <div className="h-3 bg-[#4a3330] rounded w-2/3" />
         </div>
       </div>
     );
@@ -165,8 +165,8 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (!activeExplanation) {
     return (
-      <div className="p-4 bg-[#141516] border border-[#303334] rounded-lg text-xs text-[#A4A5A0] flex items-center gap-2 font-sans">
-        <AlertCircle className="w-4 h-4 text-[#D0A05C] shrink-0" />
+      <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg text-xs text-[#d4bfb0] flex items-center gap-2 font-sans">
+        <AlertCircle className="w-4 h-4 text-[#cc8833] shrink-0" />
         <span>{error || 'No feature explanation record available.'}</span>
       </div>
     );
@@ -178,10 +178,10 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (viewMode === 'raw') {
     return (
-      <div className="p-4 bg-[#141516] border border-[#303334] rounded-lg space-y-4 font-mono text-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#303334] pb-2 text-[11px] text-[#A4A5A0]">
+      <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg space-y-4 font-mono text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#6b4c45] pb-2 text-[11px] text-[#d4bfb0]">
           <div className="flex items-center gap-2">
-            <span className="text-[#9AAA78] uppercase font-semibold">
+            <span className="text-[#cc5500] uppercase font-semibold">
               Source: {activeExplanation.explanation_source || 'SHAP TreeExplainer'}
             </span>
             <span>•</span>
@@ -194,23 +194,23 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#303334] text-[#A4A5A0] text-[10px] uppercase font-sans">
+              <tr className="border-b border-[#6b4c45] text-[#d4bfb0] text-[10px] uppercase font-sans">
                 <th className="py-2 px-2">Raw Feature Name</th>
                 <th className="py-2 px-2 text-right">Value</th>
                 <th className="py-2 px-2 text-right">SHAP Impact</th>
                 <th className="py-2 px-2 text-center">Direction</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#303334]/50">
+            <tbody className="divide-y divide-[#6b4c45]/50">
               {topFeatures.map((feat, idx) => {
                 const isRiskInc = String(feat.direction).toUpperCase().includes('INCREASES');
                 return (
-                  <tr key={idx} className="hover:bg-[#1E2021]">
-                    <td className="py-2 px-2 text-[#F1F0EA]">{feat.name || feat.label}</td>
-                    <td className="py-2 px-2 text-right text-[#A4A5A0]">
+                  <tr key={idx} className="hover:bg-[#4a3330]">
+                    <td className="py-2 px-2 text-[#f8f4e7]">{feat.name || feat.label}</td>
+                    <td className="py-2 px-2 text-right text-[#d4bfb0]">
                       {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value ?? 'N/A'}
                     </td>
-                    <td className="py-2 px-2 text-right text-[#F1F0EA] font-semibold">
+                    <td className="py-2 px-2 text-right text-[#f8f4e7] font-semibold">
                       {feat.contribution > 0 ? `+${feat.contribution.toFixed(4)}` : feat.contribution?.toFixed(4)}
                     </td>
                     <td className="py-2 px-2 text-center">
@@ -219,7 +219,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
                           <ArrowUpRight className="w-3.5 h-3.5" /> Risk+
                         </span>
                       ) : (
-                        <span className="text-[#9AAA78] inline-flex items-center gap-1 font-semibold">
+                        <span className="text-[#cc5500] inline-flex items-center gap-1 font-semibold">
                           <ArrowDownRight className="w-3.5 h-3.5" /> Risk-
                         </span>
                       )}
@@ -236,13 +236,13 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   // Smart Summary View Mode
   return (
-    <div className="p-4 bg-[#141516] border border-[#303334] rounded-lg space-y-3">
-      <div className="flex items-center justify-between border-b border-[#303334] pb-2">
-        <div className="flex items-center gap-2 text-xs font-sans font-semibold text-[#9AAA78] uppercase tracking-wide">
-          <Cpu className="w-4 h-4 text-[#9AAA78]" />
+    <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg space-y-3">
+      <div className="flex items-center justify-between border-b border-[#6b4c45] pb-2">
+        <div className="flex items-center gap-2 text-xs font-sans font-semibold text-[#cc5500] uppercase tracking-wide">
+          <Cpu className="w-4 h-4 text-[#cc5500]" />
           <span>Top AI Decision Factors (SHAP)</span>
         </div>
-        <span className="text-[10px] text-[#A4A5A0] font-mono">
+        <span className="text-[10px] text-[#d4bfb0] font-mono">
           Method: {activeExplanation.explanation_source?.toUpperCase() || 'SHAP TREEEXPLAINER'}
         </span>
       </div>
@@ -255,12 +255,12 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
           const pct = Math.min(Math.round((Math.abs(feat.contribution || 0) / maxContribution) * 100), 100);
 
           return (
-            <div key={idx} className="space-y-1.5 bg-[#1E2021] p-3 rounded-lg border border-[#303334]">
+            <div key={idx} className="space-y-1.5 bg-[#4a3330] p-3 rounded-lg border border-[#6b4c45]">
               <div className="flex items-center justify-between text-xs font-sans">
-                <div className="flex items-center gap-2 font-medium text-[#F1F0EA]">
+                <div className="flex items-center gap-2 font-medium text-[#f8f4e7]">
                   <span>{labelStr}</span>
                   {hasRawAccess && feat.value !== undefined && (
-                    <span className="text-[10px] text-[#A4A5A0] font-mono bg-[#141516] px-1.5 py-0.5 rounded border border-[#303334]">
+                    <span className="text-[10px] text-[#d4bfb0] font-mono bg-[#3b2a27] px-1.5 py-0.5 rounded border border-[#6b4c45]">
                       {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value} {meta?.unit || ''}
                     </span>
                   )}
@@ -271,7 +271,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
                       <ArrowUpRight className="w-3.5 h-3.5" /> Risk Indicator
                     </span>
                   ) : (
-                    <span className="text-[#9AAA78] flex items-center font-semibold">
+                    <span className="text-[#cc5500] flex items-center font-semibold">
                       <ArrowDownRight className="w-3.5 h-3.5" /> Normalizing
                     </span>
                   )}
@@ -279,16 +279,16 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-[#141516] h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-[#3b2a27] h-1.5 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
-                    isRiskInc ? 'bg-[#DF857C]' : 'bg-[#9AAA78]'
+                    isRiskInc ? 'bg-[#DF857C]' : 'bg-[#cc5500]'
                   }`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
 
-              <p className="text-[11px] text-[#A4A5A0] font-sans leading-snug">
+              <p className="text-[11px] text-[#d4bfb0] font-sans leading-snug">
                 {feat.description || meta?.description}
               </p>
             </div>

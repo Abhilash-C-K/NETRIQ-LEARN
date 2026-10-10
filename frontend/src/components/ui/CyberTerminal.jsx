@@ -44,7 +44,7 @@ export function CyberTerminal({
           onClick={handleCopy}
           className="flex items-center gap-1.5 text-[11px] text-[#9AA8B2] hover:text-[#E7ECEF] bg-[#101820] hover:bg-[#202D36] border border-[#2A3944] px-2.5 py-1 rounded transition-colors cursor-pointer"
         >
-          {copied ? <Check className="w-3 h-3 text-[#71A99D]" /> : <Copy className="w-3 h-3" />}
+          {copied ? <Check className="w-3 h-3 text-[#cc5500]" /> : <Copy className="w-3 h-3" />}
           <span>{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>
@@ -53,7 +53,7 @@ export function CyberTerminal({
       <div className="p-4 space-y-1.5 text-xs font-mono text-[#E7ECEF] max-h-72 overflow-y-auto leading-relaxed">
         {displayedLines.map((line, idx) => (
           <div key={idx} className="flex items-start gap-2">
-            <span className="text-[#71A99D] font-bold select-none">&gt;</span>
+            <span className="text-[#cc5500] font-bold select-none">&gt;</span>
             <span
               className={
                 line.includes("[CRITICAL]") || line.includes("RECOMMEND_BLOCK") || line.includes("QUARANTINE") || line.includes("MALICIOUS")
@@ -61,7 +61,7 @@ export function CyberTerminal({
                   : line.includes("[WARNING]") || line.includes("Heuristic")
                   ? "text-[#D3A35D]"
                   : line.includes("CONNECTED") || line.includes("active") || line.includes("BENIGN")
-                  ? "text-[#71A99D]"
+                  ? "text-[#cc5500]"
                   : "text-[#9AA8B2]"
               }
             >
@@ -69,9 +69,9 @@ export function CyberTerminal({
             </span>
           </div>
         ))}
-        <div className="flex items-center gap-2 text-[#71A99D]">
+        <div className="flex items-center gap-2 text-[#cc5500]">
           <span className="font-bold">&gt;</span>
-          <span className="w-2 h-3.5 bg-[#71A99D] inline-block animate-pulse" />
+          <span className="w-2 h-3.5 bg-[#cc5500] inline-block animate-pulse" />
         </div>
       </div>
     </div>

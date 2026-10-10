@@ -4,32 +4,32 @@ import { ShieldCheck, ShieldAlert, AlertTriangle, Flame } from 'lucide-react';
 export const SeverityBadge = ({ severity = 'LOW', size = 'medium', showIcon = true }) => {
   const normSeverity = String(severity).toUpperCase();
 
-  // Security states: Healthy (#9AAA78), Low (#8CA4B8), Medium (#D0A05C), High (#D27C62), Critical (#C95F5F)
+  // Security states: Healthy (#cc5500), Low (#c4956a), Medium (#cc8833), High (#cc5500), Critical (#b83a2e)
   const styles = {
     HEALTHY: {
-      bg: 'bg-[#9AAA78]/15 text-[#9AAA78] border-[#9AAA78]/30',
+      bg: 'bg-[#cc5500]/15 text-[#cc5500] border-[#cc5500]/30',
       icon: ShieldCheck,
-      dot: 'bg-[#9AAA78]',
+      dot: 'bg-[#cc5500]',
     },
     LOW: {
-      bg: 'bg-[#8CA4B8]/15 text-[#8CA4B8] border-[#8CA4B8]/30',
+      bg: 'bg-[#c4956a]/15 text-[#c4956a] border-[#c4956a]/30',
       icon: ShieldCheck,
-      dot: 'bg-[#8CA4B8]',
+      dot: 'bg-[#c4956a]',
     },
     MEDIUM: {
-      bg: 'bg-[#D0A05C]/15 text-[#D0A05C] border-[#D0A05C]/30',
+      bg: 'bg-[#cc8833]/15 text-[#cc8833] border-[#cc8833]/30',
       icon: AlertTriangle,
-      dot: 'bg-[#D0A05C]',
+      dot: 'bg-[#cc8833]',
     },
     HIGH: {
-      bg: 'bg-[#D27C62]/15 text-[#D27C62] border-[#D27C62]/30',
+      bg: 'bg-[#cc5500]/15 text-[#cc5500] border-[#cc5500]/30',
       icon: ShieldAlert,
-      dot: 'bg-[#D27C62]',
+      dot: 'bg-[#cc5500]',
     },
     CRITICAL: {
-      bg: 'bg-[#C95F5F]/15 text-[#C95F5F] border-[#C95F5F]/30',
+      bg: 'bg-[#b83a2e]/15 text-[#b83a2e] border-[#b83a2e]/30',
       icon: Flame,
-      dot: 'bg-[#C95F5F]',
+      dot: 'bg-[#b83a2e]',
     },
   };
 

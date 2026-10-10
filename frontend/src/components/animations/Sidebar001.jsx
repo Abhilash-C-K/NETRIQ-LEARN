@@ -125,7 +125,7 @@ function HoverHighlight() {
       {enabled && hovered && hoverRect && (
         <motion.div
           key="sb001-hover-bg"
-          className="pointer-events-none absolute z-0 rounded-md bg-[#252728] border border-[#303334]"
+          className="pointer-events-none absolute z-0 rounded-md bg-[#5c3d38] border border-[#6b4c45]"
           style={{ right: 0 }}
           initial={false}
           animate={{
@@ -170,20 +170,20 @@ export const Sidebar001Item = memo(function Sidebar001Item({
       {isActive && (
         <motion.span
           layoutId="sb001-active-bar"
-          className="pointer-events-none absolute z-10 left-[4px] top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-[#9AAA78]"
+          className="pointer-events-none absolute z-10 left-[4px] top-1/2 h-[2px] -translate-y-1/2 rounded-full bg-[#cc5500]"
           animate={{ width: 23 }}
           transition={{ type: "spring", stiffness: 800, damping: 40 }}
         />
       )}
 
       <motion.span
-        className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-px bg-[#303334]"
+        className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-px bg-[#6b4c45]"
         animate={{ width: isActive ? 0 : isHovered ? 26 : 18 }}
         transition={{ type: "spring", stiffness: 600, damping: 30 }}
       />
-      <motion.span className="pointer-events-none absolute w-[13px] left-0 top-1/4 h-px bg-[#303334]" />
-      <motion.span className="pointer-events-none absolute w-[16px] left-0 top-0 h-px bg-[#303334]" />
-      <motion.span className="pointer-events-none absolute w-[13px] left-0 top-3/4 h-px bg-[#303334]" />
+      <motion.span className="pointer-events-none absolute w-[13px] left-0 top-1/4 h-px bg-[#6b4c45]" />
+      <motion.span className="pointer-events-none absolute w-[16px] left-0 top-0 h-px bg-[#6b4c45]" />
+      <motion.span className="pointer-events-none absolute w-[13px] left-0 top-3/4 h-px bg-[#6b4c45]" />
 
       <motion.div
         ref={itemRef}
@@ -212,13 +212,13 @@ export const Sidebar001Item = memo(function Sidebar001Item({
           onMouseLeave={() => setHovered(null)}
           className={cn(
             "relative flex items-center gap-2 ml-2 pl-4 py-1.5 text-xs select-none rounded transition-colors duration-150",
-            isActive ? "text-[#F1F0EA] font-semibold" : "text-[#A4A5A0] hover:text-[#F1F0EA]",
+            isActive ? "text-[#f8f4e7] font-semibold" : "text-[#d4bfb0] hover:text-[#f8f4e7]",
             className,
           )}
         >
           <span className="relative z-1 truncate">{label}</span>
           {isNew && (
-            <span className="size-1.5 rounded-full bg-[#9AAA78] shrink-0 animate-pulse" />
+            <span className="size-1.5 rounded-full bg-[#cc5500] shrink-0 animate-pulse" />
           )}
         </a>
       </motion.div>
@@ -232,7 +232,7 @@ export function Sidebar001Separator({ children, className }) {
   return (
     <div
       className={cn(
-        "px-0 py-2 mt-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400",
+        "px-0 py-2 mt-2 text-[10px] font-mono font-semibold uppercase tracking-wider text-[#a08070]",
         className,
       )}
     >
@@ -291,16 +291,16 @@ export function Sidebar001Group({
       >
         {icon ? (
           <>
-            <span className="shrink-0 text-slate-400 [&_svg]:size-3.5 group-hover:text-cyan-400 transition-colors">
+            <span className="shrink-0 text-[#c4956a] [&_svg]:size-3.5 group-hover:text-[#cc5500] transition-colors">
               {icon}
             </span>
-            <span className="text-xs text-slate-300 group-hover:text-white font-medium transition-colors duration-150 flex-1 truncate">
+            <span className="text-xs text-[#d4bfb0] group-hover:text-[#f8f4e7] font-medium transition-colors duration-150 flex-1 truncate">
               {label}
             </span>
             <MotionChevron
               size={14}
               strokeWidth={2.5}
-              className="shrink-0 text-slate-400 mr-1"
+              className="shrink-0 text-[#a08070] mr-1"
               animate={{ rotate: isOpen ? 90 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             />
@@ -310,11 +310,11 @@ export function Sidebar001Group({
             <MotionChevron
               size={11}
               strokeWidth={2.5}
-              className="shrink-0 text-slate-400"
+              className="shrink-0 text-[#a08070]"
               animate={{ rotate: isOpen ? 90 : 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             />
-            <span className="text-xs text-slate-300 group-hover:text-white font-medium transition-colors duration-150 truncate">
+            <span className="text-xs text-[#d4bfb0] group-hover:text-[#f8f4e7] font-medium transition-colors duration-150 truncate">
               {label}
             </span>
           </>
@@ -415,7 +415,7 @@ export function Sidebar001({
       <HoverProvider containerRef={containerRef}>
         <aside
           className={cn(
-            "relative flex flex-col h-full shrink-0 bg-[#17191A] border-r border-[#303334] select-none",
+            "relative flex flex-col h-full shrink-0 bg-[#2e1f1c] border-r border-[#6b4c45] select-none",
             className,
           )}
           style={{ width }}
@@ -429,7 +429,7 @@ export function Sidebar001({
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
           >
-            <div className="absolute right-0 top-0 h-full w-px bg-[#303334] group-hover/handle:bg-[#9AAA78] transition-colors duration-150" />
+            <div className="absolute right-0 top-0 h-full w-px bg-[#6b4c45] group-hover/handle:bg-[#cc5500] transition-colors duration-150" />
           </div>
         </aside>
       </HoverProvider>
@@ -441,7 +441,7 @@ export function Sidebar001({
 
 export function Sidebar001Header({ children, className }) {
   return (
-    <div className={cn("shrink-0 px-3 pt-3 pb-2 border-b border-[#303334] bg-[#17191A]", className)}>
+    <div className={cn("shrink-0 px-3 pt-3 pb-2 border-b border-[#6b4c45] bg-[#2e1f1c]", className)}>
       {children}
     </div>
   );
@@ -453,7 +453,7 @@ export function Sidebar001Footer({ children, className }) {
   return (
     <div
       className={cn(
-        "shrink-0 px-3 pb-3 pt-2 border-t border-[#303334] bg-[#17191A] font-mono text-[11px]",
+        "shrink-0 px-3 pb-3 pt-2 border-t border-[#6b4c45] bg-[#2e1f1c] font-mono text-[11px]",
         className,
       )}
     >

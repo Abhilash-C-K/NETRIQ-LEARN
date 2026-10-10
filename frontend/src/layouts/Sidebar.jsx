@@ -1,201 +1,188 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import {
-  Sidebar001,
-  Sidebar001Header,
-  Sidebar001Content,
-  Sidebar001Group,
-  Sidebar001Item,
-  Sidebar001Section,
-  Sidebar001Footer,
-} from '../components/animations/Sidebar001';
 import {
   Shield,
   Activity,
+  Network,
   AlertTriangle,
-  History,
-  BarChart3,
+  Lock,
+  Sliders,
+  Radio,
   FileText,
-  Cpu,
-  Users,
-  Settings,
+  Server,
+  Layers,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const Sidebar = () => {
-  const { hasCapability } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleNavigate = (path) => (e) => {
-    e.preventDefault();
-    navigate(path);
+  const navItems = [
+    {
+      id: 'dashboard',
+      path: '/dashboard',
+      label: '01. Dashboard',
+      subtitle: 'SOC Control Center',
+      icon: Shield,
+      badge: 'Main',
+      badgeColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+    },
+    {
+      id: 'traffic-layer1',
+      path: '/traffic-layer1',
+      aliases: ['/monitoring'],
+      label: '02. Live Traffic',
+      subtitle: 'Layer 1 Pre-Firewall',
+      icon: Activity,
+      badge: 'L1',
+      badgeColor: 'bg-blue-600/25 text-blue-300 border-blue-500/40',
+    },
+    {
+      id: 'network-layer2',
+      path: '/network-layer2',
+      aliases: ['/analytics'],
+      label: '03. Internal Network',
+      subtitle: 'Layer 2 Topology',
+      icon: Network,
+      badge: 'L2 Flow',
+      badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+    },
+    {
+      id: 'threats',
+      path: '/threats',
+      aliases: ['/incidents'],
+      label: '04. Threat Detection',
+      subtitle: 'Alerts & SHAP Insights',
+      icon: AlertTriangle,
+      badge: 'Alerts',
+      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+    },
+    {
+      id: 'quarantine',
+      path: '/quarantine',
+      label: '05. Device Quarantine',
+      subtitle: 'Layer 2 Isolation & Audit',
+      icon: Lock,
+      badge: 'Isolation',
+      badgeColor: 'bg-red-500/20 text-red-300 border-red-500/30',
+    },
+    {
+      id: 'reports-settings',
+      path: '/reports-settings',
+      aliases: ['/reports', '/settings'],
+      label: '06. Reports & Settings',
+      subtitle: 'Configs, AI & Health',
+      icon: Sliders,
+      badge: 'Admin',
+      badgeColor: 'bg-slate-500/20 text-slate-300 border-slate-500/30',
+    },
+  ];
+
+  const isCurrentActive = (item) => {
+    if (location.pathname === item.path) return true;
+    if (item.aliases && item.aliases.includes(location.pathname)) return true;
+    return false;
   };
 
   return (
-    <Sidebar001 defaultWidth={250} minWidth={200} maxWidth={320}>
-      {/* Brand Header with Official NETRIQ Logo */}
-      <Sidebar001Header>
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg overflow-hidden border border-[#303334] shrink-0 bg-[#141516] flex items-center justify-center p-0.5">
-            <img src="/logo.jpeg" alt="NETRIQ Logo" className="w-full h-full object-cover rounded-md block" />
+    <aside className="w-64 bg-[#0a122c] border-r border-[#1a2650] flex flex-col justify-between select-none shrink-0 text-white z-20">
+      {/* Brand Header */}
+      <div>
+        <div className="p-5 border-b border-[#1a2650] flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 p-0.5 shadow-md flex items-center justify-center">
+            <div className="w-full h-full bg-[#0a122c] rounded-[10px] flex items-center justify-center">
+              <Shield className="w-5 h-5 text-blue-400" />
+            </div>
           </div>
           <div>
-            <h1 className="font-corpta text-sm tracking-[0.12em] uppercase flex items-center gap-1 select-none">
-              <span className="text-[#F1F0EA]">NETR</span>
-              <span className="text-[#9AAA78]">IQ</span>
-              <span className="text-[9px] font-sans font-medium bg-[#9AAA78]/15 text-[#9AAA78] border border-[#9AAA78]/30 px-1 py-0.2 rounded uppercase ml-1">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold tracking-wider text-base text-white">NETRIQ</span>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
                 SOC
               </span>
-            </h1>
-            <p className="text-[11px] text-[#A4A5A0] font-sans tracking-tight">Security Operations Platform</p>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium">Dual-Layer Cyber Defense</p>
           </div>
         </div>
-      </Sidebar001Header>
 
-      {/* Nav Content */}
-      <Sidebar001Content>
-        {/* Core Operations Section */}
-        <Sidebar001Section label="Security Operations">
-          {hasCapability('VIEW_SMART_SUMMARY') && (
-            <Sidebar001Item
-              href="/dashboard"
-              label={
-                <span className="flex items-center gap-2">
-                  <Shield className="w-3.5 h-3.5 text-[#71A99D]" />
-                  <span>Smart Summary</span>
-                </span>
-              }
-              isActive={location.pathname === '/dashboard'}
-              onClick={handleNavigate('/dashboard')}
-            />
-          )}
+        {/* Navigation Section */}
+        <div className="px-3 py-4 space-y-1">
+          <div className="px-3 pb-2 text-[10px] uppercase font-bold tracking-wider text-slate-400">
+            Control Center Pages
+          </div>
 
-          <Sidebar001Item
-            href="/monitoring"
-            label={
-              <span className="flex items-center gap-2">
-                <Activity className="w-3.5 h-3.5 text-[#71A99D]" />
-                <span>Live Capture</span>
-              </span>
-            }
-            isActive={location.pathname === '/monitoring'}
-            onClick={handleNavigate('/monitoring')}
-          />
+          {navItems.map((item) => {
+            const active = isCurrentActive(item);
+            const Icon = item.icon;
 
-          <Sidebar001Item
-            href="/incidents"
-            label={
-              <span className="flex items-center gap-2">
-                <AlertTriangle className="w-3.5 h-3.5 text-[#D3A35D]" />
-                <span>Incidents</span>
-              </span>
-            }
-            isActive={location.pathname === '/incidents'}
-            onClick={handleNavigate('/incidents')}
-          />
-        </Sidebar001Section>
+            return (
+              <button
+                key={item.id}
+                onClick={() => navigate(item.path)}
+                className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center justify-between transition-all group cursor-pointer ${
+                  active
+                    ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40 font-semibold'
+                    : 'text-slate-300 hover:bg-[#142047] hover:text-white'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                      active ? 'bg-white/15 text-white' : 'bg-[#142047] text-slate-400 group-hover:text-blue-400'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs leading-tight font-semibold">{item.label}</div>
+                    <div
+                      className={`text-[10px] leading-tight ${
+                        active ? 'text-blue-100 font-normal' : 'text-slate-400 group-hover:text-slate-300'
+                      }`}
+                    >
+                      {item.subtitle}
+                    </div>
+                  </div>
+                </div>
 
-        {/* Intelligence & Analytics Group */}
-        <Sidebar001Section label="Intelligence">
-          <Sidebar001Group label="Analytics & Audit" defaultOpen={true} icon={<BarChart3 />}>
-            <Sidebar001Item
-              href="/history"
-              label={
-                <span className="flex items-center gap-2">
-                  <History className="w-3.5 h-3.5 text-[#9AA8B2]" />
-                  <span>Traffic History</span>
-                </span>
-              }
-              isActive={location.pathname === '/history'}
-              onClick={handleNavigate('/history')}
-            />
-
-            <Sidebar001Item
-              href="/analytics"
-              label={
-                <span className="flex items-center gap-2">
-                  <BarChart3 className="w-3.5 h-3.5 text-[#9AA8B2]" />
-                  <span>Analytics</span>
-                </span>
-              }
-              isActive={location.pathname === '/analytics'}
-              onClick={handleNavigate('/analytics')}
-            />
-
-            <Sidebar001Item
-              href="/reports"
-              label={
-                <span className="flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5 text-[#9AA8B2]" />
-                  <span>Reports</span>
-                </span>
-              }
-              isActive={location.pathname === '/reports'}
-              onClick={handleNavigate('/reports')}
-            />
-          </Sidebar001Group>
-
-          <Sidebar001Group label="AI & Models" defaultOpen={true} icon={<Cpu />}>
-            <Sidebar001Item
-              href="/ai-performance"
-              label={
-                <span className="flex items-center gap-2">
-                  <Cpu className="w-3.5 h-3.5 text-[#9AA8B2]" />
-                  <span>AI Performance</span>
-                </span>
-              }
-              isActive={location.pathname === '/ai-performance'}
-              onClick={handleNavigate('/ai-performance')}
-            />
-          </Sidebar001Group>
-        </Sidebar001Section>
-
-        {/* System Administration */}
-        {(hasCapability('MANAGE_USERS') || hasCapability('MANAGE_SETTINGS')) && (
-          <Sidebar001Section label="Administration">
-            {hasCapability('MANAGE_USERS') && (
-              <Sidebar001Item
-                href="/users"
-                label={
-                  <span className="flex items-center gap-2">
-                    <Users className="w-3.5 h-3.5 text-[#7895B2]" />
-                    <span>User Management</span>
+                {item.badge && (
+                  <span
+                    className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                      active ? 'bg-white/20 text-white border-white/30' : item.badgeColor
+                    }`}
+                  >
+                    {item.badge}
                   </span>
-                }
-                isActive={location.pathname === '/users'}
-                onClick={handleNavigate('/users')}
-              />
-            )}
-
-            {hasCapability('MANAGE_SETTINGS') && (
-              <Sidebar001Item
-                href="/settings"
-                label={
-                  <span className="flex items-center gap-2">
-                    <Settings className="w-3.5 h-3.5 text-[#9AA8B2]" />
-                    <span>System Settings</span>
-                  </span>
-                }
-                isActive={location.pathname === '/settings'}
-                onClick={handleNavigate('/settings')}
-              />
-            )}
-          </Sidebar001Section>
-        )}
-      </Sidebar001Content>
-
-      {/* Status Footer */}
-      <Sidebar001Footer>
-        <div className="flex items-center justify-between text-[#9AA8B2] text-xs">
-          <span className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#71A99D]" />
-            NIDS Engine
-          </span>
-          <span className="text-[#71A99D] uppercase font-semibold text-[11px]">Active</span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      </Sidebar001Footer>
-    </Sidebar001>
+      </div>
+
+      {/* Footer System Status Card */}
+      <div className="p-4 border-t border-[#1a2650]">
+        <div className="p-3 rounded-lg bg-[#0f1738] border border-[#1a2650] space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-300 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-subtle-pulse" />
+              NIDS Defense Core
+            </span>
+            <span className="text-[10px] font-bold text-emerald-400 uppercase">ACTIVE</span>
+          </div>
+          <div className="text-[10px] text-slate-400 flex justify-between">
+            <span>Pre-Firewall (L1):</span>
+            <span className="text-blue-400 font-mono">ENFORCING</span>
+          </div>
+          <div className="text-[10px] text-slate-400 flex justify-between">
+            <span>Zero-Trust (L2):</span>
+            <span className="text-purple-400 font-mono">ISOLATING</span>
+          </div>
+        </div>
+      </div>
+    </aside>
   );
 };
+
 export default Sidebar;

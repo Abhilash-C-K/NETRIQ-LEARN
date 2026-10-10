@@ -2,90 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
-@font-face {
-  font-family: 'Corpta';
-  src: url('/fonts/Corpta-Demo.otf') format('opentype'),
-       url('/fonts/Corpta DEMO.otf') format('opentype');
-  font-weight: 400 900;
-  font-style: normal;
-  font-display: swap;
-}
-
 @layer base {
   body {
-    background-color: #141516;
-    color: #F1F0EA;
+    background-color: #f4f7fb;
+    color: #0f172a;
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* JetBrains Mono strictly for telemetry, IPs, ports, code, hashes */
   code, kbd, samp, pre, .font-mono {
     font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
   }
-
-  .font-corpta {
-    font-family: 'Corpta', system-ui, -apple-system, sans-serif !important;
-  }
-
-  .font-syncopate {
-    font-family: 'Syncopate', system-ui, -apple-system, sans-serif !important;
-  }
-
-  .font-cinzel {
-    font-family: 'Cinzel', Georgia, serif !important;
-  }
-
-  .font-syne {
-    font-family: 'Syne', system-ui, -apple-system, sans-serif !important;
-  }
-
-  .font-marcellus {
-    font-family: 'Marcellus', Georgia, serif !important;
-  }
-
-  .font-orbitron {
-    font-family: 'Orbitron', system-ui, -apple-system, sans-serif !important;
-  }
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-/* Hide scrollbar for IE, Edge and Firefox */
-.no-scrollbar {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-/* Restrained Enterprise scrollbar: Graphite + Olive */
+/* Custom SOC scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #141516;
+  background: #f1f5f9;
 }
 ::-webkit-scrollbar-thumb {
-  background: #303334;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9AAA78;
+  background: #94a3b8;
 }
 
-/* Clean animation for pulsing live indicator without excessive blur */
+/* Dark scrollbar for navy sidebar */
+.navy-scroll::-webkit-scrollbar-track {
+  background: #0a122c;
+}
+.navy-scroll::-webkit-scrollbar-thumb {
+  background: #1e2c5d;
+}
+.navy-scroll::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
+}
+
+/* Subtle pulse animation for live telemetry */
 @keyframes subtlePulse {
   0%, 100% {
     opacity: 1;
+    transform: scale(1);
   }
   50% {
     opacity: 0.4;
+    transform: scale(0.95);
   }
 }
 
 .animate-subtle-pulse {
   animation: subtlePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes threatAlertPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.animate-threat-pulse {
+  animation: threatAlertPulse 1.8s infinite;
 }

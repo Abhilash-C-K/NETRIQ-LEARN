@@ -11,48 +11,48 @@ export const OperationalMetrics = ({ metrics }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {/* Queue Overflow Drops */}
-      <Card className="bg-[#1E2021] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg">
+      <Card className="bg-[#4a3330] border border-[#6b4c45] text-[#f8f4e7] shadow-none rounded-lg">
         <CardContent className="p-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#A4A5A0]">Queue Drops</p>
-            <p className={`text-xl font-mono font-bold mt-1 ${queueDrops > 0 ? 'text-[#C95F5F]' : 'text-[#F1F0EA]'}`}>
+            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#d4bfb0]">Queue Drops</p>
+            <p className={`text-xl font-mono font-bold mt-1 ${queueDrops > 0 ? 'text-[#b83a2e]' : 'text-[#f8f4e7]'}`}>
               <NumberTicker value={queueDrops} />
             </p>
-            <p className="text-[11px] text-[#70736F] mt-0.5 font-sans">Drops when consumer queue limit (10k) hit</p>
+            <p className="text-[11px] text-[#a08070] mt-0.5 font-sans">Drops when consumer queue limit (10k) hit</p>
           </div>
-          <div className="p-2.5 rounded-lg border border-[#303334] bg-[#141516] text-[#A4A5A0]">
+          <div className="p-2.5 rounded-lg border border-[#6b4c45] bg-[#3b2a27] text-[#d4bfb0]">
             <AlertOctagon className="w-5 h-5" />
           </div>
         </CardContent>
       </Card>
 
       {/* Non-IP Filtered (Case A) */}
-      <Card className="bg-[#1E2021] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg">
+      <Card className="bg-[#4a3330] border border-[#6b4c45] text-[#f8f4e7] shadow-none rounded-lg">
         <CardContent className="p-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#A4A5A0]">Non-IP Filtered</p>
-            <p className="text-xl font-mono font-bold text-[#F1F0EA] mt-1">
+            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#d4bfb0]">Non-IP Filtered</p>
+            <p className="text-xl font-mono font-bold text-[#f8f4e7] mt-1">
               <NumberTicker value={nonIpCount} />
             </p>
-            <p className="text-[11px] text-[#70736F] mt-0.5 font-sans">Frames filtered (ARP, LLDP, STP)</p>
+            <p className="text-[11px] text-[#a08070] mt-0.5 font-sans">Frames filtered (ARP, LLDP, STP)</p>
           </div>
-          <div className="p-2.5 rounded-lg border border-[#303334] bg-[#141516] text-[#8CA4B8]">
+          <div className="p-2.5 rounded-lg border border-[#6b4c45] bg-[#3b2a27] text-[#c4956a]">
             <Filter className="w-5 h-5" />
           </div>
         </CardContent>
       </Card>
 
       {/* Malformed Traffic (Case B) */}
-      <Card className="bg-[#1E2021] border border-[#303334] text-[#F1F0EA] shadow-none rounded-lg">
+      <Card className="bg-[#4a3330] border border-[#6b4c45] text-[#f8f4e7] shadow-none rounded-lg">
         <CardContent className="p-4 flex items-center justify-between">
           <div>
-            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#A4A5A0]">Malformed (Case B)</p>
-            <p className="text-xl font-mono font-bold text-[#D0A05C] mt-1">
+            <p className="text-xs font-sans font-medium uppercase tracking-wide text-[#d4bfb0]">Malformed (Case B)</p>
+            <p className="text-xl font-mono font-bold text-[#cc8833] mt-1">
               <NumberTicker value={malformedCount} />
             </p>
-            <p className="text-[11px] text-[#70736F] mt-0.5 font-sans">Evaluated via Heuristic engine</p>
+            <p className="text-[11px] text-[#a08070] mt-0.5 font-sans">Evaluated via Heuristic engine</p>
           </div>
-          <div className="p-2.5 rounded-lg border border-[#303334] bg-[#141516] text-[#D0A05C]">
+          <div className="p-2.5 rounded-lg border border-[#6b4c45] bg-[#3b2a27] text-[#cc8833]">
             <Cpu className="w-5 h-5" />
           </div>
         </CardContent>

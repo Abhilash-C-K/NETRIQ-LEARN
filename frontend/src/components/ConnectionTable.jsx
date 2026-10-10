@@ -94,10 +94,10 @@ export const ConnectionTable = ({ entries, onSelectDevice }) => {
                           <button
                             type="button"
                             onClick={() => onSelectDevice(srcIp)}
-                            className="text-left font-mono hover:text-[#71A99D] hover:underline transition-colors focus:outline-none flex items-center gap-1 group cursor-pointer"
+                            className="text-left font-mono hover:text-[#cc5500] hover:underline transition-colors focus:outline-none flex items-center gap-1 group cursor-pointer"
                             title={`View activity trail for ${srcIp}`}
                           >
-                            <span className="group-hover:text-[#71A99D] font-semibold">{srcIp}</span>
+                            <span className="group-hover:text-[#cc5500] font-semibold">{srcIp}</span>
                             <span className="text-[#687883] text-[11px] font-normal">:{srcPort}</span>
                           </button>
                         ) : (

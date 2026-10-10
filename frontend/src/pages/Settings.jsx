@@ -131,7 +131,7 @@ export const Settings = () => {
               onClick={() => setActiveTab(item)}
               className={`w-full text-left px-3 py-2 text-xs font-sans rounded-md transition-colors cursor-pointer flex items-center justify-between ${
                 activeTab === item
-                  ? 'bg-[#202D36] text-[#E7ECEF] font-semibold border-l-2 border-l-[#71A99D]'
+                  ? 'bg-[#202D36] text-[#E7ECEF] font-semibold border-l-2 border-l-[#cc5500]'
                   : 'text-[#9AA8B2] hover:text-[#E7ECEF] hover:bg-[#202D36]/50'
               }`}
             >
@@ -167,7 +167,7 @@ export const Settings = () => {
                       type="text"
                       value={settings.instance_name}
                       onChange={(e) => setSettings({ ...settings, instance_name: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-mono"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
                     />
                   </div>
 
@@ -179,7 +179,7 @@ export const Settings = () => {
                       type="number"
                       value={settings.threat_retention_days}
                       onChange={(e) => setSettings({ ...settings, threat_retention_days: parseInt(e.target.value) || 7 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-mono"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
                     />
                   </div>
 
@@ -191,7 +191,7 @@ export const Settings = () => {
                       type="text"
                       value={settings.timezone}
                       onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-sans"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-sans"
                     />
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export const Settings = () => {
                       type="number"
                       value={settings.login_max_attempts}
                       onChange={(e) => setSettings({ ...settings, login_max_attempts: parseInt(e.target.value) || 5 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-mono"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
                     />
                   </div>
 
@@ -227,7 +227,7 @@ export const Settings = () => {
                       type="number"
                       value={settings.login_lockout_minutes}
                       onChange={(e) => setSettings({ ...settings, login_lockout_minutes: parseInt(e.target.value) || 15 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-mono"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-mono"
                     />
                   </div>
 
@@ -240,7 +240,7 @@ export const Settings = () => {
                       type="checkbox"
                       checked={settings.mfa_required}
                       onChange={(e) => setSettings({ ...settings, mfa_required: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
+                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -269,7 +269,7 @@ export const Settings = () => {
                       type="checkbox"
                       checked={settings.anomaly_detector_enabled}
                       onChange={(e) => setSettings({ ...settings, anomaly_detector_enabled: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
+                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
                     />
                   </div>
 
@@ -287,7 +287,7 @@ export const Settings = () => {
                       step="0.05"
                       value={settings.zero_day_weight}
                       onChange={(e) => setSettings({ ...settings, zero_day_weight: parseFloat(e.target.value) })}
-                      className="w-full accent-[#71A99D] cursor-pointer"
+                      className="w-full accent-[#cc5500] cursor-pointer"
                     />
                     <span className="text-[11px] text-[#687883] block mt-1">
                       Balances unsupervised outlier score against supervised XGBoost model output.
@@ -302,7 +302,7 @@ export const Settings = () => {
                       type="number"
                       value={settings.high_anomaly_threshold}
                       onChange={(e) => setSettings({ ...settings, high_anomaly_threshold: parseFloat(e.target.value) })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#71A99D]"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#cc5500]"
                     />
                   </div>
                 </div>
@@ -325,7 +325,7 @@ export const Settings = () => {
                     <select
                       value={settings.quarantine_mode}
                       onChange={(e) => setSettings({ ...settings, quarantine_mode: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-sans"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-sans"
                     >
                       <option value="sdn_vlan">Layer 2 SDN Host Isolation (VLAN 99)</option>
                       <option value="firewall_drop">Layer 1 Perimeter Firewall Drop Only</option>
@@ -341,7 +341,7 @@ export const Settings = () => {
                       type="number"
                       value={settings.vlan_id}
                       onChange={(e) => setSettings({ ...settings, vlan_id: parseInt(e.target.value) || 99 })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#71A99D]"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#cc5500]"
                     />
                   </div>
 
@@ -354,7 +354,7 @@ export const Settings = () => {
                       type="checkbox"
                       checked={settings.auto_quarantine_critical}
                       onChange={(e) => setSettings({ ...settings, auto_quarantine_critical: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
+                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -379,7 +379,7 @@ export const Settings = () => {
                       type="checkbox"
                       checked={settings.ws_broadcast_enabled}
                       onChange={(e) => setSettings({ ...settings, ws_broadcast_enabled: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
+                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
                     />
                   </div>
 
@@ -391,7 +391,7 @@ export const Settings = () => {
                       type="text"
                       value={settings.webhook_url}
                       onChange={(e) => setSettings({ ...settings, webhook_url: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#71A99D]"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] font-mono focus:outline-none focus:border-[#cc5500]"
                     />
                   </div>
                 </div>
@@ -416,7 +416,7 @@ export const Settings = () => {
                       type="checkbox"
                       checked={settings.siem_forwarding}
                       onChange={(e) => setSettings({ ...settings, siem_forwarding: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
+                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -439,7 +439,7 @@ export const Settings = () => {
                     <select
                       value={settings.audit_level}
                       onChange={(e) => setSettings({ ...settings, audit_level: e.target.value })}
-                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#71A99D] font-sans"
+                      className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] focus:outline-none focus:border-[#cc5500] font-sans"
                     >
                       <option value="minimal">Minimal (Mitigations & Auth Failures Only)</option>
                       <option value="standard">Standard (All State Changes & Verdicts)</option>
@@ -456,7 +456,7 @@ export const Settings = () => {
                       type="checkbox"
                       checked={settings.immutable_audit_logs}
                       onChange={(e) => setSettings({ ...settings, immutable_audit_logs: e.target.checked })}
-                      className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
+                      className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -466,7 +466,7 @@ export const Settings = () => {
             {/* Save Button Row */}
             <div className="flex items-center justify-between pt-4 border-t border-[#2A3944]">
               {saveSuccess ? (
-                <span className="text-xs text-[#71A99D] font-medium flex items-center gap-1.5 font-sans">
+                <span className="text-xs text-[#cc5500] font-medium flex items-center gap-1.5 font-sans">
                   <ShieldCheck className="w-4 h-4" /> Configuration saved successfully.
                 </span>
               ) : (
@@ -478,7 +478,7 @@ export const Settings = () => {
               <button
                 type="submit"
                 disabled={isSaving}
-                className="bg-[#71A99D] hover:bg-[#60958a] text-[#101820] font-sans text-xs font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="bg-[#cc5500] hover:bg-[#60958a] text-[#101820] font-sans text-xs font-semibold py-2 px-4 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Save className="w-3.5 h-3.5" />
                 <span>{isSaving ? 'Saving...' : 'Save Settings'}</span>

@@ -70,7 +70,7 @@ export const Users = () => {
   const getRoleBadgeClass = (userRole) => {
     const r = (userRole || 'viewer').toLowerCase();
     if (r === 'admin') return 'border-[#7895B2]/40 bg-[#7895B2]/10 text-[#7895B2]';
-    if (r === 'analyst') return 'border-[#71A99D]/40 bg-[#71A99D]/10 text-[#71A99D]';
+    if (r === 'analyst') return 'border-[#cc5500]/40 bg-[#cc5500]/10 text-[#cc5500]';
     return 'border-[#2A3944] bg-[#202D36] text-[#9AA8B2]';
   };
 
@@ -106,7 +106,7 @@ export const Users = () => {
     <div className="space-y-5 pb-8">
       {/* Toast Alert */}
       {actionSuccess && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#19242E] border border-[#2A3944] text-[#71A99D] text-xs font-medium px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#19242E] border border-[#2A3944] text-[#cc5500] text-xs font-medium px-4 py-2.5 rounded-lg shadow-xl flex items-center gap-2">
           <ShieldCheck className="w-4 h-4" />
           <span>{actionSuccess}</span>
         </div>
@@ -139,7 +139,7 @@ export const Users = () => {
       {/* Clean Table: Operator | Role | Status */}
       {isLoading ? (
         <div className="p-12 text-center text-[#9AA8B2] space-y-3">
-          <div className="w-7 h-7 border-2 border-[#2A3944] border-t-[#71A99D] rounded-full animate-spin mx-auto" />
+          <div className="w-7 h-7 border-2 border-[#2A3944] border-t-[#cc5500] rounded-full animate-spin mx-auto" />
           <p className="text-xs font-sans">Loading accounts...</p>
         </div>
       ) : error ? (
@@ -184,7 +184,7 @@ export const Users = () => {
                         <select
                           value={u.role?.toLowerCase()}
                           onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                          className="bg-[#101820] border border-[#2A3944] rounded px-1.5 py-0.5 text-[10px] text-[#9AA8B2] font-sans focus:outline-none focus:border-[#71A99D] cursor-pointer"
+                          className="bg-[#101820] border border-[#2A3944] rounded px-1.5 py-0.5 text-[10px] text-[#9AA8B2] font-sans focus:outline-none focus:border-[#cc5500] cursor-pointer"
                         >
                           <option value="admin">ADMIN</option>
                           <option value="analyst">ANALYST</option>
@@ -193,11 +193,11 @@ export const Users = () => {
                       </div>
                     </td>
 
-                    {/* Status: ● ACTIVE in #71A99D */}
+                    {/* Status: ● ACTIVE in #cc5500 */}
                     <td className="py-3 px-4 font-sans text-xs">
                       {u.is_active ? (
-                        <span className="inline-flex items-center gap-1.5 text-[#71A99D] font-medium">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#71A99D]" />
+                        <span className="inline-flex items-center gap-1.5 text-[#cc5500] font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#cc5500]" />
                           ACTIVE
                         </span>
                       ) : (

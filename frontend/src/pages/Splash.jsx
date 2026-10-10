@@ -59,7 +59,7 @@ export const Splash = () => {
       onClick={handleDismiss}
       onTouchStart={handleDismiss}
       onKeyDown={handleKeyDown}
-      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#141516] text-[#F1F0EA] select-none cursor-pointer overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[#9AAA78] ${
+      className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#3b2a27] text-[#f8f4e7] select-none cursor-pointer overflow-hidden outline-none focus-visible:ring-2 focus-visible:ring-[#cc5500] ${
         isExiting
           ? '-translate-x-full opacity-0 transition-all duration-350 ease-in-out'
           : 'translate-x-0 opacity-100 transition-all duration-300'
@@ -74,7 +74,7 @@ export const Splash = () => {
         }`}
       >
         {/* NetrIQ Brand Logo Container */}
-        <div className="w-20 h-20 rounded-2xl bg-[#1E2021] border border-[#303334] p-1.5 mb-6 shadow-none flex items-center justify-center overflow-hidden">
+        <div className="w-20 h-20 rounded-2xl bg-[#4a3330] border border-[#6b4c45] p-1.5 mb-6 shadow-none flex items-center justify-center overflow-hidden">
           <img
             src="/logo.jpeg"
             alt="NetrIQ Logo"
@@ -86,34 +86,34 @@ export const Splash = () => {
             }}
           />
           {!logoLoaded && (
-            <Shield className="w-10 h-10 text-[#9AAA78] stroke-[1.75]" aria-hidden="true" />
+            <Shield className="w-10 h-10 text-[#cc5500] stroke-[1.75]" aria-hidden="true" />
           )}
         </div>
 
         {/* Distinctive Brand Wordmark: Corpta Haute Tech Typography */}
         <div className="flex flex-col items-center mb-3">
           <div className="flex items-center font-corpta text-3xl sm:text-4xl tracking-[0.16em] uppercase select-none pl-1">
-            <span className="text-[#F1F0EA]">NETR</span>
-            <span className="text-[#9AAA78]">IQ</span>
+            <span className="text-[#f8f4e7]">NETR</span>
+            <span className="text-[#cc5500]">IQ</span>
           </div>
-          <span className="text-[10px] font-mono tracking-[0.38em] text-[#70736F] uppercase mt-2">
+          <span className="text-[10px] font-mono tracking-[0.38em] text-[#a08070] uppercase mt-2">
             Autonomous NIDS
           </span>
         </div>
-        <p className="text-xs sm:text-sm font-sans text-[#A4A5A0] tracking-normal mb-8">
+        <p className="text-xs sm:text-sm font-sans text-[#d4bfb0] tracking-normal mb-8">
           Intelligent Network Defense &amp; Firewall Response
         </p>
 
         {/* Interaction Hint */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#303334] bg-[#1E2021] text-xs font-mono text-[#9AAA78] hover:border-[#9AAA78] transition-colors">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#6b4c45] bg-[#4a3330] text-xs font-mono text-[#cc5500] hover:border-[#cc5500] transition-colors">
           <span>Tap anywhere to continue</span>
           <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
         </div>
       </div>
 
       {/* Subtle Bottom Keycap Guide */}
-      <div className="absolute bottom-8 text-[11px] font-mono text-[#70736F]">
-        Press <kbd className="px-1.5 py-0.5 rounded bg-[#1E2021] border border-[#303334] text-[#A4A5A0]">Enter</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#1E2021] border border-[#303334] text-[#A4A5A0]">Space</kbd>
+      <div className="absolute bottom-8 text-[11px] font-mono text-[#a08070]">
+        Press <kbd className="px-1.5 py-0.5 rounded bg-[#4a3330] border border-[#6b4c45] text-[#d4bfb0]">Enter</kbd> or <kbd className="px-1.5 py-0.5 rounded bg-[#4a3330] border border-[#6b4c45] text-[#d4bfb0]">Space</kbd>
       </div>
     </div>
   );

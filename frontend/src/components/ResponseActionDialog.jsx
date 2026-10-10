@@ -127,7 +127,7 @@ export const ResponseActionDialog = ({
               onChange={(e) => setReason(e.target.value)}
               placeholder="Operator rationale for audit ledger..."
               rows={2}
-              className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] placeholder-[#687883] focus:outline-none focus:border-[#71A99D] font-sans transition-colors"
+              className="w-full text-xs bg-[#101820] border border-[#2A3944] rounded-lg p-2.5 text-[#E7ECEF] placeholder-[#687883] focus:outline-none focus:border-[#cc5500] font-sans transition-colors"
             />
           </div>
 
@@ -137,7 +137,7 @@ export const ResponseActionDialog = ({
               type="checkbox"
               checked={confirmedRisk}
               onChange={(e) => setConfirmedRisk(e.target.checked)}
-              className="rounded border-[#2A3944] bg-[#101820] text-[#71A99D] w-4 h-4 cursor-pointer"
+              className="rounded border-[#2A3944] bg-[#101820] text-[#cc5500] w-4 h-4 cursor-pointer"
             />
             <span className="text-xs text-[#9AA8B2] select-none font-sans">
               I have reviewed the target asset and confirm this action.

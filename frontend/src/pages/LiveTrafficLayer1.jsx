@@ -310,14 +310,7 @@ export const LiveTrafficLayer1 = () => {
       {/* Header and Ingress Banner */}
       <div className="bg-white p-5 rounded-xl border border-[#e2e8f0] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white">LAYER 1</span>
-            <h1 className="text-xl font-bold text-[#0f172a]">Live Traffic Inspection</h1>
-            <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Pre-Firewall Tap
-            </span>
-          </div>
+          <h1 className="text-xl font-bold text-[#0f172a]">Live Traffic</h1>
         </div>
 
         {/* Live Controls */}
@@ -366,7 +359,7 @@ export const LiveTrafficLayer1 = () => {
         </div>
       </div>
 
-      {/* Layer 1 Live Ingress Metrics */}
+      {/* External Live Ingress Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-sm">
           <div className="text-[11px] font-bold text-[#64748b] uppercase">Ingress Flows in Buffer</div>
@@ -467,7 +460,7 @@ export const LiveTrafficLayer1 = () => {
         </div>
       </div>
 
-      {/* Main Layer 1 Ingress Table */}
+      {/* Main External Ingress Table */}
       <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
         <div className="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
           <div className="flex items-center gap-2">

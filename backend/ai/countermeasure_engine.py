@@ -57,7 +57,7 @@ PLAYBOOK_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "phase": CountermeasurePhase.CONTAINMENT,
                 "title": "Drop Malicious Flow at Pre-Firewall Ingress",
                 "automatable": True,
-                "instructions": "NETRIQ automatically drops offending packet streams at Layer 1 pre-firewall filter before TCP connection state tables exhaust.",
+                "instructions": "NETRIQ automatically drops offending packet streams at External pre-firewall filter before TCP connection state tables exhaust.",
             },
             {
                 "id": "DDOS-CM-2",
@@ -91,7 +91,7 @@ PLAYBOOK_REGISTRY: Dict[str, Dict[str, Any]] = {
                 "phase": CountermeasurePhase.CONTAINMENT,
                 "title": "Blacklist Scanning IP on Boundary Firewall",
                 "automatable": True,
-                "instructions": "NETRIQ pushes source IP to Layer 1 drop table to halt ongoing port enumeration sweep.",
+                "instructions": "NETRIQ pushes source IP to External drop table to halt ongoing port enumeration sweep.",
             },
             {
                 "id": "SCAN-CM-2",
@@ -123,9 +123,9 @@ PLAYBOOK_REGISTRY: Dict[str, Dict[str, Any]] = {
             {
                 "id": "LAT-CM-1",
                 "phase": CountermeasurePhase.CONTAINMENT,
-                "title": "Isolate Endpoint via Layer 2 Quarantine",
+                "title": "Isolate Endpoint via Internal Quarantine",
                 "automatable": True,
-                "instructions": "NETRIQ executes Layer 2 port isolation or reassigns compromised device to Quarantine VLAN 99, cutting host-to-host spread.",
+                "instructions": "NETRIQ executes Internal port isolation or reassigns compromised device to Quarantine VLAN 99, cutting host-to-host spread.",
             },
             {
                 "id": "LAT-CM-2",

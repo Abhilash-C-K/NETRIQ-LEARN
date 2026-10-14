@@ -36,20 +36,20 @@ export const AppRouter = () => {
         {/* 01. Dashboard - Main SOC Overview */}
         <Route path="/dashboard" element={<Dashboard />} />
 
-        {/* 02. Live Traffic - Layer 1 (Pre-Firewall Ingress) */}
+        {/* 02. Live Traffic - External (Pre-Firewall Ingress) */}
         <Route path="/traffic-layer1" element={<LiveTrafficLayer1 />} />
         <Route path="/monitoring" element={<LiveTrafficLayer1 />} />
 
-        {/* 03. Internal Network - Layer 2 (Topology & Lateral Movement via React Flow) */}
+        {/* 03. Internal Network - Internal (Topology & Lateral Movement via React Flow) */}
         <Route path="/network-layer2" element={<InternalNetworkLayer2 />} />
         <Route path="/internal-network" element={<InternalNetworkLayer2 />} />
         <Route path="/analytics" element={<InternalNetworkLayer2 />} />
 
-        {/* 04. Threat Detection - Alerts & SHAP-based Feature Explanations */}
+        {/* 04. Threat Detection - Alerts & Feature Explanations */}
         <Route path="/threats" element={<ThreatDetection />} />
         <Route path="/incidents" element={<ThreatDetection />} />
 
-        {/* 05. Device Quarantine - Layer 2 Isolation Controls & Audit Log */}
+        {/* 05. Device Quarantine - Internal Isolation Controls & Audit Log */}
         <Route path="/quarantine" element={<DeviceQuarantine />} />
 
         {/* 06. Reports - Incident Reports & SOC Compliance Audits */}

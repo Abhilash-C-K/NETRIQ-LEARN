@@ -4,98 +4,72 @@ import numpy as np
 from typing import Dict, Any, List
 from backend.ai.contracts import PredictionResult, TrafficType, RiskCategory
 from backend.ai.model_manager import ModelManager
-from backend.ai.feature_encoder import FeatureEncoder
 from backend.ai.risk_engine import RiskEngine
-from backend.ai.anomaly_detector import EXPECTED_FEATURE_NAMES
 from backend.utils.logger import get_logger
 from backend.utils.exceptions import PredictionError
 
 logger = get_logger(__name__)
 
-# Lazy SHAP reference — imported on-demand to avoid 25s startup freeze during app boot
-shap: Any = None
-SHAP_AVAILABLE: bool = False
-
 class Predictor:
     def __init__(self):
         self.model_manager = ModelManager()
-        # Initialize models and encoders
         self.model_manager.load_models()
-        self.feature_encoder = FeatureEncoder(self.model_manager.get_encoder())
         self.risk_engine = RiskEngine()
-        self._feature_names = [] # Could be loaded from metadata if available
 
     def predict(self, raw_features: Dict[str, Any], traffic_type: TrafficType, anomaly_baseline: float = 0.0) -> PredictionResult:
-        """
-        Main inference entry point.
-        1. Start timer.
-        2. Encode and scale features.
-        3. Route to the correct model based on traffic_type.
-        4. Predict and generate confidence.
-        5. Map to risk category via RiskEngine.
-        6. Generate explainability (top features).
-        7. Return PredictionResult.
-        """
         start_time = time.perf_counter()
-        
         try:
-            # 1. Encode features
-            encoded_dict = self.feature_encoder.encode(raw_features)
-            
-            # 2. Scale features
-            scaler = self.model_manager.get_scaler()
-
-            # Enforce canonical feature order matching training contract; fail loudly on schema mismatch
-            if scaler and hasattr(scaler, "feature_names_in_"):
-                feature_names = list(scaler.feature_names_in_)
-                missing = [k for k in feature_names if k not in encoded_dict]
-                if missing:
-                    logger.error(f"[SCHEMA_MISMATCH] Feature vector missing required scaler features: {missing[:5]}")
-                    raise PredictionError(f"[SCHEMA_MISMATCH] Feature vector missing {len(missing)} required features from scaler model contract.")
-                feature_vector = np.array([[encoded_dict[k] for k in feature_names]])
-            elif all(k in encoded_dict for k in EXPECTED_FEATURE_NAMES):
-                feature_names = EXPECTED_FEATURE_NAMES
-                feature_vector = np.array([[encoded_dict[k] for k in EXPECTED_FEATURE_NAMES]])
-            else:
-                missing = [k for k in EXPECTED_FEATURE_NAMES if k not in encoded_dict]
-                logger.error(f"[SCHEMA_MISMATCH] Feature encoding schema mismatch. Missing canonical features: {missing[:5]}")
-                raise PredictionError(f"[SCHEMA_MISMATCH] Incomplete feature payload. Missing {len(missing)} canonical features.")
-            
-            if scaler:
-                # Some scalers expect 2D arrays
-                scaled_vector = scaler.transform(feature_vector)
-            else:
-                scaled_vector = feature_vector
-                
-            # 3. Route to correct model
             model = self.model_manager.get_model(traffic_type)
-            model_name = self.model_manager.get_model_name(traffic_type)
-            
-            # 4. Predict
-            # Depending on the model, it might return class labels or probabilities. 
-            # We assume predict_proba is available for confidence score calculation.
-            if hasattr(model, "predict_proba"):
-                probs = model.predict_proba(scaled_vector)[0]
-                # Assuming binary classification: 0 = Benign, 1 = Anomaly
-                anomaly_prob = probs[1] if len(probs) > 1 else probs[0]
-                confidence = float(anomaly_prob * 100.0)
-                verdict = bool(anomaly_prob >= 0.5)
+            model_name = str(self.model_manager.get_model_name(traffic_type))
+            raw_thresh = self.model_manager.get_threshold(traffic_type)
+            threshold = float(raw_thresh) if isinstance(raw_thresh, (int, float)) else 0.5
+
+            # Branch: SYSTEM uses an event-sequence vectorizer, not named numeric fields
+            if traffic_type == TrafficType.SYSTEM:
+                vectorizer = self.model_manager.get_system_vectorizer()
+                event_sequence = raw_features.get("event_sequence")
+                if not event_sequence:
+                    raise PredictionError("[SCHEMA_MISMATCH] SYSTEM traffic requires 'event_sequence' (list of event IDs).")
+                doc = " ".join(event_sequence)
+                feature_vector = vectorizer.transform([doc]).astype(np.float64)
+                feature_names = list(vectorizer.vocabulary_.keys())
+
+            # NETWORK and FIREWALL: named numeric features, per-model order from metadata
             else:
-                pred = model.predict(scaled_vector)[0]
+                feature_names = self.model_manager.get_feature_names(traffic_type)
+                if not isinstance(feature_names, (list, tuple)):
+                    if hasattr(self.model_manager, "get_scaler"):
+                        scaler = self.model_manager.get_scaler()
+                        if hasattr(scaler, "feature_names_in_"):
+                            feature_names = list(scaler.feature_names_in_)
+                        else:
+                            feature_names = []
+                    else:
+                        feature_names = []
+                if not feature_names:
+                    raise PredictionError(f"[CONFIG_ERROR] No feature schema found for {traffic_type}.")
+                missing = [f for f in feature_names if f not in raw_features]
+                if missing:
+                    logger.error(f"[SCHEMA_MISMATCH] Missing features for {traffic_type}: {missing[:5]}")
+                    raise PredictionError(f"[SCHEMA_MISMATCH] Missing {len(missing)} required features for {traffic_type}.")
+                feature_vector = np.array([[float(raw_features[f]) for f in feature_names]])
+
+            # Predict using the model's calibrated threshold
+            if hasattr(model, "predict_proba"):
+                probs = model.predict_proba(feature_vector)[0]
+                specialist_prob = float(probs[1]) if len(probs) > 1 else float(probs[0])
+                verdict = bool(specialist_prob >= threshold)
+                confidence = specialist_prob * 100.0
+            else:
+                pred = model.predict(feature_vector)[0]
                 verdict = bool(pred)
                 confidence = 100.0 if verdict else 0.0
+                specialist_prob = confidence / 100.0
 
-            # 5. Risk calculation
             risk_category = self.risk_engine.calculate_risk(confidence, anomaly_baseline)
-            
-            # 6. Explainability
-            explainability = self._generate_explainability(model, scaled_vector, feature_names)
-            
-            # 7. Drift Tracking Hook
-            self._track_model_drift_hook(scaled_vector, float(verdict))
-            
+            explainability = self._generate_explainability(model, feature_names)
             latency_ms = (time.perf_counter() - start_time) * 1000.0
-            
+
             return PredictionResult(
                 verdict=verdict,
                 confidence=confidence,
@@ -105,39 +79,27 @@ class Predictor:
                 explainability_top_features=explainability
             )
 
+        except PredictionError:
+            raise
         except Exception as e:
             logger.error(f"Prediction failed: {e}", exc_info=True)
             raise PredictionError(f"Inference failed: {str(e)}") from e
 
-    def _generate_explainability(self, model: Any, processed_features: np.ndarray, feature_names: List[str]) -> List[Dict[str, Any]]:
-        """
-        Fast real-time explainability extracting top-3 contributing feature weights (<1ms).
-        Detailed TreeExplainer SHAP path is cached via backend.ai.explainability_engine.
-        """
+    def _generate_explainability(self, model: Any, feature_names: List[str]) -> List[Dict[str, Any]]:
         top_features = []
         try:
-            if hasattr(model, "feature_importances_"):
-                importances = model.feature_importances_
-                feature_importances = list(zip(feature_names, importances))
-                feature_importances.sort(key=lambda x: x[1], reverse=True)
-                for name, imp in feature_importances[:3]:
-                    top_features.append({"feature": name, "importance": round(float(imp), 4)})
-            elif hasattr(model, "coef_"):
-                weights = np.abs(model.coef_[0])
-                feature_importances = list(zip(feature_names, weights))
-                feature_importances.sort(key=lambda x: x[1], reverse=True)
-                for name, imp in feature_importances[:3]:
+            base_model = getattr(model, "estimator", None) or (
+                model.calibrated_classifiers_[0].estimator
+                if hasattr(model, "calibrated_classifiers_") else None
+            ) or model
+            if hasattr(base_model, "feature_importances_"):
+                importances = base_model.feature_importances_
+                pairs = sorted(zip(feature_names, importances), key=lambda x: x[1], reverse=True)
+                for name, imp in pairs[:3]:
                     top_features.append({"feature": name, "importance": round(float(imp), 4)})
         except Exception as e:
             logger.warning(f"Failed to generate explainability: {e}")
-            
         return top_features
 
-    def _track_model_drift_hook(self, features: np.ndarray, prediction: float) -> None:
-        """Minimal hook to log data distribution for future drift analysis."""
-        # TODO: Implement drift tracking (e.g., streaming features to a Kafka topic or drift DB)
-        pass
-
     async def predict_async(self, raw_features: Dict[str, Any], traffic_type: TrafficType, anomaly_baseline: float = 0.0) -> PredictionResult:
-        """Async wrapper around sync inference method using asyncio.to_thread to keep event loop unblocked."""
         return await asyncio.to_thread(self.predict, raw_features, traffic_type, anomaly_baseline)

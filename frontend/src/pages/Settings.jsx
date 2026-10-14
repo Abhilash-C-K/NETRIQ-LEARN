@@ -188,12 +188,12 @@ export const Settings = () => {
           </div>
 
           <div className="space-y-5">
-            {/* Layer 1 Slider */}
+            {/* External Slider */}
             <div className="p-4 rounded-xl border border-[#e2eaf4] bg-[#f8fafc]">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <span className="text-xs font-bold text-[#0a1c3d] block">
-                    Layer 1 Threat Threshold
+                    External Threat Threshold
                   </span>
                   <span className="text-[11px] text-[#687d9a]">
                     Minimum confidence required to trigger pre-firewall blocking.
@@ -218,12 +218,12 @@ export const Settings = () => {
               </div>
             </div>
 
-            {/* Layer 2 Slider */}
+            {/* Internal Slider */}
             <div className="p-4 rounded-xl border border-[#e2eaf4] bg-[#f8fafc]">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <span className="text-xs font-bold text-[#0a1c3d] block">
-                    Layer 2 Anomaly Threshold
+                    Internal Anomaly Threshold
                   </span>
                   <span className="text-[11px] text-[#687d9a]">
                     Sensitivity for identifying unusual host-to-host communications.

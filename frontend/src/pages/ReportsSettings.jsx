@@ -241,15 +241,15 @@ export const ReportsSettings = () => {
               </div>
 
               <div>
-                <label className="text-[11px] font-bold text-[#475569] block mb-1.5">Defense Layer Scope</label>
+                <label className="text-[11px] font-bold text-[#475569] block mb-1.5">Defense Scope</label>
                 <select
                   value={reportLayer}
                   onChange={(e) => setReportLayer(e.target.value)}
                   className="w-full p-2 rounded-lg border border-[#e2e8f0] text-xs bg-[#f8fafc]"
                 >
-                  <option value="ALL">Unified (Layer 1 + Layer 2)</option>
-                  <option value="L1">Layer 1: Pre-Firewall Ingress Only</option>
-                  <option value="L2">Layer 2: Internal Zero-Trust Only</option>
+                  <option value="ALL">Unified (External + Internal)</option>
+                  <option value="L1">External: Pre-Firewall Ingress Only</option>
+                  <option value="L2">Internal: Internal Zero-Trust Only</option>
                 </select>
               </div>
 
@@ -313,8 +313,8 @@ export const ReportsSettings = () => {
               </div>
 
               <div className="text-xs text-[#334155] leading-relaxed bg-white p-3 rounded-lg border border-[#e2e8f0]">
-                <strong>Executive Assessment:</strong> During the evaluated period, NetrIQ Layer 1 successfully blocked
-                all volumetric DoS attacks at edge ingress with zero packet spills into internal subnets. Layer 2 zero-trust
+                <strong>Executive Assessment:</strong> During the evaluated period, NetrIQ External defense successfully blocked
+                all volumetric DoS attacks at edge ingress with zero packet spills into internal subnets. Internal zero-trust
                 monitoring flagged and contained an unauthorized lateral SMB credential extraction vector targeting DC-01,
                 quarantining the source host within 1.8 seconds of detection.
               </div>
@@ -389,16 +389,16 @@ export const ReportsSettings = () => {
         <div className="bg-white rounded-xl border border-[#e2e8f0] p-6 shadow-sm space-y-6">
           <div>
             <h2 className="text-base font-bold text-[#0f172a]">Machine Learning Model Thresholds & Policy</h2>
-            <p className="text-xs text-[#64748b]">Adjust classification confidence cutoffs for Layer 1 and Layer 2.</p>
+            <p className="text-xs text-[#64748b]">Adjust classification confidence cutoffs for External and Internal.</p>
           </div>
 
           <div className="space-y-5">
-            {/* Layer 1 Slider */}
+            {/* External Slider */}
             <div className="p-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc]">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <span className="text-xs font-bold text-[#0f172a] block">
-                    Layer 1 Pre-Firewall Confidence Threshold: {(layer1Threshold * 100).toFixed(0)}%
+                    External Pre-Firewall Confidence Threshold: {(layer1Threshold * 100).toFixed(0)}%
                   </span>
                   <span className="text-[11px] text-[#64748b]">
                     Model: RandomForest_v1.2 + XGBoost Ingress Filter. Packets above this threshold are automatically dropped.
@@ -417,12 +417,12 @@ export const ReportsSettings = () => {
               />
             </div>
 
-            {/* Layer 2 Slider */}
+            {/* Internal Slider */}
             <div className="p-4 rounded-xl border border-[#e2e8f0] bg-[#f8fafc]">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <span className="text-xs font-bold text-[#0f172a] block">
-                    Layer 2 Lateral Movement Anomaly Threshold: {(layer2Threshold * 100).toFixed(0)}%
+                    Internal Lateral Movement Anomaly Threshold: {(layer2Threshold * 100).toFixed(0)}%
                   </span>
                   <span className="text-[11px] text-[#64748b]">
                     Model: LightGBM Zero-Trust Sentinel. Internal communications exceeding this score trigger containment alerts.

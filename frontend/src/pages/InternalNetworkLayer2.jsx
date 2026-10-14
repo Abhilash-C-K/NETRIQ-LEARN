@@ -258,7 +258,7 @@ export const InternalNetworkLayer2 = () => {
         await responseService.triggerQuarantine({
           target_ip: node.data.ip,
           target_mac: node.data.mac,
-          reason: `SOC Manual Quarantine from Layer 2 Topology: ${node.data.label}`,
+          reason: `SOC Manual Quarantine from Internal Topology: ${node.data.label}`,
         });
       }
 
@@ -286,11 +286,11 @@ export const InternalNetworkLayer2 = () => {
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Layer 2 Header Banner */}
+      {/* Internal Header Banner */}
       <div className="bg-white p-5 rounded-xl border border-[#e2e8f0] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#7c3aed] text-white">LAYER 2</span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#7c3aed] text-white">INTERNAL</span>
             <h1 className="text-xl font-bold text-[#0f172a]">Internal Network Topology & Lateral Movement</h1>
           </div>
         </div>
@@ -413,7 +413,7 @@ export const InternalNetworkLayer2 = () => {
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-[#64748b]">Layer 2 Behavioral Findings</span>
+                  <span className="text-[11px] font-semibold text-[#64748b]">Internal Behavioral Findings</span>
                   <p className="text-xs text-[#334155] mt-1 p-2.5 rounded bg-slate-50 border border-slate-200 leading-relaxed">
                     {selectedNode.data.details}
                   </p>

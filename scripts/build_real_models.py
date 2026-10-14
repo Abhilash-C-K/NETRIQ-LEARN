@@ -117,14 +117,67 @@ def main():
         random_state=42,
         eval_metric="logloss"
     )
-    network_model.fit(X_scaled, y)
+    network_model.fit(X, y)
     
     # Save network model (replaces old uncalibrated mock)
     network_model_path = os.path.join(MODELS_DIR, "network_traffic_RandomForest.joblib")
     joblib.dump(network_model, network_model_path)
     print(f"      Saved network classifier to {network_model_path}")
 
-    # Firewall XGBoost
+    # Network metadata
+    network_meta = {
+        "dataset": "CICIDS2017",
+        "threshold": 0.5,
+        "features": EXPECTED_FEATURE_NAMES
+    }
+    with open(os.path.join(MODELS_DIR, "network_metadata.json"), "w") as f:
+        json.dump(network_meta, f, indent=2)
+    print("      Saved network_metadata.json")
+
+    # -------------------------------------------------------------
+    # Firewall Model & Metadata (11 features schema)
+    # -------------------------------------------------------------
+    print("\nTraining Firewall XGBoost Classifier (11-feature schema)...")
+    firewall_features = [
+        "Source Port", "Destination Port", "NAT Source Port", "NAT Destination Port",
+        "Bytes", "Bytes Sent", "Bytes Received", "Packets", "Elapsed Time (sec)",
+        "pkts_sent", "pkts_received"
+    ]
+    
+    # Synthesize firewall training data
+    n_fw_benign = 800
+    n_fw_attack = 200
+    X_fw_benign = np.column_stack([
+        np.random.randint(1024, 65535, n_fw_benign),  # Source Port
+        np.random.choice([80, 443, 8080, 53], n_fw_benign),  # Destination Port
+        np.random.randint(1024, 65535, n_fw_benign),  # NAT Source Port
+        np.random.choice([80, 443, 8080, 53], n_fw_benign),  # NAT Destination Port
+        np.random.uniform(500, 50000, n_fw_benign),    # Bytes
+        np.random.uniform(200, 20000, n_fw_benign),    # Bytes Sent
+        np.random.uniform(300, 30000, n_fw_benign),    # Bytes Received
+        np.random.randint(5, 100, n_fw_benign),        # Packets
+        np.random.uniform(1, 120, n_fw_benign),        # Elapsed Time (sec)
+        np.random.randint(2, 50, n_fw_benign),         # pkts_sent
+        np.random.randint(3, 50, n_fw_benign),         # pkts_received
+    ])
+    X_fw_attack = np.column_stack([
+        np.random.randint(1024, 65535, n_fw_attack),  # Source Port
+        np.random.randint(1, 1024, n_fw_attack),      # Destination Port (scanning privileged ports)
+        np.zeros(n_fw_attack),                         # NAT Source Port (un-natted probe)
+        np.random.randint(1, 1024, n_fw_attack),      # NAT Destination Port
+        np.random.uniform(40, 200, n_fw_attack),       # Bytes (small probes)
+        np.random.uniform(40, 200, n_fw_attack),       # Bytes Sent
+        np.zeros(n_fw_attack),                         # Bytes Received (dropped/blocked)
+        np.random.randint(1, 5, n_fw_attack),          # Packets
+        np.random.uniform(0.01, 1.0, n_fw_attack),     # Elapsed Time (sec)
+        np.random.randint(1, 5, n_fw_attack),          # pkts_sent
+        np.zeros(n_fw_attack),                         # pkts_received
+    ])
+    X_fw = np.vstack([X_fw_benign, X_fw_attack])
+    y_fw = np.array([0] * n_fw_benign + [1] * n_fw_attack)
+    fw_perm = np.random.permutation(len(y_fw))
+    X_fw, y_fw = X_fw[fw_perm], y_fw[fw_perm]
+
     firewall_model = xgb.XGBClassifier(
         n_estimators=50,
         max_depth=4,
@@ -132,11 +185,51 @@ def main():
         random_state=42,
         eval_metric="logloss"
     )
-    firewall_model.fit(X_scaled[:1000], y[:1000])
+    firewall_model.fit(X_fw, y_fw)
     joblib.dump(firewall_model, os.path.join(MODELS_DIR, "firewall_XGBoost.joblib"))
     print("      Saved firewall_XGBoost.joblib")
 
-    # System Logs LightGBM
+    firewall_meta = {
+        "dataset": "Internet_Firewall",
+        "threshold": 0.5,
+        "features": firewall_features
+    }
+    with open(os.path.join(MODELS_DIR, "firewall_metadata.json"), "w") as f:
+        json.dump(firewall_meta, f, indent=2)
+    print("      Saved firewall_metadata.json")
+
+    # -------------------------------------------------------------
+    # System Logs Model & Vectorizer (Event-sequence schema)
+    # -------------------------------------------------------------
+    print("\nTraining System Logs LightGBM Classifier & Event Vectorizer...")
+    from sklearn.feature_extraction.text import CountVectorizer
+
+    system_events = ["4624", "4625", "4672", "4688", "7045", "1102"]
+    vectorizer = CountVectorizer(vocabulary=system_events)
+    # Fit vectorizer
+    vectorizer.fit([" ".join(system_events)])
+    joblib.dump(vectorizer, os.path.join(MODELS_DIR, "system_logs_vectorizer.joblib"))
+    print("      Saved system_logs_vectorizer.joblib")
+
+    # Synthesize event sequence corpus
+    benign_sequences = [
+        "4624 4688 4624",
+        "4624 4672 4688",
+        "4624 4624 4688 4688",
+        "4624 4688",
+        "4624 4624"
+    ] * 100
+    attack_sequences = [
+        "4625 4625 4625 4625 4625 4624",   # Brute force success
+        "4625 4625 4625 4625 4625",        # Brute force
+        "4624 7045 4688",                  # Service installed
+        "4624 1102",                       # Audit log cleared
+        "4625 4625 7045"
+    ] * 40
+    all_sequences = benign_sequences + attack_sequences
+    y_sys = np.array([0] * len(benign_sequences) + [1] * len(attack_sequences))
+    X_sys = vectorizer.transform(all_sequences).toarray().astype(float)
+
     system_model = lgb.LGBMClassifier(
         n_estimators=50,
         max_depth=4,
@@ -144,11 +237,20 @@ def main():
         random_state=42,
         verbosity=-1
     )
-    system_model.fit(X_scaled[:1000], y[:1000])
+    system_model.fit(X_sys, y_sys)
     joblib.dump(system_model, os.path.join(MODELS_DIR, "system_logs_LightGBM.joblib"))
     print("      Saved system_logs_LightGBM.joblib")
 
-    print("[4/5] Calibrating Unsupervised Statistical Anomaly Detector...")
+    system_meta = {
+        "dataset": "Sysmon_Audit_Logs",
+        "threshold": 0.5,
+        "features": ["event_sequence"]
+    }
+    with open(os.path.join(MODELS_DIR, "system_metadata.json"), "w") as f:
+        json.dump(system_meta, f, indent=2)
+    print("      Saved system_metadata.json")
+
+    print("\n[4/5] Calibrating Unsupervised Statistical Anomaly Detector...")
     benign_means = X_benign.mean(axis=0)
     benign_stds = X_benign.std(axis=0)
     anomaly_detector = StatisticalAnomalyDetector(means=benign_means, stds=benign_stds)
@@ -167,7 +269,7 @@ def main():
         for i, feat in enumerate(EXPECTED_FEATURE_NAMES)
     }
 
-    print("[5/5] Generating metadata.json...")
+    print("\n[5/5] Generating metadata.json...")
     metadata = {
         "models": {
             "network_traffic_RandomForest": "2.0-XGBoost",

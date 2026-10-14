@@ -56,7 +56,7 @@ export const ResponseActionDialog = ({
               <p className="text-xs text-[#9AA8B2] font-sans">
                 {isReverse
                   ? 'Release an active firewall block or host isolation'
-                  : 'Enforce Layer 2 port quarantine on the target host'}
+                  : 'Enforce Internal port quarantine on the target host'}
               </p>
             </div>
           </div>
@@ -94,8 +94,8 @@ export const ResponseActionDialog = ({
               <span className="text-[#9AA8B2]">ENFORCEMENT LAYER:</span>
               <span className="font-bold text-[#7895B2]">
                 {initialAction.toLowerCase().includes('quarantine')
-                  ? 'Layer 2 (SDN Host Quarantine)'
-                  : 'Layer 1 (Perimeter Firewall Block)'}
+                  ? 'Internal (SDN Host Quarantine)'
+                  : 'External (Perimeter Firewall Block)'}
               </span>
             </div>
           </div>

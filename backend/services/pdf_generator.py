@@ -120,7 +120,7 @@ def build_soc_pdf_report(
     # Human-friendly report titles
     title_map = {
         'incident_summary': 'Executive Threat & Incident Mitigation Assessment',
-        'sdn_audit': 'Layer 2 Host Isolation & Quarantine Audit Report',
+        'sdn_audit': 'Internal Host Isolation & Quarantine Audit Report',
         'compliance': 'NIDS Continuous Telemetry & Compliance Log',
         'executive_brief': 'CISO Cyber Defense & Anomaly Briefing',
     }
@@ -191,19 +191,19 @@ def build_soc_pdf_report(
             Paragraph('ACTIVE CAPABILITIES & POLICY', cell_header),
         ],
         [
-            Paragraph('Layer 1: Pre-Firewall TAP', cell_bold),
+            Paragraph('External: Pre-Firewall TAP', cell_bold),
             Paragraph('<font color="#9AAA78"><b>ACTIVE (0ms delay)</b></font>', cell_style),
             Paragraph('Passive packet mirroring; zero-latency inline inspection; RECOMMEND_BLOCK signals active.', cell_style),
         ],
         [
-            Paragraph('Layer 2: Host Isolation Agent', cell_bold),
+            Paragraph('Internal: Host Isolation Agent', cell_bold),
             Paragraph('<font color="#9AAA78"><b>ISOLATION READY</b></font>', cell_style),
             Paragraph('East-West behavioral model detecting lateral movement, credential abuse, and rapid file modification.', cell_style),
         ],
         [
             Paragraph('AI Explainability Engine', cell_bold),
-            Paragraph('<font color="#9AAA78"><b>SHAP TREEEXPLAINER</b></font>', cell_style),
-            Paragraph('Sub-millisecond mathematical Shapley feature attribution on 71 canonical flow features.', cell_style),
+            Paragraph('<font color="#9AAA78"><b>TREEEXPLAINER</b></font>', cell_style),
+            Paragraph('Sub-millisecond mathematical feature attribution on 71 canonical flow features.', cell_style),
         ],
     ]
 

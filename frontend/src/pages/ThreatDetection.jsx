@@ -54,7 +54,7 @@ export const ThreatDetection = () => {
       // Add incidents with strictly unique IDs
       incList.forEach((inc, idx) => {
         const isInternal = inc.src_ip && (inc.src_ip.startsWith('192.168.') || inc.src_ip.startsWith('10.'));
-        const layer = isInternal ? 'Layer 2' : 'Layer 1';
+        const layer = isInternal ? 'Internal' : 'External';
         const sev = String(inc.severity || 'HIGH').toUpperCase();
         const conf = inc.confidence ? (inc.confidence > 1 ? inc.confidence / 100 : inc.confidence) : 0.94;
         const rawId = inc.id || inc._id;
@@ -73,9 +73,9 @@ export const ThreatDetection = () => {
           timestamp: inc.created_at ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleString() : 'Recent',
           prediction: inc.response_action ? `Action: ${inc.response_action}` : 'Malicious Activity',
           confidence: conf,
-          model: layer === 'Layer 1' ? 'RandomForest_v1.2 (L1 Fast-Path)' : 'LightGBM_v2.0 (L2 Zero-Trust)',
+          model: layer === 'External' ? 'RandomForest_v1.2 (External Fast-Path)' : 'LightGBM_v2.0 (Internal Zero-Trust)',
           status: inc.status === 'resolved' ? 'Resolved / Mitigated' : 'Active Investigation',
-          mitre: layer === 'Layer 1' ? 'T1498 - Network Denial of Service' : 'T1021 - Lateral Movement: SMB/Admin Shares',
+          mitre: layer === 'External' ? 'T1498 - Network Denial of Service' : 'T1021 - Lateral Movement: SMB/Admin Shares',
           summary: inc.description || 'Host communication flagged by NetrIQ neural detection pipeline.',
           raw_data: inc,
           shap_features: [
@@ -122,7 +122,7 @@ export const ThreatDetection = () => {
       // Add threats with strictly unique IDs
       thrList.forEach((thr, idx) => {
         const isInternal = thr.src_ip && (thr.src_ip.startsWith('192.168.') || thr.src_ip.startsWith('10.'));
-        const layer = isInternal ? 'Layer 2' : 'Layer 1';
+        const layer = isInternal ? 'Internal' : 'External';
         const sev = String(thr.severity || 'HIGH').toUpperCase();
         const conf = thr.confidence ? (thr.confidence > 1 ? thr.confidence / 100 : thr.confidence) : 0.96;
         const rawId = thr.id || thr._id;
@@ -141,9 +141,9 @@ export const ThreatDetection = () => {
           timestamp: thr.timestamp ? new Date(thr.timestamp * (thr.timestamp < 10000000000 ? 1000 : 1)).toLocaleString() : 'Recent',
           prediction: thr.prediction || 'SYN Flood Volumetric',
           confidence: conf,
-          model: thr.model_used || (layer === 'Layer 1' ? 'XGBoostFusion_v1.0' : 'IsolationForest_v1.1'),
+          model: thr.model_used || (layer === 'External' ? 'XGBoostFusion_v1.0' : 'IsolationForest_v1.1'),
           status: thr.action === 'QUARANTINE' ? 'Device Quarantined' : 'Edge Mitigated',
-          mitre: layer === 'Layer 1' ? 'T1046 - Network Service Scanning' : 'T1048 - Exfiltration Over Alternative Protocol',
+          mitre: layer === 'External' ? 'T1046 - Network Service Scanning' : 'T1048 - Exfiltration Over Alternative Protocol',
           summary: thr.reason || 'Cryptographic heartbeat beaconing pattern matching CobaltStrike C2 profile.',
           raw_data: thr,
           shap_features: [
@@ -258,8 +258,8 @@ export const ThreatDetection = () => {
   const layerCounts = useMemo(() => {
     return {
       ALL: threats.length,
-      'Layer 1': threats.filter((t) => t.layer === 'Layer 1').length,
-      'Layer 2': threats.filter((t) => t.layer === 'Layer 2').length,
+      'External': threats.filter((t) => t.layer === 'External').length,
+      'Internal': threats.filter((t) => t.layer === 'Internal').length,
     };
   }, [threats]);
 
@@ -288,7 +288,7 @@ export const ThreatDetection = () => {
           'The Random Forest classifier recognized this behavior as a socket exhaustion technique. This feature alone contributed +44% directly to the AI decision.',
         baselineComparison: 'Observed 1,240 pkts/s vs Normal Baseline 24 pkts/s',
         recommendation:
-          'Drop ingress packets matching source IP at Layer 1 pre-firewall filter before connection state tables exhaust.',
+          'Drop ingress packets matching source IP at External pre-firewall filter before connection state tables exhaust.',
       };
     } else if (typeLower.includes('port scan') || typeLower.includes('scan') || typeLower.includes('probe')) {
       return {
@@ -309,10 +309,10 @@ export const ThreatDetection = () => {
         rootCause:
           'Endpoint initiated high-frequency SMB (Port 445) and RPC connections to 12 neighboring internal workstation IPs without prior authenticated baseline history, bypassing standard domain authentication.',
         whyAiFlagged:
-          'The LightGBM Zero-Trust Sentinel detected internal subnet deviation. The unexpected peer-to-peer administrative path contributed +42% to the Layer 2 containment alert.',
+          'The LightGBM Zero-Trust Sentinel detected internal subnet deviation. The unexpected peer-to-peer administrative path contributed +42% to the Internal containment alert.',
         baselineComparison: '12 internal workstations probed vs Normal Baseline 0 unmanaged peers',
         recommendation:
-          'Trigger immediate Layer 2 autonomous quarantine to isolate this device into quarantine VLAN 99.',
+          'Trigger immediate Internal autonomous quarantine to isolate this device into quarantine VLAN 99.',
       };
     } else {
       return {
@@ -370,12 +370,7 @@ export const ThreatDetection = () => {
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold text-[#0a1c3d]">Threat Detection & SHAP Explanations</h1>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 uppercase">
-                  Explainable AI (XAI)
-                </span>
-              </div>
+              <h1 className="text-xl font-bold text-[#0a1c3d]">Threat Detection</h1>
             </div>
           </div>
         </div>
@@ -391,8 +386,8 @@ export const ThreatDetection = () => {
 
           {/* Layer Filter Buttons */}
           <div className="flex items-center gap-1 bg-[#f0f5fc] p-1 rounded-xl border border-[#dbe6f5] text-xs">
-            <span className="text-[#687d9a] font-semibold text-[11px] px-1.5">Layer:</span>
-            {['ALL', 'Layer 1', 'Layer 2'].map((l) => {
+            <span className="text-[#687d9a] font-semibold text-[11px] px-1.5">Scope:</span>
+            {['ALL', 'External', 'Internal'].map((l) => {
               const active = layerFilter === l;
               return (
                 <button
@@ -449,7 +444,7 @@ export const ThreatDetection = () => {
         </div>
       </div>
 
-      {/* Main Threat Grid: Threat List on Left, SHAP Detail Panel on Right */}
+      {/* Main Threat Grid: Threat List on Left, Detail Panel on Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Threats Incident Table (5 cols) */}
         <div className="lg:col-span-5 bg-white rounded-2xl border border-[#e2eaf4] shadow-xs overflow-hidden flex flex-col">
@@ -484,7 +479,7 @@ export const ThreatDetection = () => {
                       <div className="flex items-center gap-1.5">
                         <span
                           className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase ${
-                            threat.layer === 'Layer 1'
+                            threat.layer === 'External'
                               ? 'bg-blue-100 text-blue-800 border border-blue-200'
                               : 'bg-purple-100 text-purple-800 border border-purple-200'
                           }`}
@@ -531,7 +526,7 @@ export const ThreatDetection = () => {
           </div>
         </div>
 
-        {/* Right: Detailed SHAP Feature Explanations Panel (7 cols) */}
+        {/* Right: Detailed Feature Explanations Panel (7 cols) */}
         <div className="lg:col-span-7 bg-white rounded-2xl border border-[#e2eaf4] shadow-xs p-6 flex flex-col justify-between">
           {activeThreat ? (
             <div className="space-y-6">
@@ -542,7 +537,7 @@ export const ThreatDetection = () => {
                     <span className="font-mono text-sm font-bold text-[#0a1c3d]">{activeThreat.id}</span>
                     <span
                       className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                        activeThreat.layer === 'Layer 1' ? 'bg-blue-600 text-white' : 'bg-[#7c3aed] text-white'
+                        activeThreat.layer === 'External' ? 'bg-blue-600 text-white' : 'bg-[#7c3aed] text-white'
                       }`}
                     >
                       {activeThreat.layer}
@@ -618,7 +613,7 @@ export const ThreatDetection = () => {
                   <div className="p-3.5 bg-white rounded-xl border border-blue-200/60 text-xs text-[#1e293b] space-y-2">
                     <div className="flex items-center gap-1.5 font-bold text-blue-900 text-xs">
                       <Info className="w-3.5 h-3.5 text-blue-600" />
-                      <span>Mathematical Root Cause (SHAP Attribution):</span>
+                      <span>Mathematical Root Cause (Feature Attribution):</span>
                     </div>
                     <p className="text-xs text-[#475569] leading-relaxed">
                       {plainDiagnosis.whyAiFlagged}
@@ -636,19 +631,19 @@ export const ThreatDetection = () => {
                 incidentId={activeThreat.rawId || activeThreat.id}
                 threatType={activeThreat.type}
                 confidence={activeThreat.confidence}
-                isInternal={activeThreat.layer === 'Layer 2'}
+                isInternal={activeThreat.layer === 'Internal'}
                 responseAction={activeThreat.prediction}
                 topFeatures={activeThreat.shap_features}
               />
             </div>
           ) : (
-            <div className="p-12 text-center text-[#687d9a]">Select an incident to view SHAP explanations.</div>
+            <div className="p-12 text-center text-[#687d9a]">Select an incident to view details.</div>
           )}
 
           {/* Quick Action Footer */}
           {activeThreat && (
             <div className="pt-4 border-t border-[#e2eaf4] mt-6 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-[11px] text-[#687d9a]">Empirical SHAP verification stored in MongoDB Atlas audit ledger</span>
+              <span className="text-[11px] text-[#687d9a]">Empirical verification stored in MongoDB Atlas audit ledger</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleExportJSON(activeThreat)}

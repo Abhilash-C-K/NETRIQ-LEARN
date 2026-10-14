@@ -222,7 +222,7 @@ export const DeviceQuarantine = () => {
       <div className="bg-white p-5 rounded-xl border border-[#e2e8f0] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#7c3aed] text-white">LAYER 2</span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#7c3aed] text-white">INTERNAL</span>
             <h1 className="text-xl font-bold text-[#0f172a]">Device Quarantine & Containment Center</h1>
           </div>
         </div>
@@ -396,7 +396,7 @@ export const DeviceQuarantine = () => {
                     ? 'Confirm Immediate Device Isolation'
                     : 'Confirm Network Access Restoration'}
                 </h3>
-                <p className="text-xs text-[#64748b]">Layer 2 Zero-Trust Policy Action</p>
+                <p className="text-xs text-[#64748b]">Internal Zero-Trust Policy Action</p>
               </div>
             </div>
 

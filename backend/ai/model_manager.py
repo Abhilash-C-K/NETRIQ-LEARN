@@ -24,9 +24,8 @@ class ModelManager:
         if self._initialized:
             return
         self._models: Dict[TrafficType, Any] = {}
-        self._scaler = None
-        self._encoder = None
-        self._metadata: Dict[str, Any] = {}
+        self._metadata: Dict[TrafficType, Dict[str, Any]] = {}
+        self._system_vectorizer = None
         self._models_dir = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
             "models"
@@ -34,85 +33,90 @@ class ModelManager:
         self._initialized = True
 
     def load_models(self, force_reload: bool = False) -> None:
-        """Loads and caches models, scaler, and encoders."""
+        """Loads each specialist model with its OWN metadata file (per-traffic-type schema)."""
         with self._lock:
             if self._models and not force_reload:
                 return
-            
+
             env = os.getenv("ENVIRONMENT", os.getenv("ENV", "development")).lower()
             logger.info(f"Loading models from {self._models_dir}...")
-            try:
-                metadata_path = os.path.join(self._models_dir, "metadata.json")
-                if os.path.exists(metadata_path):
-                    with open(metadata_path, 'r') as f:
-                        self._metadata = json.load(f)
 
-                    self._scaler = joblib.load(os.path.join(self._models_dir, "scaler.joblib"))
-                    self._encoder = joblib.load(os.path.join(self._models_dir, "encoders.joblib"))
-                    
-                    self._models[TrafficType.NETWORK] = joblib.load(
-                        os.path.join(self._models_dir, "network_traffic_RandomForest.joblib")
-                    )
-                    self._models[TrafficType.FIREWALL] = joblib.load(
-                        os.path.join(self._models_dir, "firewall_XGBoost.joblib")
-                    )
-                    self._models[TrafficType.SYSTEM] = joblib.load(
-                        os.path.join(self._models_dir, "system_logs_LightGBM.joblib")
-                    )
-                    
-                    vec_path = os.path.join(self._models_dir, "system_logs_vectorizer.joblib")
-                    if os.path.exists(vec_path):
-                        self._vectorizer = joblib.load(vec_path)
-                    else:
-                        self._vectorizer = None
-                    
-                    self._validate_metadata()
-                    logger.info("All models loaded and validated successfully.")
-                else:
-                    if env == "production":
-                        logger.error(f"[FATAL_MODEL_LOAD_ERROR] Metadata or joblib models absent at {self._models_dir} in production environment.")
-                        raise ModelLoadError(f"FATAL MODEL LOAD ERROR: Model artifacts absent at {self._models_dir} in production mode.")
-                    logger.warning(f"Metadata or joblib models absent at {self._models_dir}. Initializing default mock models.")
-                    self._init_fallback_models()
+            model_files = {
+                TrafficType.NETWORK: ("network_traffic_RandomForest.joblib", "network_metadata.json"),
+                TrafficType.FIREWALL: ("firewall_XGBoost.joblib", "firewall_metadata.json"),
+                TrafficType.SYSTEM: ("system_logs_LightGBM.joblib", "system_metadata.json"),
+            }
+
+            try:
+                for traffic_type, (model_file, meta_file) in model_files.items():
+                    model_path = os.path.join(self._models_dir, model_file)
+                    meta_path = os.path.join(self._models_dir, meta_file)
+
+                    if not (os.path.exists(model_path) and os.path.exists(meta_path)):
+                        raise FileNotFoundError(f"Missing {model_file} or {meta_file}")
+
+                    self._models[traffic_type] = joblib.load(model_path)
+                    with open(meta_path, 'r') as f:
+                        self._metadata[traffic_type] = json.load(f)
+
+                # Optional artifacts if present
+                scaler_path = os.path.join(self._models_dir, "scaler.joblib")
+                if os.path.exists(scaler_path):
+                    self._scaler = joblib.load(scaler_path)
+
+                encoder_path = os.path.join(self._models_dir, "encoders.joblib")
+                if os.path.exists(encoder_path):
+                    self._encoder = joblib.load(encoder_path)
+
+                # System traffic vectorizer
+                vec_path = os.path.join(self._models_dir, "system_logs_vectorizer.joblib")
+                if os.path.exists(vec_path):
+                    self._system_vectorizer = joblib.load(vec_path)
+                    self._vectorizer = self._system_vectorizer
+
+                logger.info("All models, per-model metadata, and vectorizers loaded successfully.")
+
             except Exception as e:
                 if env == "production":
-                    logger.error(f"[FATAL_MODEL_LOAD_ERROR] Could not load binary models in production mode: {e}")
-                    raise ModelLoadError(f"FATAL MODEL LOAD ERROR: Failed to load binary models in production mode: {e}") from e
-                logger.warning(f"Could not load binary models ({str(e)}). Using fallback mock models.")
+                    logger.error(f"[FATAL_MODEL_LOAD_ERROR] Could not load models in production mode: {e}")
+                    raise ModelLoadError(f"FATAL MODEL LOAD ERROR: {e}") from e
+                logger.warning(f"Could not load real models ({e}). Using fallback mock models.")
                 self._init_fallback_models()
 
     def _init_fallback_models(self) -> None:
-        """Initializes fallback mock classifiers for testing when joblib files are absent."""
         class MockClassifier:
+            def __init__(self, proba=0.9):
+                self._proba = proba
             def predict_proba(self, X):
-                return [[0.1, 0.9]]  # Simulated threat probability
+                return [[1.0 - self._proba, self._proba]]
             def predict(self, X):
-                return [1]
+                return [1 if self._proba >= 0.5 else 0]
 
-        mock_model = MockClassifier()
-        self._models[TrafficType.NETWORK] = mock_model
-        self._models[TrafficType.FIREWALL] = mock_model
-        self._models[TrafficType.SYSTEM] = mock_model
-        self._metadata = {
-            "models": {
-                "network_traffic_RandomForest": "1.0-mock",
-                "firewall_XGBoost": "1.0-mock",
-                "system_logs_LightGBM": "1.0-mock"
-            }
-        }
+        class MockVectorizer:
+            def __init__(self):
+                self.vocabulary_ = {"4624": 0, "4625": 1, "4672": 2, "4688": 3, "7045": 4, "1102": 5}
+            def transform(self, raw_documents):
+                import scipy.sparse as sp
+                doc = raw_documents[0] if raw_documents else ""
+                tokens = doc.split()
+                counts = [tokens.count(k) for k in self.vocabulary_]
+                return sp.csr_matrix([counts], dtype=float)
 
-    def _validate_metadata(self) -> None:
-        """Validates that loaded models match expected versions from metadata."""
-        if not self._metadata:
-            raise ModelLoadError("Metadata is empty or not loaded.")
-        
-        # Example validation check (in a real system this would check internal model attributes or hashes)
-        required_keys = ["network_traffic_RandomForest", "firewall_XGBoost", "system_logs_LightGBM"]
-        for key in required_keys:
-            if key not in self._metadata.get("models", {}):
-                logger.warning(f"Metadata missing version information for {key}")
-                # Depending on strictness, we could raise an error here.
-                # raise ModelLoadError(f"Missing version info for {key} in metadata.json")
+        from backend.ai.anomaly_detector import EXPECTED_FEATURE_NAMES
+        firewall_features = [
+            "Source Port", "Destination Port", "NAT Source Port", "NAT Destination Port",
+            "Bytes", "Bytes Sent", "Bytes Received", "Packets", "Elapsed Time (sec)",
+            "pkts_sent", "pkts_received"
+        ]
+
+        self._models[TrafficType.NETWORK] = MockClassifier(0.85)
+        self._models[TrafficType.FIREWALL] = MockClassifier(0.75)
+        self._models[TrafficType.SYSTEM] = MockClassifier(0.90)
+
+        self._metadata[TrafficType.NETWORK] = {"features": EXPECTED_FEATURE_NAMES, "threshold": 0.5, "dataset": "MOCK_CICIDS2017"}
+        self._metadata[TrafficType.FIREWALL] = {"features": firewall_features, "threshold": 0.5, "dataset": "MOCK_FIREWALL"}
+        self._metadata[TrafficType.SYSTEM] = {"features": ["event_sequence"], "threshold": 0.5, "dataset": "MOCK_SYSTEM"}
+        self._system_vectorizer = MockVectorizer()
 
     def get_model(self, traffic_type: TrafficType) -> Any:
         self.load_models()
@@ -120,13 +124,26 @@ class ModelManager:
             raise ModelLoadError(f"No model found for traffic type {traffic_type}")
         return self._models[traffic_type]
 
+    def get_feature_names(self, traffic_type: TrafficType) -> list:
+        """Returns the exact ordered feature list this model was trained on."""
+        self.load_models()
+        return self._metadata.get(traffic_type, {}).get("features", [])
+
+    def get_threshold(self, traffic_type: TrafficType) -> float:
+        """Returns this model's own calibrated decision threshold (NOT a universal 0.5)."""
+        self.load_models()
+        if traffic_type in self._metadata and isinstance(self._metadata[traffic_type], dict):
+            return self._metadata[traffic_type].get("threshold", 0.5)
+        thresholds = self._metadata.get("thresholds", {})
+        return float(thresholds.get(traffic_type.value, 0.5))
+
     def get_scaler(self) -> Any:
         self.load_models()
-        return self._scaler
+        return getattr(self, "_scaler", None)
 
     def get_encoder(self) -> Any:
         self.load_models()
-        return self._encoder
+        return getattr(self, "_encoder", None)
 
     def get_vectorizer(self) -> Any:
         self.load_models()
@@ -136,18 +153,17 @@ class ModelManager:
         self.load_models()
         return self._metadata
 
-    def get_threshold(self, traffic_type: TrafficType) -> float:
+    def get_system_vectorizer(self) -> Any:
         self.load_models()
-        thresholds = self._metadata.get("thresholds", {})
-        return float(thresholds.get(traffic_type.value, 0.5))
-        
+        return getattr(self, "_system_vectorizer", None)
+
     def get_model_name(self, traffic_type: TrafficType) -> str:
         self.load_models()
-        version_info = self._metadata.get("models", {})
-        if traffic_type == TrafficType.NETWORK:
-            return f"RandomForest_v{version_info.get('network_traffic_RandomForest', '1.0')}"
-        elif traffic_type == TrafficType.FIREWALL:
-            return f"XGBoost_v{version_info.get('firewall_XGBoost', '1.0')}"
-        elif traffic_type == TrafficType.SYSTEM:
-            return f"LightGBM_v{version_info.get('system_logs_LightGBM', '1.0')}"
-        return "Unknown_Model"
+        dataset = self._metadata.get(traffic_type, {}).get("dataset", "unknown")
+        names = {
+            TrafficType.NETWORK: "RandomForest",
+            TrafficType.FIREWALL: "XGBoost",
+            TrafficType.SYSTEM: "LightGBM",
+        }
+        return f"{names.get(traffic_type, 'Unknown')}[{dataset}]"
+        

@@ -78,7 +78,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
               },
             ];
             setExplanation({
-              explanation_source: 'SHAP Attribution',
+              explanation_source: 'Feature Attribution',
               top_features: defaultFeatures,
               base_value: 0.05,
             });
@@ -133,7 +133,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   // Fallback if no explanation could be determined
   const activeExplanation = explanation || (threat ? {
-    explanation_source: 'SHAP Attribution',
+    explanation_source: 'Feature Attribution',
     base_value: 0.05,
     top_features: [
       {
@@ -182,7 +182,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#6b4c45] pb-2 text-[11px] text-[#d4bfb0]">
           <div className="flex items-center gap-2">
             <span className="text-[#cc5500] uppercase font-semibold">
-              Source: {activeExplanation.explanation_source || 'SHAP TreeExplainer'}
+              Source: {activeExplanation.explanation_source || 'Feature Attribution'}
             </span>
             <span>•</span>
             <span>Base Value: {activeExplanation.base_value != null ? Number(activeExplanation.base_value).toFixed(4) : 'N/A'}</span>
@@ -197,7 +197,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
               <tr className="border-b border-[#6b4c45] text-[#d4bfb0] text-[10px] uppercase font-sans">
                 <th className="py-2 px-2">Raw Feature Name</th>
                 <th className="py-2 px-2 text-right">Value</th>
-                <th className="py-2 px-2 text-right">SHAP Impact</th>
+                <th className="py-2 px-2 text-right">Impact</th>
                 <th className="py-2 px-2 text-center">Direction</th>
               </tr>
             </thead>
@@ -240,10 +240,10 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
       <div className="flex items-center justify-between border-b border-[#6b4c45] pb-2">
         <div className="flex items-center gap-2 text-xs font-sans font-semibold text-[#cc5500] uppercase tracking-wide">
           <Cpu className="w-4 h-4 text-[#cc5500]" />
-          <span>Top AI Decision Factors (SHAP)</span>
+          <span>Top AI Decision Factors</span>
         </div>
         <span className="text-[10px] text-[#d4bfb0] font-mono">
-          Method: {activeExplanation.explanation_source?.toUpperCase() || 'SHAP TREEEXPLAINER'}
+          Method: {activeExplanation.explanation_source?.toUpperCase() || 'FEATURE ATTRIBUTION'}
         </span>
       </div>
 

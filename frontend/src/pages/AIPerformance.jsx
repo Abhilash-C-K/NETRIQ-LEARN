@@ -52,7 +52,7 @@ export const AIPerformance = () => {
               </span>
             </div>
             <p className="text-xs text-[#d4bfb0] mt-1 font-sans">
-              Live hardware inference latency, supervised model parameters, SHAP feature explainability &amp; Isolation Forest anomaly metrics
+              Live hardware inference latency, supervised model parameters, feature explainability &amp; Isolation Forest anomaly metrics
             </p>
           </div>
         </div>
@@ -141,10 +141,10 @@ export const AIPerformance = () => {
               ATTRIBUTION ENGINE
             </span>
             <p className="text-base font-semibold text-[#f8f4e7] font-sans">
-              {models.explainability?.engine || 'SHAP TreeExplainer'}
+              {models.explainability?.engine?.replace(/SHAP\s*/i, '') || 'TreeExplainer'}
             </p>
             <p className="text-xs text-[#d4bfb0] font-sans">
-              {models.explainability?.mode || 'Sub-millisecond Shapley feature attribution'}
+              {models.explainability?.mode?.replace(/Shapley\s*/i, '') || 'Sub-millisecond feature attribution'}
             </p>
           </CardContent>
         </Card>

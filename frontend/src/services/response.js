@@ -2,7 +2,7 @@ import api from './api';
 
 export const responseService = {
   /**
-   * Enforces forward Layer 2 device quarantine via SDN.
+   * Enforces forward Internal device quarantine via SDN.
    * Requires TRIGGER_QUARANTINE capability (Admin / Analyst).
    */
   async triggerQuarantine({ target_ip, target_mac = null, reason = 'Manual SOC quarantine' }) {

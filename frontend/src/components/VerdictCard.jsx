@@ -48,7 +48,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
       return `Internal host ${src_ip} isolated due to anomalous behavior.`;
     }
     if (normAction === 'RECOMMEND_BLOCK') {
-      return `External source ${src_ip} flagged for Layer 1 firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
+      return `External source ${src_ip} flagged for External firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
     }
     return `Traffic flow ${src_ip} → ${sni || `${dst_ip}:${dst_port}`} evaluated as verified benign payload.`;
   };

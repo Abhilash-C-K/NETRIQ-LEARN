@@ -7,7 +7,7 @@ export function CyberTerminal({
     "[NETRIQ Engine] Scapy packet capture engine initialized on active interface...",
     "[FeatureExtractor] Listening in promiscuous mode for raw TCP/UDP/ICMP flows...",
     "[AnomalyDetector] Isolation Forest model loaded (n_estimators=100, max_samples=256).",
-    "[ExplainabilityEngine] SHAP TreeExplainer feature attribution ready.",
+    "[ExplainabilityEngine] Feature attribution engine ready.",
     "[LIVE_MONITOR] Dual-layer NIDS monitoring network wire traffic."
   ],
   title = "netriq-kernel-monitor v1.0.0",

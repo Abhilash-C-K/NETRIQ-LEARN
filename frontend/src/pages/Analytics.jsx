@@ -135,11 +135,10 @@ export const Analytics = () => {
         <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-[#9AA8B2] block font-sans font-medium uppercase tracking-wide">BLOCKED CONNECTIONS</span>
               <span className="text-2xl font-mono font-bold text-[#E7ECEF] mt-1 block">
                 {blockedCount.toLocaleString()}
               </span>
-              <span className="text-[11px] text-[#9AA8B2] font-sans mt-0.5 block">Layer 1 &amp; 2 containment</span>
+              <span className="text-[11px] text-[#9AA8B2] font-sans mt-0.5 block">External &amp; Internal containment</span>
             </div>
             <div className="p-2.5 rounded-lg bg-[#101820] border border-[#2A3944] text-[#9AA8B2]">
               <Layers className="w-5 h-5" />

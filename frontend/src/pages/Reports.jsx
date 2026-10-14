@@ -275,15 +275,15 @@ export const Reports = () => {
 
         {/* Defense Scope Dropdown */}
         <div className="mb-6 max-w-xs">
-          <label className="text-xs font-bold text-[#0a1c3d] block mb-1.5">Defense Layer Scope</label>
+          <label className="text-xs font-bold text-[#0a1c3d] block mb-1.5">Defense Scope</label>
           <select
             value={reportLayer}
             onChange={(e) => setReportLayer(e.target.value)}
             className="w-full p-2.5 rounded-xl border border-[#dbe6f5] text-xs bg-[#f8fafc] text-[#0a1c3d] font-medium"
           >
-            <option value="ALL">All Layers (Unified)</option>
-            <option value="L1">Layer 1: External Traffic</option>
-            <option value="L2">Layer 2: Internal Network</option>
+            <option value="ALL">All Scopes (Unified)</option>
+            <option value="L1">External Traffic</option>
+            <option value="L2">Internal Network</option>
           </select>
         </div>
 
@@ -319,14 +319,14 @@ export const Reports = () => {
                         timestamp: '10:32 AM',
                         threat_type: 'DDoS Attack',
                         source_ip: '192.168.1.105',
-                        response_action: 'Blocked at Layer 1',
+                        response_action: 'Blocked at External',
                         severity: 'HIGH',
                       },
                       {
                         timestamp: '10:29 AM',
                         threat_type: 'Port Scan',
                         source_ip: '10.0.0.25',
-                        response_action: 'Blocked at Layer 1',
+                        response_action: 'Blocked at External',
                         severity: 'HIGH',
                       },
                       {

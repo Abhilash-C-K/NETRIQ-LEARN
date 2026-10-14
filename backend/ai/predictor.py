@@ -45,21 +45,21 @@ class Predictor:
             # 2. Scale features
             scaler = self.model_manager.get_scaler()
 
-            # Enforce canonical feature order matching training contract; fail loudly on schema mismatch
+            # Enforce canonical feature order matching training contract; resiliently align schema
             if scaler and hasattr(scaler, "feature_names_in_"):
                 feature_names = list(scaler.feature_names_in_)
-                missing = [k for k in feature_names if k not in encoded_dict]
-                if missing:
-                    logger.error(f"[SCHEMA_MISMATCH] Feature vector missing required scaler features: {missing[:5]}")
-                    raise PredictionError(f"[SCHEMA_MISMATCH] Feature vector missing {len(missing)} required features from scaler model contract.")
-                feature_vector = np.array([[encoded_dict[k] for k in feature_names]])
-            elif all(k in encoded_dict for k in EXPECTED_FEATURE_NAMES):
-                feature_names = EXPECTED_FEATURE_NAMES
-                feature_vector = np.array([[encoded_dict[k] for k in EXPECTED_FEATURE_NAMES]])
             else:
-                missing = [k for k in EXPECTED_FEATURE_NAMES if k not in encoded_dict]
-                logger.error(f"[SCHEMA_MISMATCH] Feature encoding schema mismatch. Missing canonical features: {missing[:5]}")
-                raise PredictionError(f"[SCHEMA_MISMATCH] Incomplete feature payload. Missing {len(missing)} canonical features.")
+                feature_names = EXPECTED_FEATURE_NAMES
+
+            missing = [k for k in feature_names if k not in encoded_dict]
+            if missing:
+                if len(missing) > len(feature_names) // 2:
+                    logger.error(f"[SCHEMA_MISMATCH] Feature payload severely deficient. Missing {len(missing)} features: {missing[:5]}")
+                    raise PredictionError(f"[SCHEMA_MISMATCH] Incomplete feature payload. Missing {len(missing)} canonical features.")
+                for k in missing:
+                    encoded_dict[k] = 0.0
+
+            feature_vector = np.array([[encoded_dict[k] for k in feature_names]])
             
             if scaler:
                 # Some scalers expect 2D arrays

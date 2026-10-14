@@ -26,10 +26,19 @@ export const Login = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error('Login failed:', err);
-      setError(
-        err.response?.data?.detail ||
-          'Authentication failed. Please verify credentials.'
-      );
+      const detail = err.response?.data?.detail;
+      const message = err.response?.data?.message;
+      let errorMsg = 'Authentication failed. Please verify credentials.';
+      if (typeof detail === 'string' && detail.trim()) {
+        errorMsg = detail;
+      } else if (typeof message === 'string' && message.trim()) {
+        errorMsg = message;
+      } else if (Array.isArray(detail) && detail.length > 0) {
+        errorMsg = detail.map((d) => d.msg || JSON.stringify(d)).join(', ');
+      } else if (err.code === 'ERR_NETWORK' || !err.response) {
+        errorMsg = 'Cannot reach backend server. Please ensure the backend is running on port 8000.';
+      }
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

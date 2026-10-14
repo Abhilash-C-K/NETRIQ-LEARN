@@ -79,32 +79,44 @@ class AnalyticsService:
         except Exception as e:
             logger.error(f"Failed to calculate analytics KPIs: {e}", exc_info=True)
             return {
-                "total_flows": 200000,
-                "malicious_flow_rate": 3.2,
-                "malicious_count": 6400,
-                "mean_latency_ms": 1.42,
-                "blocked_connections": 71000,
-                "active_incidents": 70000,
+                "total_flows": 0,
+                "malicious_flow_rate": 0.0,
+                "malicious_count": 0,
+                "mean_latency_ms": 0.0,
+                "blocked_connections": 0,
+                "active_incidents": 0,
                 "attack_vectors": [],
-                "unanimous_agreement": 88.0
+                "unanimous_agreement": 0.0
             }
 
     async def get_trends(self, role: Role, start_time: Optional[float] = None, end_time: Optional[float] = None) -> Dict[str, Any]:
-        """Aggregates threat trend points over the requested time window."""
+        """Aggregates threat trend points over the requested time window from live MongoDB records."""
         now = time.time()
         start = start_time if start_time is not None else (now - 86400.0)
         end = end_time if end_time is not None else now
         
-        # Build 10 hourly data points across the window from real threat records
         step = (end - start) / 10
         points = []
-        for i in range(10):
-            ts = start + (i * step)
-            # Derive relative activity distribution
-            points.append({
-                "timestamp": ts,
-                "value": round(15 + (i * 4) + (i % 3 * 6), 1)
-            })
+        try:
+            for i in range(10):
+                b_start = start + (i * step)
+                b_end = b_start + step
+                count = await threats_repo.collection.count_documents({
+                    "timestamp": {"$gte": b_start, "$lt": b_end},
+                    "$or": [
+                        {"is_anomaly": True},
+                        {"prediction": {"$in": ["ANOMALY", "MALICIOUS", "SUSPICIOUS"]}},
+                        {"action": {"$in": ["RECOMMEND_BLOCK", "QUARANTINE"]}}
+                    ]
+                })
+                points.append({
+                    "timestamp": b_start,
+                    "value": count
+                })
+        except Exception as e:
+            logger.warning(f"Error querying trend points: {e}")
+            for i in range(10):
+                points.append({"timestamp": start + (i * step), "value": 0})
 
         return {
             "series_name": "Threats Blocked",

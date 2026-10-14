@@ -16,10 +16,10 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
     reason,
   } = threat || {};
 
-  const src_ip = threat.src_ip || (threat.affected_assets && threat.affected_assets[0]) || '192.168.1.100';
-  const dst_ip = threat.dst_ip || (threat.affected_assets && threat.affected_assets[1]) || '10.0.0.1';
-  const src_port = threat.src_port || 443;
-  const dst_port = threat.dst_port || 80;
+  const src_ip = threat.src_ip || (threat.affected_assets && threat.affected_assets[0]) || 'Unknown Source';
+  const dst_ip = threat.dst_ip || (threat.affected_assets && threat.affected_assets[1]) || 'Gateway';
+  const src_port = threat.src_port || '—';
+  const dst_port = threat.dst_port || '—';
   const protocol = (threat.protocol || 'TCP').toUpperCase();
   const severity = (threat.severity || 'LOW').toUpperCase();
   const action = threat.action || threat.response_action || 'NOTIFY';

@@ -61,6 +61,27 @@ export const ThreatDetection = () => {
         const displayId = rawId ? `INC-${String(rawId).slice(-4).toUpperCase()}` : `INC-${idx + 101}`;
         const uniqueId = `INC-${idx}-${rawId ? String(rawId).slice(-6) : idx}`;
 
+        const dynamicShap = inc.shap_features || (inc.raw_data && inc.raw_data.explanation) || [
+          {
+            feature: 'threat_confidence',
+            plainTitle: 'Model Confidence',
+            value: `${(conf * 100).toFixed(1)}%`,
+            baseline: '50.0%',
+            impact: Number((conf - 0.5).toFixed(2)),
+            direction: conf >= 0.5 ? 'increases_risk' : 'decreases_risk',
+            explanation: `Autonomous detection evaluated by ${layer === 'External' ? 'XGBoost external classifier' : 'LightGBM internal host model'}.`,
+          },
+          {
+            feature: 'response_mitigation',
+            plainTitle: 'Mitigation Status',
+            value: inc.response_action || 'Mitigated',
+            baseline: 'Monitored',
+            impact: 0.35,
+            direction: 'increases_risk',
+            explanation: `Action dispatched: ${inc.response_action || 'Autonomous response'}.`,
+          },
+        ];
+
         merged.push({
           id: displayId,
           uniqueId,
@@ -68,54 +89,17 @@ export const ThreatDetection = () => {
           layer,
           type: inc.description || 'AI Detected Anomaly',
           severity: sev,
-          src_ip: inc.src_ip || (inc.affected_assets && inc.affected_assets[0]) || '192.168.1.105',
-          dst_ip: inc.dst_ip || '185.220.101.5',
+          src_ip: inc.src_ip || (inc.affected_assets && inc.affected_assets[0]) || 'Unknown Host',
+          dst_ip: inc.dst_ip || 'Gateway',
           timestamp: inc.created_at ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleString() : 'Recent',
           prediction: inc.response_action ? `Action: ${inc.response_action}` : 'Malicious Activity',
           confidence: conf,
-          model: layer === 'External' ? 'RandomForest_v1.2 (External Fast-Path)' : 'LightGBM_v2.0 (Internal Zero-Trust)',
+          model: layer === 'External' ? 'XGBoost_v2.0 (External)' : 'LightGBM_v2.0 (Internal)',
           status: inc.status === 'resolved' ? 'Resolved / Mitigated' : 'Active Investigation',
           mitre: layer === 'External' ? 'T1498 - Network Denial of Service' : 'T1021 - Lateral Movement: SMB/Admin Shares',
-          summary: inc.description || 'Host communication flagged by NetrIQ neural detection pipeline.',
+          summary: inc.description || 'Host communication flagged by NetrIQ detection pipeline.',
           raw_data: inc,
-          shap_features: [
-            {
-              feature: 'syn_flag_ratio',
-              plainTitle: 'SYN-to-ACK Handshake Asymmetry',
-              value: '0.96 (96% unconfirmed requests)',
-              baseline: '0.02 (2% normal)',
-              impact: 0.44,
-              direction: 'increases_risk',
-              explanation: '96% of packets are connection requests with zero response handshakes, starving TCP socket tables.',
-            },
-            {
-              feature: 'byte_rate_anomaly',
-              plainTitle: 'Volumetric Transfer Rate Surge',
-              value: `${((inc.bytes_transferred || 42000) / 1024).toFixed(1)} KB/s`,
-              baseline: '1.2 KB/s',
-              impact: 0.36,
-              direction: 'increases_risk',
-              explanation: 'Outbound flow volume exceeded the normal authenticated baseline by over 35x.',
-            },
-            {
-              feature: 'dst_host_srv_serror_rate',
-              plainTitle: 'Target Server Rejection Rate',
-              value: '0.92 (92% failed handshakes)',
-              baseline: '0.01 (1% normal)',
-              impact: 0.28,
-              direction: 'increases_risk',
-              explanation: 'Over 92% of target hosts immediately reset or dropped incoming requests.',
-            },
-            {
-              feature: 'fwd_header_length',
-              plainTitle: 'Transport Protocol Framing Standard',
-              value: '32 bytes (Valid IPv4/TCP)',
-              baseline: '32 bytes',
-              impact: -0.05,
-              direction: 'decreases_risk',
-              explanation: 'Packet framing conforms to standard RFC 793 headers, which slightly reduced the risk score.',
-            },
-          ],
+          shap_features: dynamicShap,
         });
       });
 
@@ -129,6 +113,27 @@ export const ThreatDetection = () => {
         const displayId = rawId ? `THR-${String(rawId).slice(-4).toUpperCase()}` : `THR-${idx + 201}`;
         const uniqueId = `THR-${idx}-${rawId ? String(rawId).slice(-6) : idx}`;
 
+        const thrShap = thr.shap_features || (thr.raw_data && thr.raw_data.explanation) || [
+          {
+            feature: 'flow_prediction',
+            plainTitle: 'Classification Verdict',
+            value: thr.prediction || 'ANOMALY',
+            baseline: 'BENIGN',
+            impact: 0.45,
+            direction: 'increases_risk',
+            explanation: `Ingress classifier categorized this connection as ${thr.prediction || 'ANOMALY'}.`,
+          },
+          {
+            feature: 'protocol_port',
+            plainTitle: 'Target Port & Protocol',
+            value: `${thr.protocol || 'TCP'}:${thr.dst_port || 'Unknown'}`,
+            baseline: 'Standard Port',
+            impact: 0.3,
+            direction: 'increases_risk',
+            explanation: `Connection directed towards port ${thr.dst_port || 'unknown'} with action ${thr.action || 'INSPECT'}.`,
+          },
+        ];
+
         merged.push({
           id: displayId,
           uniqueId,
@@ -136,54 +141,17 @@ export const ThreatDetection = () => {
           layer,
           type: thr.prediction || thr.reason || 'Network Flow Ingress Anomaly',
           severity: sev,
-          src_ip: thr.src_ip || '198.51.100.44',
-          dst_ip: thr.dst_ip || '10.0.0.1',
+          src_ip: thr.src_ip || 'Unknown Source',
+          dst_ip: thr.dst_ip || 'Gateway',
           timestamp: thr.timestamp ? new Date(thr.timestamp * (thr.timestamp < 10000000000 ? 1000 : 1)).toLocaleString() : 'Recent',
-          prediction: thr.prediction || 'SYN Flood Volumetric',
+          prediction: thr.prediction || 'Network Anomaly',
           confidence: conf,
-          model: thr.model_used || (layer === 'External' ? 'XGBoostFusion_v1.0' : 'IsolationForest_v1.1'),
-          status: thr.action === 'QUARANTINE' ? 'Device Quarantined' : 'Edge Mitigated',
+          model: thr.model_used || (layer === 'External' ? 'XGBoost_v2.0' : 'Statistical_IsolationForest'),
+          status: thr.action === 'QUARANTINE' ? 'Device Quarantined' : (thr.action === 'RECOMMEND_BLOCK' ? 'Firewall Drop Dispatched' : 'Monitored'),
           mitre: layer === 'External' ? 'T1046 - Network Service Scanning' : 'T1048 - Exfiltration Over Alternative Protocol',
-          summary: thr.reason || 'Cryptographic heartbeat beaconing pattern matching CobaltStrike C2 profile.',
+          summary: thr.reason || 'Telemetry flagged as statistical or supervised outlier.',
           raw_data: thr,
-          shap_features: [
-            {
-              feature: 'syn_flag_ratio',
-              plainTitle: 'Connection Flood Concentration',
-              value: '0.94 (High SYN concentration)',
-              baseline: '0.01 (Normal baseline)',
-              impact: 0.42,
-              direction: 'increases_risk',
-              explanation: 'Repeated burst of connection requests without waiting for server response.',
-            },
-            {
-              feature: 'dst_port_dispersion',
-              plainTitle: 'Rapid Multi-Port Sweeping',
-              value: '42 sequential ports',
-              baseline: '1–2 designated ports',
-              impact: 0.38,
-              direction: 'increases_risk',
-              explanation: 'Probed sequential ports within 350ms, a classic signature of automated port enumeration.',
-            },
-            {
-              feature: 'payload_entropy_shannon',
-              plainTitle: 'Payload Cryptographic Randomness',
-              value: '7.85 (Encrypted / Packed)',
-              baseline: '3.20 (Plaintext protocols)',
-              impact: 0.22,
-              direction: 'increases_risk',
-              explanation: 'High Shannon entropy indicates encrypted or obfuscated command payload.',
-            },
-            {
-              feature: 'connection_lifetime_ms',
-              plainTitle: 'Short-Lived Ephemeral Session',
-              value: '1.4 ms',
-              baseline: '450 ms',
-              impact: -0.04,
-              direction: 'decreases_risk',
-              explanation: 'Extremely short lifetime reduces probability of sustained data exfiltration.',
-            },
-          ],
+          shap_features: thrShap,
         });
       });
 

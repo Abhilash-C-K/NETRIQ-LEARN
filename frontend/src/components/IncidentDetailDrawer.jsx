@@ -138,10 +138,10 @@ export const IncidentDetailDrawer = ({
   if (!isOpen || !incident) return null;
 
   const incidentCode = incident.incident_code || (incident.id ? `INC-${incident.id.slice(-4).toUpperCase()}` : 'INC-101');
-  const srcIp = incident.src_ip || incident.affected_assets?.[0] || '192.168.1.105';
-  const dstIp = incident.dst_ip || '185.220.101.5';
-  const srcPort = incident.src_port || 51002;
-  const dstPort = incident.dst_port || 443;
+  const srcIp = incident.src_ip || incident.affected_assets?.[0] || 'Unknown Source';
+  const dstIp = incident.dst_ip || 'Gateway';
+  const srcPort = incident.src_port || '—';
+  const dstPort = incident.dst_port || '—';
   const protocol = (incident.protocol || 'TCP').toUpperCase();
   const severity = (incident.severity || 'LOW').toUpperCase();
   const status = (incident.status || 'active').toLowerCase();

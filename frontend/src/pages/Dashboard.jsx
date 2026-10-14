@@ -40,116 +40,34 @@ export const Dashboard = () => {
   const [threats, setThreats] = useState([]);
   const [incidents, setIncidents] = useState([]);
   const [summary, setSummary] = useState({
-    total_traffic_gb: '12.4 GB',
-    detected_threats: 7,
-    quarantined_devices: 2,
-    normal_traffic_pct: '99.1%',
+    total_traffic_gb: '0.0 GB',
+    detected_threats: 0,
+    quarantined_devices: 0,
+    normal_traffic_pct: '100%',
   });
 
-  // Mini Sparkline sample telemetry data for top 4 cards
-  const sparklineData = {
-    traffic: [
-      { v: 10 }, { v: 12 }, { v: 11 }, { v: 15 }, { v: 14 }, { v: 18 }, { v: 16 }, { v: 22 }, { v: 20 },
-    ],
-    threats: [
-      { v: 2 }, { v: 3 }, { v: 2 }, { v: 5 }, { v: 3 }, { v: 6 }, { v: 4 }, { v: 7 },
-    ],
-    quarantine: [
-      { v: 1 }, { v: 1 }, { v: 2 }, { v: 1 }, { v: 2 }, { v: 3 }, { v: 2 }, { v: 4 }, { v: 3 },
-    ],
-    normal: [
-      { v: 98 }, { v: 99 }, { v: 98.5 }, { v: 99 }, { v: 99.2 }, { v: 99.1 }, { v: 99.4 }, { v: 99.1 },
-    ],
-  };
+  // Dynamic Sparkline telemetry data for top 4 cards
+  const [sparklineData, setSparklineData] = useState({
+    traffic: [{ v: 0 }, { v: 0 }, { v: 0 }],
+    threats: [{ v: 0 }, { v: 0 }, { v: 0 }],
+    quarantine: [{ v: 0 }, { v: 0 }, { v: 0 }],
+    normal: [{ v: 100 }, { v: 100 }, { v: 100 }],
+  });
 
-  // Main Live Traffic Analysis Chart Data matching the image curve and anomalous red spike
-  const [trafficAnalysisData, setTrafficAnalysisData] = useState([
-    { time: '10:20', normal: 105, suspicious: 15 },
-    { time: '10:21', normal: 112, suspicious: 18 },
-    { time: '10:22', normal: 135, suspicious: 12 },
-    { time: '10:23', normal: 128, suspicious: 16 },
-    { time: '10:24', normal: 154, suspicious: 14 },
-    { time: '10:25', normal: 138, suspicious: 20 },
-    { time: '10:26', normal: 142, suspicious: 102 }, // Spike at 10:26
-    { time: '10:27', normal: 126, suspicious: 24 },
-    { time: '10:28', normal: 132, suspicious: 16 },
-    { time: '10:29', normal: 122, suspicious: 18 },
-    { time: '10:30', normal: 144, suspicious: 19 },
-    { time: '10:31', normal: 130, suspicious: 22 },
-    { time: '10:32', normal: 145, suspicious: 60 },
-    { time: '10:33', normal: 138, suspicious: 18 },
-  ]);
+  // Main Live Traffic Analysis Chart Data dynamically bucketed from real records
+  const [trafficAnalysisData, setTrafficAnalysisData] = useState([]);
 
-  // Threat Distribution Donut Data matching the image segments
-  const threatDistributionData = [
-    { name: 'DDoS', value: 28.6, count: 2, color: '#0047b3' },
-    { name: 'Port Scan', value: 14.3, count: 1, color: '#0073e6' },
-    { name: 'Malware', value: 28.6, count: 2, color: '#29b6f6' },
-    { name: 'Lateral Movement', value: 14.3, count: 1, color: '#81d4fa' },
-    { name: 'Others', value: 14.3, count: 1, color: '#b3e5fc' },
-  ];
+  // Threat Distribution Donut Data dynamically calculated from real threat records
+  const [threatDistributionData, setThreatDistributionData] = useState([]);
 
-  // Top Threat Sources from screenshot
-  const [topThreatSources, setTopThreatSources] = useState([
-    { ip: '192.168.1.105', type: 'DDoS', count: 1254, risk: 'High' },
-    { ip: '10.0.0.25', type: 'Port Scan', count: 342, risk: 'High' },
-    { ip: '172.16.0.18', type: 'Malware', count: 98, risk: 'Medium' },
-    { ip: '192.168.1.77', type: 'Lateral Movement', count: 67, risk: 'Medium' },
-    { ip: '203.0.113.45', type: 'Brute Force', count: 45, risk: 'Low' },
-  ]);
+  // Top Threat Sources dynamically extracted from real threats
+  const [topThreatSources, setTopThreatSources] = useState([]);
 
-  // Device Status table matching screenshot
-  const [deviceStatuses, setDeviceStatuses] = useState([
-    { ip: '192.168.1.10', status: 'Normal', lastActivity: '10:32 AM' },
-    { ip: '192.168.1.25', status: 'Normal', lastActivity: '10:31 AM' },
-    { ip: '192.168.1.58', status: 'Quarantined', lastActivity: '10:28 AM' },
-    { ip: '192.168.1.77', status: 'Suspicious', lastActivity: '10:27 AM' },
-    { ip: '192.168.1.102', status: 'Normal', lastActivity: '10:25 AM' },
-  ]);
+  // Device Status table dynamically derived from real observed devices
+  const [deviceStatuses, setDeviceStatuses] = useState([]);
 
-  // Recent Alerts list matching screenshot
-  const [recentAlerts, setRecentAlerts] = useState([
-    {
-      id: 1,
-      type: 'warning',
-      color: 'text-red-500 bg-red-50',
-      title: 'DDoS Attack Detected',
-      desc: 'High volume traffic from 192.168.1.105',
-      time: '10:32 AM',
-    },
-    {
-      id: 2,
-      type: 'warning',
-      color: 'text-red-500 bg-red-50',
-      title: 'Port Scan Activity',
-      desc: 'Multiple ports scanned from 10.0.0.25',
-      time: '10:29 AM',
-    },
-    {
-      id: 3,
-      type: 'warning',
-      color: 'text-amber-500 bg-amber-50',
-      title: 'Suspicious Lateral Movement',
-      desc: 'Unusual internal device communication',
-      time: '10:27 AM',
-    },
-    {
-      id: 4,
-      type: 'warning',
-      color: 'text-red-500 bg-red-50',
-      title: 'Malware Detected',
-      desc: 'Malicious file transfer blocked',
-      time: '10:24 AM',
-    },
-    {
-      id: 5,
-      type: 'quarantine',
-      color: 'text-blue-500 bg-blue-50',
-      title: 'Device Quarantined',
-      desc: '192.168.1.58 moved to quarantine',
-      time: '10:22 AM',
-    },
-  ]);
+  // Recent Alerts list dynamically derived from real incidents & threat outliers
+  const [recentAlerts, setRecentAlerts] = useState([]);
 
   // Connect to live MongoDB backend
   useEffect(() => {
@@ -172,7 +90,7 @@ export const Dashboard = () => {
         const blockedCount = threatsList.filter((t) => t.action === 'RECOMMEND_BLOCK' || t.action === 'QUARANTINE' || t.verdict === 'BLOCK').length;
         const quarantinedCount = incidentsList.filter((i) => i.response_action === 'quarantine' || String(i.description).includes('QUARANTINE')).length;
         const benignCount = threatsList.filter((t) => !t.is_anomaly && t.prediction !== 'MALICIOUS').length;
-        const normalPct = threatsList.length > 0 ? ((benignCount / threatsList.length) * 100).toFixed(1) + '%' : '98.5%';
+        const normalPct = threatsList.length > 0 ? ((benignCount / threatsList.length) * 100).toFixed(1) + '%' : '100%';
 
         setSummary({
           total_traffic_gb: s.total_threats_blocked ? `${(s.total_threats_blocked * 0.08).toFixed(1)} GB` : `${(threatsList.length * 0.14).toFixed(1)} GB`,
@@ -198,9 +116,9 @@ export const Dashboard = () => {
             ipMap[ip].count += 1;
           });
           const sortedSources = Object.values(ipMap).sort((a, b) => b.count - a.count).slice(0, 5);
-          if (sortedSources.length > 0) {
-            setTopThreatSources(sortedSources);
-          }
+          setTopThreatSources(sortedSources);
+        } else {
+          setTopThreatSources([]);
         }
 
         // 3. Dynamic Device Statuses from Observed Network Traffic
@@ -217,40 +135,116 @@ export const Dashboard = () => {
               lastActivity: t.timestamp ? new Date(t.timestamp * (t.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
             };
           });
-          const dynamicDevs = Object.values(devMap).slice(0, 5);
-          if (dynamicDevs.length > 0) {
-            setDeviceStatuses(dynamicDevs);
-          }
+          setDeviceStatuses(Object.values(devMap).slice(0, 5));
+        } else {
+          setDeviceStatuses([]);
         }
 
         // 4. Dynamic Recent Alerts from Incidents and Threat Detections
-        if (incidentsList.length > 0 || threatsList.length > 0) {
-          const realAlerts = [];
-          incidentsList.slice(0, 3).forEach((inc, idx) => {
-            realAlerts.push({
-              id: `INC-ALERT-${idx}`,
-              type: inc.response_action === 'quarantine' ? 'quarantine' : 'warning',
-              color: inc.response_action === 'quarantine' ? 'text-blue-500 bg-blue-50' : 'text-red-500 bg-red-50',
-              title: inc.description ? inc.description.slice(0, 32) : 'Threat Anomaly Flagged',
-              desc: inc.src_ip ? `Host ${inc.src_ip} flagged by AI engine` : 'Investigated by Response Engine',
-              time: inc.created_at ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
-            });
+        const realAlerts = [];
+        incidentsList.slice(0, 3).forEach((inc, idx) => {
+          realAlerts.push({
+            id: `INC-ALERT-${idx}`,
+            type: inc.response_action === 'quarantine' ? 'quarantine' : 'warning',
+            color: inc.response_action === 'quarantine' ? 'text-blue-500 bg-blue-50' : 'text-red-500 bg-red-50',
+            title: inc.description ? inc.description.slice(0, 32) : 'Threat Anomaly Flagged',
+            desc: inc.src_ip ? `Host ${inc.src_ip} flagged by AI engine` : 'Investigated by Response Engine',
+            time: inc.created_at ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
+          });
+        });
+
+        threatsList.filter((t) => t.is_anomaly || t.severity === 'CRITICAL').slice(0, 2).forEach((thr, idx) => {
+          realAlerts.push({
+            id: `THR-ALERT-${idx}`,
+            type: 'warning',
+            color: 'text-amber-500 bg-amber-50',
+            title: thr.prediction || 'Behavioral Flow Outlier',
+            desc: `${thr.src_ip || 'Host'} -> ${thr.dst_ip || 'Gateway'}`,
+            time: thr.timestamp ? new Date(thr.timestamp * (thr.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
+          });
+        });
+
+        setRecentAlerts(realAlerts.slice(0, 5));
+
+        // 5. Dynamic Traffic Analysis Timeline Buckets
+        if (threatsList.length > 0) {
+          const sortedByTime = [...threatsList].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+          const minTime = sortedByTime[0]?.timestamp || (Date.now() / 1000 - 3600);
+          const maxTime = sortedByTime[sortedByTime.length - 1]?.timestamp || (Date.now() / 1000);
+          const timeSpan = Math.max(maxTime - minTime, 60);
+          const bucketsCount = 10;
+          const bucketSize = timeSpan / bucketsCount;
+
+          const buckets = Array.from({ length: bucketsCount }, (_, i) => {
+            const bucketStart = minTime + i * bucketSize;
+            const timeLabel = new Date(bucketStart * (bucketStart < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            return { time: timeLabel, normal: 0, suspicious: 0 };
           });
 
-          threatsList.filter((t) => t.is_anomaly || t.severity === 'CRITICAL').slice(0, 2).forEach((thr, idx) => {
-            realAlerts.push({
-              id: `THR-ALERT-${idx}`,
-              type: 'warning',
-              color: 'text-amber-500 bg-amber-50',
-              title: thr.prediction || 'Behavioral Flow Outlier',
-              desc: `${thr.src_ip || 'Host'} -> ${thr.dst_ip || 'Gateway'}`,
-              time: thr.timestamp ? new Date(thr.timestamp * (thr.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
-            });
+          threatsList.forEach((t) => {
+            const ts = t.timestamp || minTime;
+            const idx = Math.min(Math.floor((ts - minTime) / bucketSize), bucketsCount - 1);
+            if (idx >= 0 && idx < bucketsCount) {
+              if (t.is_anomaly || t.prediction === 'MALICIOUS' || t.prediction === 'ANOMALY') {
+                buckets[idx].suspicious += 1;
+              } else {
+                buckets[idx].normal += 1;
+              }
+            }
+          });
+          setTrafficAnalysisData(buckets);
+
+          // Dynamic Sparklines for top cards
+          setSparklineData({
+            traffic: buckets.map((b) => ({ v: b.normal + b.suspicious })),
+            threats: buckets.map((b) => ({ v: b.suspicious })),
+            quarantine: buckets.map((b) => ({ v: Math.min(b.suspicious, quarantinedCount) })),
+            normal: buckets.map((b) => ({ v: b.normal + b.suspicious > 0 ? Number(((b.normal / (b.normal + b.suspicious)) * 100).toFixed(1)) : 100 })),
+          });
+        }
+
+        // 6. Dynamic Threat Distribution Donut Data
+        if (threatsList.length > 0) {
+          const catCounts = {
+            'DDoS': 0,
+            'Port Scan': 0,
+            'Malware': 0,
+            'Lateral Movement': 0,
+            'Others': 0,
+          };
+          const anomalies = threatsList.filter((t) => t.is_anomaly || t.prediction !== 'BENIGN');
+          anomalies.forEach((t) => {
+            const pred = String(t.prediction || t.reason || '').toLowerCase();
+            if (pred.includes('ddos') || pred.includes('syn') || pred.includes('flood')) {
+              catCounts['DDoS'] += 1;
+            } else if (pred.includes('scan') || pred.includes('probe') || pred.includes('recon')) {
+              catCounts['Port Scan'] += 1;
+            } else if (pred.includes('malware') || pred.includes('c2') || pred.includes('trojan')) {
+              catCounts['Malware'] += 1;
+            } else if (pred.includes('lateral') || pred.includes('smb') || pred.includes('auth')) {
+              catCounts['Lateral Movement'] += 1;
+            } else {
+              catCounts['Others'] += 1;
+            }
           });
 
-          if (realAlerts.length > 0) {
-            setRecentAlerts(realAlerts.slice(0, 5));
-          }
+          const totalAnom = Math.max(anomalies.length, 1);
+          const colors = {
+            'DDoS': '#0047b3',
+            'Port Scan': '#0073e6',
+            'Malware': '#29b6f6',
+            'Lateral Movement': '#81d4fa',
+            'Others': '#b3e5fc',
+          };
+          const distData = Object.entries(catCounts)
+            .filter(([_, count]) => count > 0 || anomalies.length === 0)
+            .map(([name, count]) => ({
+              name,
+              count,
+              value: Math.round((count / totalAnom) * 100) || (anomalies.length === 0 && name === 'Others' ? 100 : 0),
+              color: colors[name],
+            }));
+          setThreatDistributionData(distData.length > 0 ? distData : [{ name: 'Benign Flow', value: 100, count: 0, color: '#10b981' }]);
         }
       } catch (err) {
         console.warn('Dashboard telemetry error:', err);
@@ -298,14 +292,17 @@ export const Dashboard = () => {
 
   // Quick Action Handler
   const handleBlockIP = async () => {
+    const defaultIp = topThreatSources[0]?.ip;
+    const targetIp = window.prompt('Enter target IP address to block:', defaultIp || '');
+    if (!targetIp) return;
     try {
       await responseService.triggerQuarantine({
-        target_ip: '192.168.1.105',
-        reason: 'Manual Quick Action: Block IP Address from SOC Dashboard',
+        target_ip: targetIp,
+        reason: `Manual Quick Action: Block IP Address from SOC Dashboard (${targetIp})`,
       });
-      alert('Firewall drop rule dispatched for IP: 192.168.1.105');
+      alert(`Firewall drop rule dispatched for IP: ${targetIp}`);
     } catch (err) {
-      alert(`Action dispatched: ${err.message || 'Block executed'}`);
+      alert(`Action error: ${err.message || 'Block executed'}`);
     }
   };
 
@@ -591,24 +588,28 @@ export const Dashboard = () => {
             </div>
 
             <div className="space-y-3">
-              {recentAlerts.map((alert) => (
-                <div key={alert.id} className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-2.5">
-                    <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${alert.color}`}>
-                      {alert.type === 'quarantine' ? (
-                        <div className="w-2.5 h-2.5 rounded-full border-2 border-blue-600" />
-                      ) : (
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                      )}
+              {recentAlerts.length === 0 ? (
+                <div className="text-xs text-[#8ca0b8] text-center py-6">No recent alerts recorded.</div>
+              ) : (
+                recentAlerts.map((alert) => (
+                  <div key={alert.id} className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 ${alert.color}`}>
+                        {alert.type === 'quarantine' ? (
+                          <div className="w-2.5 h-2.5 rounded-full border-2 border-blue-600" />
+                        ) : (
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-[#0a1c3d] leading-tight">{alert.title}</div>
+                        <div className="text-[11px] text-[#687d9a] leading-tight mt-0.5">{alert.desc}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-xs font-bold text-[#0a1c3d] leading-tight">{alert.title}</div>
-                      <div className="text-[11px] text-[#687d9a] leading-tight mt-0.5">{alert.desc}</div>
-                    </div>
+                    <div className="text-[11px] text-[#8ca0b8] font-medium whitespace-nowrap">{alert.time}</div>
                   </div>
-                  <div className="text-[11px] text-[#8ca0b8] font-medium whitespace-nowrap">{alert.time}</div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -631,26 +632,34 @@ export const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f8fbff]">
-                {topThreatSources.map((row, i) => (
-                  <tr key={i} className="hover:bg-[#f8fbff] transition-colors">
-                    <td className="py-2.5 font-mono text-[11px] font-semibold text-[#0a1c3d]">{row.ip}</td>
-                    <td className="py-2.5 text-[11px] text-[#475569]">{row.type}</td>
-                    <td className="py-2.5 font-mono text-[11px] text-[#475569] text-center">{row.count}</td>
-                    <td className="py-2.5 text-right">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          row.risk === 'High'
-                            ? 'bg-[#fee2e2] text-[#ef4444]'
-                            : row.risk === 'Medium'
-                            ? 'bg-[#fef3c7] text-[#f59e0b]'
-                            : 'bg-[#dcfce7] text-[#10b981]'
-                        }`}
-                      >
-                        {row.risk}
-                      </span>
+                {topThreatSources.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="py-6 text-center text-[#8ca0b8]">
+                      No active threat sources detected.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  topThreatSources.map((row, i) => (
+                    <tr key={i} className="hover:bg-[#f8fbff] transition-colors">
+                      <td className="py-2.5 font-mono text-[11px] font-semibold text-[#0a1c3d]">{row.ip}</td>
+                      <td className="py-2.5 text-[11px] text-[#475569]">{row.type}</td>
+                      <td className="py-2.5 font-mono text-[11px] text-[#475569] text-center">{row.count}</td>
+                      <td className="py-2.5 text-right">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            row.risk === 'High'
+                              ? 'bg-[#fee2e2] text-[#ef4444]'
+                              : row.risk === 'Medium'
+                              ? 'bg-[#fef3c7] text-[#f59e0b]'
+                              : 'bg-[#dcfce7] text-[#10b981]'
+                          }`}
+                        >
+                          {row.risk}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -678,36 +687,44 @@ export const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f8fbff]">
-                {deviceStatuses.map((row, i) => (
-                  <tr key={i} className="hover:bg-[#f8fbff] transition-colors">
-                    <td className="py-2.5 font-mono text-[11px] font-semibold text-[#0a1c3d]">{row.ip}</td>
-                    <td className="py-2.5 text-[11px]">
-                      <span className="flex items-center gap-1.5 font-medium">
-                        <span
-                          className={`w-2 h-2 rounded-full ${
-                            row.status === 'Normal'
-                              ? 'bg-[#10b981]'
-                              : row.status === 'Quarantined'
-                              ? 'bg-[#ef4444]'
-                              : 'bg-[#f59e0b]'
-                          }`}
-                        />
-                        <span
-                          className={
-                            row.status === 'Normal'
-                              ? 'text-[#10b981]'
-                              : row.status === 'Quarantined'
-                              ? 'text-[#ef4444]'
-                              : 'text-[#f59e0b]'
-                          }
-                        >
-                          {row.status}
-                        </span>
-                      </span>
+                {deviceStatuses.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-6 text-center text-[#8ca0b8]">
+                      No active devices observed.
                     </td>
-                    <td className="py-2.5 text-[11px] text-[#8ca0b8] text-right font-medium">{row.lastActivity}</td>
                   </tr>
-                ))}
+                ) : (
+                  deviceStatuses.map((row, i) => (
+                    <tr key={i} className="hover:bg-[#f8fbff] transition-colors">
+                      <td className="py-2.5 font-mono text-[11px] font-semibold text-[#0a1c3d]">{row.ip}</td>
+                      <td className="py-2.5 text-[11px]">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              row.status === 'Normal'
+                                ? 'bg-[#10b981]'
+                                : row.status === 'Quarantined'
+                                ? 'bg-[#ef4444]'
+                                : 'bg-[#f59e0b]'
+                            }`}
+                          />
+                          <span
+                            className={
+                              row.status === 'Normal'
+                                ? 'text-[#10b981]'
+                                : row.status === 'Quarantined'
+                                ? 'text-[#ef4444]'
+                                : 'text-[#f59e0b]'
+                            }
+                          >
+                            {row.status}
+                          </span>
+                        </span>
+                      </td>
+                      <td className="py-2.5 text-[11px] text-[#8ca0b8] text-right font-medium">{row.lastActivity}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

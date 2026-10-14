@@ -14,6 +14,9 @@ from backend.auth.exceptions import (
     WeakPasswordError
 )
 from backend.database.exceptions import DocumentNotFoundError
+from backend.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 auth_service = AuthService()

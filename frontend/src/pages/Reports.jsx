@@ -104,7 +104,7 @@ export const Reports = () => {
           incidentsSummary: recentIncidents.map((i) => ({
             timestamp: i.timestamp || new Date().toISOString(),
             threatType: i.threat_type || 'Unknown Vector',
-            sourceIp: i.source_ip || '192.168.1.105',
+            sourceIp: i.source_ip || (i.affected_assets && i.affected_assets[0]) || 'N/A',
             action: i.response_action || 'Mitigated',
             severity: i.severity || 'HIGH',
           })),
@@ -312,43 +312,18 @@ export const Reports = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#edf2f9] text-xs">
-                {(recentIncidents.length > 0
-                  ? recentIncidents
-                  : [
-                      {
-                        timestamp: '10:32 AM',
-                        threat_type: 'DDoS Attack',
-                        source_ip: '192.168.1.105',
-                        response_action: 'Blocked at External',
-                        severity: 'HIGH',
-                      },
-                      {
-                        timestamp: '10:29 AM',
-                        threat_type: 'Port Scan',
-                        source_ip: '10.0.0.25',
-                        response_action: 'Blocked at External',
-                        severity: 'HIGH',
-                      },
-                      {
-                        timestamp: '10:28 AM',
-                        threat_type: 'Lateral Movement',
-                        source_ip: '192.168.1.58',
-                        response_action: 'Quarantined Host',
-                        severity: 'CRITICAL',
-                      },
-                      {
-                        timestamp: '10:24 AM',
-                        threat_type: 'Malware Exfiltration',
-                        source_ip: '172.16.0.18',
-                        response_action: 'Packet Dropped',
-                        severity: 'MEDIUM',
-                      },
-                    ]
-                ).map((row, idx) => (
+                {recentIncidents.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-[#687d9a]">
+                      No incident audit records recorded for this time window.
+                    </td>
+                  </tr>
+                ) : (
+                  recentIncidents.map((row, idx) => (
                   <tr key={idx} className="hover:bg-white/80 transition-colors">
                     <td className="py-2.5 font-mono text-[11px] text-[#687d9a]">{row.timestamp || '10:30 AM'}</td>
                     <td className="py-2.5 font-bold text-[#0a1c3d]">{row.threat_type || 'Suspicious Flow'}</td>
-                    <td className="py-2.5 font-mono text-[11px] text-[#0a1c3d]">{row.source_ip || '192.168.1.1'}</td>
+                    <td className="py-2.5 font-mono text-[11px] text-[#0a1c3d]">{row.source_ip || row.src_ip || 'N/A'}</td>
                     <td className="py-2.5 text-[#475569]">{row.response_action || 'Mitigated'}</td>
                     <td className="py-2.5 text-right">
                       <span

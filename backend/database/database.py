@@ -31,6 +31,7 @@ class DatabaseManager:
         mongo_db_name = os.getenv("MONGO_DB", "netriq_db")
         min_pool_size = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
         max_pool_size = int(os.getenv("MONGO_MAX_POOL_SIZE", "100"))
+        timeout_ms = int(os.getenv("MONGO_TIMEOUT_MS", "20000"))
 
         delay = 1.0
         for attempt in range(1, retries + 1):
@@ -40,7 +41,9 @@ class DatabaseManager:
                     mongo_uri,
                     minPoolSize=min_pool_size,
                     maxPoolSize=max_pool_size,
-                    serverSelectionTimeoutMS=5000  # 5 seconds timeout for selection
+                    serverSelectionTimeoutMS=timeout_ms,
+                    connectTimeoutMS=timeout_ms,
+                    socketTimeoutMS=30000
                 )
                 # Force a call to verify connection
                 await cls.client.server_info()
@@ -48,8 +51,14 @@ class DatabaseManager:
                 logger.info(f"Successfully connected to MongoDB database: {mongo_db_name}")
                 await cls._ensure_indexes()
                 return
-            except (ConnectionFailure, ServerSelectionTimeoutError) as e:
+            except (ConnectionFailure, ServerSelectionTimeoutError, Exception) as e:
                 logger.error(f"MongoDB connection failed: {e}")
+                if cls.client is not None:
+                    try:
+                        cls.client.close()
+                    except Exception:
+                        pass
+                    cls.client = None
                 if attempt < retries:
                     logger.info(f"Retrying in {delay} seconds...")
                     await asyncio.sleep(delay)
@@ -57,6 +66,7 @@ class DatabaseManager:
                 else:
                     logger.critical("Failed to connect to MongoDB after maximum retries.")
                     cls.client = None
+                    cls.db = None
                     raise DatabaseConnectionError("MongoDB connection exhausted retries.") from e
 
     @classmethod

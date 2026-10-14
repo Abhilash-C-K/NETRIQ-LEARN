@@ -18,6 +18,7 @@ import {
 import api from '../services/api';
 import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
+import { reportService } from '../services/reports';
 
 export const Reports = () => {
   const [reportRange, setReportRange] = useState('24h');
@@ -73,36 +74,42 @@ export const Reports = () => {
     fetchReportData();
   }, [reportRange, reportLayer]);
 
-  const handleExport = (format) => {
-    setGeneratingReport(true);
-    setTimeout(() => {
-      setGeneratingReport(false);
-      setReportSuccess(true);
-      setTimeout(() => setReportSuccess(false), 3000);
+  const handleExport = async (format) => {
+    try {
+      setGeneratingReport(true);
 
-      const reportPayload = {
-        title: 'NetrIQ Cybersecurity Compliance & Threat Report',
-        generatedAt: new Date().toISOString(),
-        timeframe: reportRange,
-        layerScope: reportLayer,
-        complianceStatus: 'COMPLIANT (SOC 2 / ISO 27001 Baseline)',
-        metrics: {
-          totalFlowsRecorded: reportStats.totalFlows,
-          threatsMitigated: reportStats.threatsMitigated,
-          devicesQuarantined: reportStats.quarantinedCount,
-          meanTimeToMitigate: reportStats.meanTimeToMitigate,
-          normalTrafficPercentage: reportStats.normalTrafficPct,
-        },
-        incidentsSummary: recentIncidents.map((i) => ({
-          timestamp: i.timestamp || new Date().toISOString(),
-          threatType: i.threat_type || 'Unknown Vector',
-          sourceIp: i.source_ip || '192.168.1.105',
-          action: i.response_action || 'Mitigated',
-          severity: i.severity || 'HIGH',
-        })),
-      };
+      if (format === 'pdf') {
+        // Generate and download real ReportLab PDF directly from backend
+        const genRes = await reportService.generateReport({
+          report_type: 'executive_summary',
+          format: 'pdf',
+        });
+        const filename = `NetrIQ_SOC_Executive_Report_${reportRange}.pdf`;
+        await reportService.downloadReport(genRes.id, filename);
+        setReportSuccess(true);
+        setTimeout(() => setReportSuccess(false), 3000);
+      } else if (format === 'json') {
+        const reportPayload = {
+          title: 'NetrIQ Cybersecurity Threat Report',
+          generatedAt: new Date().toISOString(),
+          timeframe: reportRange,
+          layerScope: reportLayer,
+          metrics: {
+            totalFlowsRecorded: reportStats.totalFlows,
+            threatsMitigated: reportStats.threatsMitigated,
+            devicesQuarantined: reportStats.quarantinedCount,
+            meanTimeToMitigate: reportStats.meanTimeToMitigate,
+            normalTrafficPercentage: reportStats.normalTrafficPct,
+          },
+          incidentsSummary: recentIncidents.map((i) => ({
+            timestamp: i.timestamp || new Date().toISOString(),
+            threatType: i.threat_type || 'Unknown Vector',
+            sourceIp: i.source_ip || '192.168.1.105',
+            action: i.response_action || 'Mitigated',
+            severity: i.severity || 'HIGH',
+          })),
+        };
 
-      if (format === 'json') {
         const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(reportPayload, null, 2));
         const anchor = document.createElement('a');
         anchor.setAttribute('href', dataStr);
@@ -110,6 +117,8 @@ export const Reports = () => {
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
+        setReportSuccess(true);
+        setTimeout(() => setReportSuccess(false), 3000);
       } else if (format === 'csv') {
         let csvContent = 'Metric,Value\n';
         csvContent += `Generated At,${new Date().toISOString()}\n`;
@@ -130,10 +139,15 @@ export const Reports = () => {
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
-      } else {
-        window.print();
+        setReportSuccess(true);
+        setTimeout(() => setReportSuccess(false), 3000);
       }
-    }, 600);
+    } catch (err) {
+      console.error('Failed to export report:', err);
+      alert('Failed to generate PDF report from backend. Please verify backend connection.');
+    } finally {
+      setGeneratingReport(false);
+    }
   };
 
   return (
@@ -237,8 +251,8 @@ export const Reports = () => {
               onClick={() => handleExport('pdf')}
               className="px-4 py-2.5 rounded-xl bg-[#0066cc] hover:bg-[#0052a3] text-white text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm disabled:opacity-50"
             >
-              <Printer className="w-4 h-4" />
-              <span>Print / Export PDF</span>
+              <Download className="w-4 h-4" />
+              <span>{generatingReport ? 'Generating PDF...' : 'Download PDF Report'}</span>
             </button>
             <button
               disabled={generatingReport}

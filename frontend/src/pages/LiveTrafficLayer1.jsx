@@ -554,10 +554,10 @@ export const LiveTrafficLayer1 = () => {
         <div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white">LAYER 1</span>
-            <h1 className="text-xl font-bold text-[#0f172a]">Live Ingress Traffic Inspection</h1>
+            <h1 className="text-xl font-bold text-[#0f172a]">Live Traffic Inspection</h1>
             <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Pre-Firewall Ingress Tap
+              Pre-Firewall Tap
             </span>
           </div>
         </div>

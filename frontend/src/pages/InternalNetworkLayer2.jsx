@@ -12,8 +12,7 @@ import {
   Network,
   Shield,
   AlertTriangle,
-  Lock,
-  Unlock,
+  ShieldAlert,
   Radio,
   Server,
   Laptop,
@@ -353,14 +352,7 @@ export const InternalNetworkLayer2 = () => {
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#7c3aed] text-white">LAYER 2</span>
             <h1 className="text-xl font-bold text-[#0f172a]">Internal Network Topology & Lateral Movement</h1>
-            <span className="flex items-center gap-1 text-xs font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse" />
-              East-West Zero-Trust Sentinel
-            </span>
           </div>
-          <p className="text-xs text-[#64748b] mt-1">
-            Visualizing internal host-to-host communications, lateral hop trajectories, and compromised node containment.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
@@ -408,7 +400,7 @@ export const InternalNetworkLayer2 = () => {
             attributionPosition="bottom-left"
           >
             <Background color="#cbd5e1" gap={18} size={1} />
-            <Controls className="bg-white border border-[#e2e8f0] shadow-sm rounded-lg" />
+            <Controls showInteractive={false} className="bg-white border border-[#e2e8f0] shadow-sm rounded-lg" />
             <MiniMap
               nodeColor={(n) => {
                 if (n.data?.status === 'COMPROMISED') return '#ef4444';
@@ -519,7 +511,7 @@ export const InternalNetworkLayer2 = () => {
                   onClick={() => handleToggleQuarantine(selectedNode)}
                   className="w-full py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
                 >
-                  <Unlock className={`w-4 h-4 ${actionInProgress ? 'animate-spin' : ''}`} />
+                  <CheckCircle2 className={`w-4 h-4 ${actionInProgress ? 'animate-spin' : ''}`} />
                   {actionInProgress ? 'Restoring on Backend...' : 'Restore Network Access'}
                 </button>
               ) : (
@@ -528,7 +520,7 @@ export const InternalNetworkLayer2 = () => {
                   onClick={() => handleToggleQuarantine(selectedNode)}
                   className="w-full py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer shadow-sm disabled:opacity-50"
                 >
-                  <Lock className={`w-4 h-4 ${actionInProgress ? 'animate-spin' : ''}`} />
+                  <ShieldAlert className={`w-4 h-4 ${actionInProgress ? 'animate-spin' : ''}`} />
                   {actionInProgress ? 'Enforcing Quarantine on Backend...' : 'Quarantine & Isolate Device Immediately'}
                 </button>
               )}

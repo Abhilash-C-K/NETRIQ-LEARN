@@ -268,13 +268,7 @@ export const DeviceQuarantine = () => {
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#7c3aed] text-white">LAYER 2</span>
             <h1 className="text-xl font-bold text-[#0f172a]">Device Quarantine & Containment Center</h1>
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">
-              Zero-Trust Enforcement Active
-            </span>
           </div>
-          <p className="text-xs text-[#64748b] mt-1">
-            Immediate endpoint isolation to stop lateral movement, command & control callbacks, and internal network sabotage.
-          </p>
         </div>
 
         {/* Quick Isolation Stats */}
@@ -425,62 +419,6 @@ export const DeviceQuarantine = () => {
         </div>
       </div>
 
-      {/* Layer 2 Quarantine Audit Log */}
-      <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm p-5">
-        <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#e2e8f0]">
-          <div>
-            <h3 className="font-bold text-sm text-[#0f172a] flex items-center gap-2">
-              <FileCheck className="w-4 h-4 text-purple-600" />
-              Layer 2 Containment Audit Log (MongoDB Records)
-            </h3>
-            <p className="text-xs text-[#64748b]">Immutable record of isolation and recovery operations</p>
-          </div>
-          <span className="text-[11px] text-[#64748b] font-mono">Syncing with MongoDB</span>
-        </div>
-
-        <div className="divide-y divide-[#f1f5f9]">
-          {auditLog.map((log) => (
-            <div key={log.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <div className="flex items-start gap-3">
-                <div
-                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
-                    log.action === 'DEVICE_QUARANTINED'
-                      ? 'bg-red-50 text-red-600'
-                      : 'bg-emerald-50 text-emerald-600'
-                  }`}
-                >
-                  {log.action === 'DEVICE_QUARANTINED' ? (
-                    <Lock className="w-3.5 h-3.5" />
-                  ) : (
-                    <Unlock className="w-3.5 h-3.5" />
-                  )}
-                </div>
-                <div>
-                  <div className="font-bold text-[#0f172a] flex items-center gap-2">
-                    <span>{log.deviceName}</span>
-                    <span className="font-mono text-[#64748b] text-[11px]">({log.deviceIp})</span>
-                    <span
-                      className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${
-                        log.action === 'DEVICE_QUARANTINED'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      {log.action}
-                    </span>
-                  </div>
-                  <div className="text-[11px] text-[#475569] mt-0.5">{log.enforcement}</div>
-                </div>
-              </div>
-
-              <div className="text-right sm:pl-4">
-                <div className="text-[11px] font-medium text-[#0f172a]">{log.operator}</div>
-                <div className="text-[10px] text-[#94a3b8] font-mono">{log.timestamp}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
 
       {/* Confirmation Modal */}
       {modalAction && (

@@ -147,9 +147,6 @@ export const Reports = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-[#0a1c3d]">Security & Incident Reports</h1>
-              <p className="text-xs text-[#687d9a] mt-0.5">
-                Generate SOC compliance audits, threat telemetry summaries, and historical mitigation logs.
-              </p>
             </div>
           </div>
         </div>
@@ -178,7 +175,7 @@ export const Reports = () => {
       {reportSuccess && (
         <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2 shadow-xs">
           <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>Report exported successfully. Telemetry verified with MongoDB Atlas database.</span>
+          <span>Report exported successfully.</span>
         </div>
       )}
 
@@ -192,7 +189,7 @@ export const Reports = () => {
           <div className="text-2xl font-bold text-[#0a1c3d] font-mono">{reportStats.totalFlows.toLocaleString()}</div>
           <div className="text-[11px] text-emerald-600 font-semibold mt-1 flex items-center gap-1">
             <TrendingUp className="w-3 h-3" />
-            <span>99.1% Verified Clean Ingress</span>
+            <span>99.1% Clean Traffic</span>
           </div>
         </div>
 
@@ -202,7 +199,7 @@ export const Reports = () => {
             <Shield className="w-4 h-4 text-red-500" />
           </div>
           <div className="text-2xl font-bold text-red-600 font-mono">{reportStats.threatsMitigated}</div>
-          <div className="text-[11px] text-[#687d9a] mt-1">Blocked via Layer 1 Pre-Firewall</div>
+          <div className="text-[11px] text-[#687d9a] mt-1">Blocked Pre-Firewall</div>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-[#e2eaf4] shadow-xs">
@@ -211,7 +208,7 @@ export const Reports = () => {
             <AlertTriangle className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-2xl font-bold text-amber-600 font-mono">{reportStats.quarantinedCount}</div>
-          <div className="text-[11px] text-[#687d9a] mt-1">Autonomous Quarantine (Layer 2)</div>
+          <div className="text-[11px] text-[#687d9a] mt-1">Quarantined Endpoints</div>
         </div>
 
         <div className="bg-white rounded-2xl p-5 border border-[#e2eaf4] shadow-xs">
@@ -220,7 +217,7 @@ export const Reports = () => {
             <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
           <div className="text-2xl font-bold text-[#0a1c3d] font-mono">{reportStats.meanTimeToMitigate}</div>
-          <div className="text-[11px] text-emerald-600 font-semibold mt-1">Autonomous Response Time</div>
+          <div className="text-[11px] text-emerald-600 font-semibold mt-1">Response Time</div>
         </div>
       </div>
 
@@ -263,58 +260,33 @@ export const Reports = () => {
         </div>
 
         {/* Defense Scope Dropdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <label className="text-xs font-bold text-[#0a1c3d] block mb-1.5">Defense Layer Scope</label>
-            <select
-              value={reportLayer}
-              onChange={(e) => setReportLayer(e.target.value)}
-              className="w-full p-2.5 rounded-xl border border-[#dbe6f5] text-xs bg-[#f8fafc] text-[#0a1c3d] font-medium"
-            >
-              <option value="ALL">Unified (Layer 1 Ingress + Layer 2 Internal)</option>
-              <option value="L1">Layer 1: Pre-Firewall Edge Ingress Only</option>
-              <option value="L2">Layer 2: Internal Zero-Trust Lateral Movement Only</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold text-[#0a1c3d] block mb-1.5">Compliance Standard Baseline</label>
-            <div className="p-2.5 rounded-xl border border-[#dbe6f5] text-xs bg-[#f8fafc] text-[#475569] font-medium flex items-center justify-between">
-              <span>SOC 2 Type II / NIST CSF 2.0 Incident Protocol</span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800">
-                ACTIVE
-              </span>
-            </div>
-          </div>
+        <div className="mb-6 max-w-xs">
+          <label className="text-xs font-bold text-[#0a1c3d] block mb-1.5">Defense Layer Scope</label>
+          <select
+            value={reportLayer}
+            onChange={(e) => setReportLayer(e.target.value)}
+            className="w-full p-2.5 rounded-xl border border-[#dbe6f5] text-xs bg-[#f8fafc] text-[#0a1c3d] font-medium"
+          >
+            <option value="ALL">All Layers (Unified)</option>
+            <option value="L1">Layer 1: External Traffic</option>
+            <option value="L2">Layer 2: Internal Network</option>
+          </select>
         </div>
 
-        {/* Live Executive Summary Preview */}
+        {/* Security Summary Preview */}
         <div className="border border-[#e2eaf4] rounded-2xl p-5 bg-[#f8fafc]">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e2eaf4] mb-4">
-            <div>
-              <h3 className="font-bold text-sm text-[#0a1c3d]">
-                NetrIQ Security Posture Summary Preview ({reportRange.toUpperCase()})
-              </h3>
-              <p className="text-[11px] text-[#687d9a] mt-0.5">
-                Confidential SOC Audit Record · Generated directly from MongoDB Atlas Telemetry
-              </p>
-            </div>
-            <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase">
-              COMPLIANT
-            </span>
-          </div>
-
-          <div className="text-xs text-[#334155] leading-relaxed bg-white p-4 rounded-xl border border-[#e2eaf4] mb-4">
-            <strong>Executive Assessment:</strong> During the evaluated period ({reportRange}), NetrIQ Layer 1
-            successfully analyzed all packet streams at pre-firewall edge ingress, neutralizing volumetric DDoS and port
-            scanning threats before internal ingress was possible. Concurrently, Layer 2 zero-trust monitoring observed
-            internal subnet communications, detecting unauthorized lateral movement attempts and isolating compromised hosts
-            in under 1.8 seconds.
+          <div className="pb-3 border-b border-[#e2eaf4] mb-4">
+            <h3 className="font-bold text-sm text-[#0a1c3d]">
+              Security Summary Preview ({reportRange.toUpperCase()})
+            </h3>
+            <p className="text-[11px] text-[#687d9a] mt-0.5">
+              Live threat telemetry and response audit
+            </p>
           </div>
 
           {/* Incidents Table */}
           <div className="overflow-x-auto">
-            <div className="text-xs font-bold text-[#0a1c3d] mb-2">Audit Sample: Mitigated Incidents</div>
+            <div className="text-xs font-bold text-[#0a1c3d] mb-2">Mitigated Incidents Log</div>
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-[#e2eaf4] text-[11px] text-[#687d9a] font-semibold">

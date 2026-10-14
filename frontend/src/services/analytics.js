@@ -12,4 +12,9 @@ export const analyticsService = {
     const response = await api.get('/analytics/trends', { params });
     return response.data;
   },
+
+  async getKPIs() {
+    const response = await api.get('/analytics/kpis');
+    return response.data;
+  },
 };

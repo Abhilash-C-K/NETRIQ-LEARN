@@ -45,235 +45,7 @@ const normalizeVerdict = (action, severity, isAnomaly) => {
   return 'ALLOW';
 };
 
-// Canonical baseline flows ensuring every protocol (TCP, UDP, ICMP) and verdict (ALLOW, BLOCK, DROP, INSPECT) is represented
-const BASELINE_SEED_FLOWS = [
-  // --- TCP FLOWS ---
-  {
-    id: 'L1-TCP-101',
-    src_ip: '142.250.190.46',
-    dst_ip: '10.0.0.1',
-    protocol: 'TCP',
-    src_port: 443,
-    dst_port: 54201,
-    features: { duration_ms: 18.4, packets: 142, bytes_per_sec: 320400, syn_ratio: 0.02 },
-    predicted_class: 'HTTPS TLS Ingress Flow',
-    confidence: 0.992,
-    verdict: 'ALLOW',
-    timestamp: '1:38:12 PM',
-  },
-  {
-    id: 'L1-TCP-102',
-    src_ip: '198.51.100.77',
-    dst_ip: '10.0.0.1',
-    protocol: 'TCP',
-    src_port: 59912,
-    dst_port: 80,
-    features: { duration_ms: 1.2, packets: 5200, bytes_per_sec: 2840000, syn_ratio: 0.99 },
-    predicted_class: 'SYN Flood Volumetric DDoS',
-    confidence: 0.988,
-    verdict: 'BLOCK',
-    timestamp: '1:38:10 PM',
-  },
-  {
-    id: 'L1-TCP-103',
-    src_ip: '198.51.100.11',
-    dst_ip: '10.0.0.1',
-    protocol: 'TCP',
-    src_port: 61120,
-    dst_port: 8080,
-    features: { duration_ms: 0.4, packets: 8, bytes_per_sec: 1420, syn_ratio: 0.0 },
-    predicted_class: 'TCP Null Scan Probe',
-    confidence: 0.945,
-    verdict: 'DROP',
-    timestamp: '1:38:05 PM',
-  },
-  {
-    id: 'L1-TCP-104',
-    src_ip: '198.51.100.35',
-    dst_ip: '10.0.0.1',
-    protocol: 'TCP',
-    src_port: 55120,
-    dst_port: 8443,
-    features: { duration_ms: 84.6, packets: 86, bytes_per_sec: 41200, syn_ratio: 0.12 },
-    predicted_class: 'Heuristic Zero-Day Anomaly',
-    confidence: 0.884,
-    verdict: 'INSPECT',
-    timestamp: '1:38:01 PM',
-  },
-  {
-    id: 'L1-TCP-105',
-    src_ip: '203.0.113.99',
-    dst_ip: '10.0.0.1',
-    protocol: 'TCP',
-    src_port: 48821,
-    dst_port: 22,
-    features: { duration_ms: 12.0, packets: 95, bytes_per_sec: 18400, syn_ratio: 0.85 },
-    predicted_class: 'SSH Brute Force Attempt',
-    confidence: 0.976,
-    verdict: 'BLOCK',
-    timestamp: '1:37:55 PM',
-  },
-  {
-    id: 'L1-TCP-106',
-    src_ip: '104.18.26.12',
-    dst_ip: '10.0.0.1',
-    protocol: 'TCP',
-    src_port: 443,
-    dst_port: 51882,
-    features: { duration_ms: 22.1, packets: 64, bytes_per_sec: 142000, syn_ratio: 0.01 },
-    predicted_class: 'Cloudflare Edge CDN Ingress',
-    confidence: 0.995,
-    verdict: 'ALLOW',
-    timestamp: '1:37:48 PM',
-  },
 
-  // --- UDP FLOWS ---
-  {
-    id: 'L1-UDP-201',
-    src_ip: '8.8.8.8',
-    dst_ip: '10.0.0.1',
-    protocol: 'UDP',
-    src_port: 53,
-    dst_port: 5353,
-    features: { duration_ms: 4.8, packets: 2, bytes_per_sec: 8400, syn_ratio: 0.0 },
-    predicted_class: 'Google DNS Resolution',
-    confidence: 0.998,
-    verdict: 'ALLOW',
-    timestamp: '1:38:11 PM',
-  },
-  {
-    id: 'L1-UDP-202',
-    src_ip: '198.51.100.188',
-    dst_ip: '10.0.0.1',
-    protocol: 'UDP',
-    src_port: 53,
-    dst_port: 53,
-    features: { duration_ms: 0.8, packets: 4800, bytes_per_sec: 3410000, syn_ratio: 0.0 },
-    predicted_class: 'DNS Amplification DDoS',
-    confidence: 0.989,
-    verdict: 'BLOCK',
-    timestamp: '1:38:09 PM',
-  },
-  {
-    id: 'L1-UDP-203',
-    src_ip: '198.51.100.99',
-    dst_ip: '10.0.0.1',
-    protocol: 'UDP',
-    src_port: 41234,
-    dst_port: 3000,
-    features: { duration_ms: 1.1, packets: 1800, bytes_per_sec: 1950000, syn_ratio: 0.0 },
-    predicted_class: 'UDP Flood Volumetric Spike',
-    confidence: 0.962,
-    verdict: 'DROP',
-    timestamp: '1:38:04 PM',
-  },
-  {
-    id: 'L1-UDP-204',
-    src_ip: '192.168.1.114',
-    dst_ip: '239.255.255.250',
-    protocol: 'UDP',
-    src_port: 59916,
-    dst_port: 1900,
-    features: { duration_ms: 20.2, packets: 72, bytes_per_sec: 76400, syn_ratio: 0.0 },
-    predicted_class: 'SSDP Discovery Burst',
-    confidence: 0.890,
-    verdict: 'INSPECT',
-    timestamp: '1:37:58 PM',
-  },
-  {
-    id: 'L1-UDP-205',
-    src_ip: '129.6.15.28',
-    dst_ip: '10.0.0.1',
-    protocol: 'UDP',
-    src_port: 123,
-    dst_port: 123,
-    features: { duration_ms: 6.2, packets: 4, bytes_per_sec: 1200, syn_ratio: 0.0 },
-    predicted_class: 'NIST NTP Time Sync',
-    confidence: 0.996,
-    verdict: 'ALLOW',
-    timestamp: '1:37:50 PM',
-  },
-  {
-    id: 'L1-UDP-206',
-    src_ip: '192.168.1.114',
-    dst_ip: '224.0.0.251',
-    protocol: 'UDP',
-    src_port: 5353,
-    dst_port: 5353,
-    features: { duration_ms: 28.0, packets: 148, bytes_per_sec: 127200, syn_ratio: 0.0 },
-    predicted_class: 'mDNS Local Service Discovery',
-    confidence: 0.991,
-    verdict: 'ALLOW',
-    timestamp: '1:37:42 PM',
-  },
-
-  // --- ICMP FLOWS ---
-  {
-    id: 'L1-ICMP-301',
-    src_ip: '192.168.1.1',
-    dst_ip: '10.0.0.1',
-    protocol: 'ICMP',
-    src_port: 0,
-    dst_port: 0,
-    features: { duration_ms: 0.6, packets: 4, bytes_per_sec: 320, syn_ratio: 0.0 },
-    predicted_class: 'Default Gateway Echo Ping',
-    confidence: 0.999,
-    verdict: 'ALLOW',
-    timestamp: '1:38:14 PM',
-  },
-  {
-    id: 'L1-ICMP-302',
-    src_ip: '198.51.100.22',
-    dst_ip: '10.0.0.1',
-    protocol: 'ICMP',
-    src_port: 0,
-    dst_port: 0,
-    features: { duration_ms: 0.2, packets: 3600, bytes_per_sec: 2150000, syn_ratio: 0.0 },
-    predicted_class: 'ICMP Smurf Amplification Flood',
-    confidence: 0.994,
-    verdict: 'BLOCK',
-    timestamp: '1:38:08 PM',
-  },
-  {
-    id: 'L1-ICMP-303',
-    src_ip: '203.0.113.10',
-    dst_ip: '10.0.0.1',
-    protocol: 'ICMP',
-    src_port: 0,
-    dst_port: 0,
-    features: { duration_ms: 0.5, packets: 14, bytes_per_sec: 1120, syn_ratio: 0.0 },
-    predicted_class: 'ICMP Redirect Route Poisoning',
-    confidence: 0.958,
-    verdict: 'DROP',
-    timestamp: '1:38:02 PM',
-  },
-  {
-    id: 'L1-ICMP-304',
-    src_ip: '8.8.4.4',
-    dst_ip: '10.0.0.1',
-    protocol: 'ICMP',
-    src_port: 0,
-    dst_port: 0,
-    features: { duration_ms: 14.1, packets: 6, bytes_per_sec: 480, syn_ratio: 0.0 },
-    predicted_class: 'ICMP TTL Exceeded Anomaly',
-    confidence: 0.872,
-    verdict: 'INSPECT',
-    timestamp: '1:37:52 PM',
-  },
-  {
-    id: 'L1-ICMP-305',
-    src_ip: '10.0.0.254',
-    dst_ip: '10.0.0.1',
-    protocol: 'ICMP',
-    src_port: 0,
-    dst_port: 0,
-    features: { duration_ms: 0.8, packets: 2, bytes_per_sec: 160, syn_ratio: 0.0 },
-    predicted_class: 'Router Advertisement Ping',
-    confidence: 0.997,
-    verdict: 'ALLOW',
-    timestamp: '1:37:44 PM',
-  },
-];
 
 export const LiveTrafficLayer1 = () => {
   const { connectionStatus, subscribe } = useWebSocket();
@@ -281,8 +53,7 @@ export const LiveTrafficLayer1 = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [verdictFilter, setVerdictFilter] = useState('ALL');
   const [protocolFilter, setProtocolFilter] = useState('ALL');
-  const [simulating, setSimulating] = useState(false);
-  const [flows, setFlows] = useState(BASELINE_SEED_FLOWS);
+  const [flows, setFlows] = useState([]);
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -328,26 +99,13 @@ export const LiveTrafficLayer1 = () => {
           };
         });
 
-        // Ensure we preserve full protocol and verdict coverage by merging with seed flows
-        const combined = [...formatted];
-        const existingProtos = new Set(combined.map((f) => f.protocol));
-        const existingVerdicts = new Set(combined.map((f) => f.verdict));
-
-        BASELINE_SEED_FLOWS.forEach((seed) => {
-          if (!existingProtos.has(seed.protocol) || !existingVerdicts.has(seed.verdict) || combined.length < 30) {
-            if (!combined.some((c) => c.id === seed.id)) {
-              combined.push(seed);
-            }
-          }
-        });
-
-        setFlows(combined);
+        setFlows(formatted);
       } else {
-        setFlows(BASELINE_SEED_FLOWS);
+        setFlows([]);
       }
     } catch (err) {
-      console.warn('Failed to load raw flows from database, using baseline telemetry:', err);
-      setFlows(BASELINE_SEED_FLOWS);
+      console.warn('Failed to load raw flows from database:', err);
+      setFlows([]);
     } finally {
       setLoading(false);
     }

@@ -109,135 +109,68 @@ export const InternalNetworkLayer2 = () => {
         predictionService.getRecentThreats(50),
       ]);
 
-      // Collect known real IPs and determine statuses
-      const deviceMap = {
-        '192.168.1.1': {
-          id: 'gateway',
-          label: 'Internal Core Gateway',
-          ip: '192.168.1.1',
-          mac: '00:1A:2B:3C:4D:01',
-          type: 'router',
-          vlan: 'VLAN-10 (Trunk)',
-          status: 'NORMAL',
-          riskScore: 5,
-          openPorts: [80, 443, 53, 22],
-          details: 'Physical L3 gateway & network span collector.',
-          x: 420,
-          y: 30,
-        },
-        '192.168.1.10': {
-          id: 'dc01',
-          label: 'DC-01 (Active Directory)',
-          ip: '192.168.1.10',
-          mac: '00:1A:2B:3C:4D:10',
-          type: 'server',
-          vlan: 'VLAN-20 (Infra)',
-          status: 'SUSPICIOUS',
-          riskScore: 74,
-          openPorts: [53, 88, 389, 445],
-          details: 'Domain Controller under active Kerberos monitoring.',
-          x: 720,
-          y: 160,
-        },
-        '192.168.1.50': {
-          id: 'db01',
-          label: 'Production DB (Postgres)',
-          ip: '192.168.1.50',
-          mac: '00:1A:2B:3C:4D:50',
-          type: 'database',
-          vlan: 'VLAN-30 (Data)',
-          status: 'NORMAL',
-          riskScore: 12,
-          openPorts: [5432, 22],
-          details: 'Database cluster. Verified ACL isolation.',
-          x: 140,
-          y: 160,
-        },
-        '192.168.1.40': {
-          id: 'web01',
-          label: 'App Server (NGINX/API)',
-          ip: '192.168.1.40',
-          mac: '00:1A:2B:3C:4D:40',
-          type: 'server',
-          vlan: 'VLAN-40 (DMZ)',
-          status: 'NORMAL',
-          riskScore: 18,
-          openPorts: [80, 443, 8000],
-          details: 'Handles public ingress and internal app traffic.',
-          x: 420,
-          y: 170,
-        },
-        '192.168.1.105': {
-          id: 'ws_host_c',
-          label: 'Workstation (Host-C)',
-          ip: '192.168.1.105',
-          mac: '00:1A:2B:3C:4D:C3',
-          type: 'workstation',
-          vlan: 'VLAN-50 (Users)',
-          status: 'COMPROMISED',
-          riskScore: 96,
-          openPorts: [445, 135],
-          details: 'LATERAL MOVEMENT: SMB Pass-the-Hash against DC-01 recorded in MongoDB.',
-          x: 580,
-          y: 340,
-        },
-        '10.0.0.42': {
-          id: 'asset_42',
-          label: 'Remote Asset (10.0.0.42)',
-          ip: '10.0.0.42',
-          mac: '00:1A:2B:3C:4D:42',
-          type: 'workstation',
-          vlan: 'VLAN-99 (Quarantined)',
-          status: 'QUARANTINED',
-          riskScore: 98,
-          openPorts: [],
-          details: 'Isolated by NetrIQ Response Engine under Incident INC-42.',
-          x: 820,
-          y: 340,
-        },
-        '192.168.1.112': {
-          id: 'ws_dev',
-          label: 'Dev Workstation-12',
-          ip: '192.168.1.112',
-          mac: '00:1A:2B:3C:4D:B2',
-          type: 'workstation',
-          vlan: 'VLAN-50 (Users)',
-          status: 'SUSPICIOUS',
-          riskScore: 68,
-          openPorts: [22, 3000],
-          details: 'Repetitive east-west port sweeps targeting DB-01.',
-          x: 300,
-          y: 340,
-        },
-        '192.168.1.101': {
-          id: 'ws_fin',
-          label: 'Finance WS-01',
-          ip: '192.168.1.101',
-          mac: '00:1A:2B:3C:4D:A1',
-          type: 'workstation',
-          vlan: 'VLAN-50 (Users)',
-          status: 'NORMAL',
-          riskScore: 8,
-          openPorts: [445],
-          details: 'Clean financial ERP telemetry.',
-          x: 80,
-          y: 340,
-        },
-      };
+      // Discover real internal devices dynamically from live MongoDB telemetry
+      const deviceMap = {};
+      const internalThreats = Array.isArray(threats) ? threats : [];
+      const realIncidents = Array.isArray(incidents) ? incidents : [];
 
-      // Check real incident responses in MongoDB to update live device status
-      if (Array.isArray(incidents)) {
-        incidents.forEach((inc) => {
-          const asset = inc.src_ip || (inc.affected_assets && inc.affected_assets[0]);
-          if (asset && deviceMap[asset]) {
-            if (inc.response_action === 'quarantine' || inc.status === 'quarantined') {
-              deviceMap[asset].status = 'QUARANTINED';
-              deviceMap[asset].vlan = 'VLAN-99 (Quarantined)';
-              deviceMap[asset].details = inc.description || deviceMap[asset].details;
-            }
-          }
-        });
+      // Extract unique observed internal IPs
+      const internalIps = new Set();
+      internalThreats.forEach((t) => {
+        if (t.src_ip && (t.src_ip.startsWith('192.168.') || t.src_ip.startsWith('10.') || t.src_ip.startsWith('172.'))) {
+          internalIps.add(t.src_ip);
+        }
+        if (t.dst_ip && (t.dst_ip.startsWith('192.168.') || t.dst_ip.startsWith('10.') || t.dst_ip.startsWith('172.'))) {
+          internalIps.add(t.dst_ip);
+        }
+      });
+      realIncidents.forEach((inc) => {
+        const ip = inc.src_ip || (inc.affected_assets && inc.affected_assets[0]);
+        if (ip && (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.'))) {
+          internalIps.add(ip);
+        }
+      });
+
+      // Ensure at least the core gateway is present if no flows captured yet
+      if (internalIps.size === 0) {
+        internalIps.add('192.168.1.1');
       }
+
+      // Build dynamic nodes
+      const ipList = Array.from(internalIps).slice(0, 9);
+      ipList.forEach((ip, idx) => {
+        const matchingThreats = internalThreats.filter((t) => t.src_ip === ip || t.dst_ip === ip);
+        const isQuar = realIncidents.some((i) => (i.src_ip === ip || (i.affected_assets && i.affected_assets.includes(ip))) && (i.response_action === 'quarantine' || String(i.description).includes('QUARANTINE'))) ||
+          matchingThreats.some((t) => t.action === 'QUARANTINE');
+
+        const hasCritical = matchingThreats.some((t) => t.severity === 'CRITICAL' || t.is_anomaly);
+        const hasWarning = matchingThreats.some((t) => t.severity === 'HIGH' || t.severity === 'MEDIUM');
+
+        const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
+        const vlan = isQuar ? 'VLAN-99 (Quarantined)' : ip.endsWith('.1') ? 'VLAN-10 (Trunk)' : 'VLAN-50 (Internal)';
+
+        const col = idx % 3;
+        const row = Math.floor(idx / 3);
+        const xPos = 140 + col * 280;
+        const yPos = 40 + row * 150;
+
+        const ports = Array.from(new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))).slice(0, 4);
+
+        deviceMap[ip] = {
+          id: `dev-${ip.replace(/\./g, '-')}`,
+          label: ip.endsWith('.1') ? 'Internal Core Gateway' : `Host (${ip})`,
+          ip,
+          mac: `00:1A:2B:3C:${(idx + 10).toString(16).toUpperCase()}:01`,
+          type: ip.endsWith('.1') ? 'router' : (ip.endsWith('.10') ? 'server' : 'workstation'),
+          vlan,
+          status,
+          riskScore: isQuar ? 98 : hasCritical ? 92 : hasWarning ? 65 : 12,
+          openPorts: ports.length > 0 ? ports : [80, 443],
+          details: isQuar ? 'Quarantined by NetrIQ Response Engine.' : matchingThreats[0]?.reason || 'Monitored internal host telemetry.',
+          x: xPos,
+          y: yPos,
+        };
+      });
 
       const generatedNodes = Object.values(deviceMap).map((d) => ({
         id: d.id,
@@ -246,44 +179,51 @@ export const InternalNetworkLayer2 = () => {
         data: d,
       }));
 
-      const generatedEdges = [
-        { id: 'e-gw-web', source: 'gateway', target: 'web01', animated: true, style: { stroke: '#2563eb', strokeWidth: 2 } },
-        { id: 'e-web-db', source: 'web01', target: 'db01', animated: true, style: { stroke: '#2563eb', strokeWidth: 2 } },
-        { id: 'e-gw-dc', source: 'gateway', target: 'dc01', style: { stroke: '#94a3b8', strokeWidth: 1.5 } },
-        { id: 'e-fin-web', source: 'ws_fin', target: 'web01', style: { stroke: '#2563eb', strokeWidth: 1.5 } },
-        {
-          id: 'e-dev-db',
-          source: 'ws_dev',
-          target: 'db01',
-          animated: true,
-          label: 'East-West Probe',
-          labelStyle: { fill: '#c2410c', fontSize: 10, fontWeight: 700 },
-          style: { stroke: '#f97316', strokeWidth: 2, strokeDasharray: '4 4' },
-          markerEnd: { type: MarkerType.ArrowClosed, color: '#f97316' },
-        },
-        {
-          id: 'e-lateral-dc',
-          source: 'ws_host_c',
-          target: 'dc01',
-          animated: true,
-          label: 'LATERAL MOVEMENT (Port 445 SMB)',
-          labelStyle: { fill: '#b91c1c', fontSize: 10, fontWeight: 800 },
-          style: { stroke: '#ef4444', strokeWidth: 3 },
-          markerEnd: { type: MarkerType.ArrowClosed, color: '#ef4444' },
-        },
-        {
-          id: 'e-asset42-cut',
-          source: 'gateway',
-          target: 'asset_42',
-          label: 'Traffic Cut / Isolated',
-          labelStyle: { fill: '#7c3aed', fontSize: 10, fontWeight: 700 },
-          style: { stroke: '#7c3aed', strokeWidth: 2, strokeDasharray: '6 6', opacity: 0.6 },
-        },
-      ];
+      // Dynamic edges based on observed communication pairs
+      const generatedEdges = [];
+      const edgePairs = new Set();
+
+      internalThreats.forEach((t, idx) => {
+        const s = t.src_ip;
+        const d = t.dst_ip;
+        if (deviceMap[s] && deviceMap[d] && s !== d) {
+          const pairKey = `${s}->${d}`;
+          if (!edgePairs.has(pairKey) && generatedEdges.length < 12) {
+            edgePairs.add(pairKey);
+            const isAnom = t.is_anomaly || t.action === 'QUARANTINE';
+            generatedEdges.push({
+              id: `edge-${idx}`,
+              source: deviceMap[s].id,
+              target: deviceMap[d].id,
+              animated: isAnom,
+              label: isAnom ? `Threat (Port ${t.dst_port || 445})` : undefined,
+              labelStyle: isAnom ? { fill: '#ef4444', fontSize: 10, fontWeight: 700 } : undefined,
+              style: {
+                stroke: isAnom ? '#ef4444' : '#2563eb',
+                strokeWidth: isAnom ? 2.5 : 1.5,
+              },
+              markerEnd: isAnom ? { type: MarkerType.ArrowClosed, color: '#ef4444' } : undefined,
+            });
+          }
+        }
+      });
+
+      // If no cross-talk observed yet, link gateway to nodes
+      if (generatedEdges.length === 0 && generatedNodes.length > 1) {
+        const gwNode = generatedNodes[0];
+        for (let i = 1; i < generatedNodes.length; i++) {
+          generatedEdges.push({
+            id: `edge-gw-${i}`,
+            source: gwNode.id,
+            target: generatedNodes[i].id,
+            style: { stroke: '#94a3b8', strokeWidth: 1.5 },
+          });
+        }
+      }
 
       setNodes(generatedNodes);
       setEdges(generatedEdges);
-      setSelectedNode(generatedNodes.find((n) => n.id === 'ws_host_c') || generatedNodes[0]);
+      setSelectedNode(generatedNodes[0] || null);
     } catch (err) {
       console.error('Failed to load topology from database:', err);
     } finally {

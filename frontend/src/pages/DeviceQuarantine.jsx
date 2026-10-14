@@ -38,83 +38,33 @@ export const DeviceQuarantine = () => {
         predictionService.getRecentThreats(50),
       ]);
 
-      const candidateMap = {
-        '192.168.1.105': {
-          id: 'DEV-105',
-          hostname: 'HR-Laptop (Host-C)',
-          ip: '192.168.1.105',
-          mac: '00:1A:2B:3C:4D:C3',
-          vlan: 'VLAN-99 (Isolated)',
-          status: 'QUARANTINED',
-          riskScore: 96,
-          reason: 'Pass-the-Hash SMB credential spraying against Domain Controller (DC-01)',
-          quarantinedAt: '2026-10-10 10:29:45',
-          isolatedBy: 'NetrIQ Autonomous Engine',
-        },
-        '10.0.0.42': {
-          id: 'DEV-042',
-          hostname: 'Remote Asset (10.0.0.42)',
-          ip: '10.0.0.42',
-          mac: '00:1A:2B:3C:4D:42',
-          vlan: 'VLAN-99 (Isolated)',
-          status: 'QUARANTINED',
-          riskScore: 98,
-          reason: 'AI Verdict: QUARANTINE executed against endpoint',
-          quarantinedAt: '2026-10-10 09:14:20',
-          isolatedBy: 'NetrIQ Response Engine',
-        },
-        '192.168.1.112': {
-          id: 'DEV-112',
-          hostname: 'Dev-Workstation-12',
-          ip: '192.168.1.112',
-          mac: '00:1A:2B:3C:4D:B2',
-          vlan: 'VLAN-50 (Users)',
-          status: 'SUSPICIOUS',
-          riskScore: 68,
-          reason: 'Repetitive port probing towards Production Database (Port 5432)',
-          quarantinedAt: null,
-          isolatedBy: null,
-        },
-        '192.168.1.102': {
-          id: 'DEV-102',
-          hostname: 'Finance-WS-02',
-          ip: '192.168.1.102',
-          mac: '00:1A:2B:3C:4D:A2',
-          vlan: 'VLAN-50 (Users)',
-          status: 'SUSPICIOUS',
-          riskScore: 55,
-          reason: 'Unusual outbound data transfer spike to unauthorized IP',
-          quarantinedAt: null,
-          isolatedBy: null,
-        },
-      };
+      const candidateMap = {};
+      const realLogs = [];
 
       // Ingest real MongoDB incidents
-      const realLogs = [];
       if (Array.isArray(incidents)) {
         incidents.forEach((inc, idx) => {
           const asset = inc.src_ip || (inc.affected_assets && inc.affected_assets[0]);
-          if (inc.response_action === 'quarantine' || String(inc.description).includes('QUARANTINE')) {
-            if (asset && !candidateMap[asset]) {
-              candidateMap[asset] = {
-                id: `DEV-${idx + 200}`,
-                hostname: `Host-${asset.replace(/\./g, '-')}`,
-                ip: asset,
-                mac: `00:1A:2B:3C:4D:${(idx + 10).toString(16).toUpperCase()}`,
-                vlan: 'VLAN-99 (Isolated)',
-                status: 'QUARANTINED',
-                riskScore: 95,
-                reason: inc.description || 'Quarantined under Incident response policy',
-                quarantinedAt: inc.created_at ? new Date(inc.created_at * 1000).toLocaleString() : 'Recently',
-                isolatedBy: 'NetrIQ Response Engine',
-              };
-            }
+          const isQuar = inc.response_action === 'quarantine' || String(inc.description).includes('QUARANTINE') || inc.status === 'quarantined';
+          if (asset && isQuar) {
+            candidateMap[asset] = {
+              id: `DEV-${String(inc.id || idx).slice(-4)}`,
+              hostname: `Host (${asset})`,
+              ip: asset,
+              mac: `00:1A:2B:3C:${(idx + 10).toString(16).toUpperCase()}:42`,
+              vlan: 'VLAN-99 (Isolated)',
+              status: 'QUARANTINED',
+              riskScore: 98,
+              reason: inc.description || 'Quarantined under Incident response policy',
+              quarantinedAt: inc.created_at ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleString() : 'Recently',
+              isolatedBy: 'NetrIQ Response Engine',
+            };
 
             realLogs.push({
-              id: `AUD-${String(inc.id || idx).substring(0, 5)}`,
-              timestamp: inc.created_at ? new Date(inc.created_at * 1000).toLocaleString() : new Date().toLocaleString(),
-              deviceIp: asset || '192.168.1.105',
-              deviceName: candidateMap[asset]?.hostname || `Host-${asset}`,
+              id: `AUD-${String(inc.id || idx).slice(-5)}`,
+              timestamp: inc.created_at ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleString() : new Date().toLocaleString(),
+              deviceIp: asset,
+              deviceName: `Host (${asset})`,
               action: 'DEVICE_QUARANTINED',
               operator: 'NetrIQ Autonomous Engine',
               enforcement: 'VLAN-99 Reassignment + Port Isolation ACL',
@@ -123,27 +73,33 @@ export const DeviceQuarantine = () => {
         });
       }
 
+      // Ingest real MongoDB threats
+      if (Array.isArray(threats)) {
+        threats.forEach((thr, idx) => {
+          const ip = thr.src_ip;
+          if (ip && !candidateMap[ip]) {
+            const isQuar = thr.action === 'QUARANTINE';
+            const isSusp = thr.is_anomaly || thr.severity === 'CRITICAL' || thr.severity === 'HIGH';
+            if (isQuar || isSusp) {
+              candidateMap[ip] = {
+                id: `DEV-${String(thr.id || idx).slice(-4)}`,
+                hostname: `Host (${ip})`,
+                ip,
+                mac: `00:1A:2B:3C:${(idx + 20).toString(16).toUpperCase()}:11`,
+                vlan: isQuar ? 'VLAN-99 (Isolated)' : 'VLAN-50 (Users)',
+                status: isQuar ? 'QUARANTINED' : 'SUSPICIOUS',
+                riskScore: isQuar ? 96 : (thr.severity === 'CRITICAL' ? 88 : 65),
+                reason: thr.reason || thr.prediction || 'Behavioral flow anomaly',
+                quarantinedAt: isQuar ? (thr.timestamp ? new Date(thr.timestamp * (thr.timestamp < 10000000000 ? 1000 : 1)).toLocaleString() : 'Recent') : null,
+                isolatedBy: isQuar ? 'NetrIQ Autonomous Engine' : null,
+              };
+            }
+          }
+        });
+      }
+
       setDevices(Object.values(candidateMap));
-      setAuditLog(realLogs.length > 0 ? realLogs : [
-        {
-          id: 'AUD-501',
-          timestamp: new Date().toLocaleString(),
-          deviceIp: '192.168.1.105',
-          deviceName: 'HR-Laptop (Host-C)',
-          action: 'DEVICE_QUARANTINED',
-          operator: 'NetrIQ Auto-ZeroTrust Rule #4',
-          enforcement: 'VLAN-99 Reassignment + Port Isolation ACL',
-        },
-        {
-          id: 'AUD-500',
-          timestamp: '2026-10-10 09:14:20',
-          deviceIp: '10.0.0.42',
-          deviceName: 'Remote Asset (10.0.0.42)',
-          action: 'DEVICE_QUARANTINED',
-          operator: 'SOC Admin',
-          enforcement: 'Switch Port Shutdown & ARP Blackhole',
-        },
-      ]);
+      setAuditLog(realLogs);
     } catch (err) {
       console.error('Failed to load device quarantine records:', err);
     } finally {

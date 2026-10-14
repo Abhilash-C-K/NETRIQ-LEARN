@@ -9,6 +9,18 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
+@router.get("/kpis", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
+async def get_kpis(req: Request):
+    try:
+        role = get_request_role(req)
+        return await analytics_service.get_kpis(role=role)
+    except Exception as e:
+        logger.error(f"Failed to fetch analytics KPIs: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch analytics KPIs"
+        )
+
 @router.get("/trends", response_model=TrendSeries, dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
 async def get_trends(req: Request, query: TimeRangeQuery = Depends()):
     try:

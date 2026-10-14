@@ -25,11 +25,17 @@ export const Monitoring = () => {
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards' | 'terminal'
   const [selectedDeviceIp, setSelectedDeviceIp] = useState(null);
 
-  // Fetch initial sniffer status
+  // Fetch initial sniffer status & recent captured flows
   const fetchStatus = useCallback(async () => {
     try {
-      const data = await monitoringService.getStatus();
-      setStatus(data);
+      const [statusData, threatsData] = await Promise.allSettled([
+        monitoringService.getStatus(),
+        predictionService.getRecentThreats(50),
+      ]);
+      if (statusData.status === 'fulfilled') setStatus(statusData.value);
+      if (threatsData.status === 'fulfilled' && Array.isArray(threatsData.value) && threatsData.value.length > 0) {
+        setFeed(threatsData.value.slice(0, 50));
+      }
       setError(null);
     } catch (err) {
       console.error('Failed to fetch monitoring status:', err);

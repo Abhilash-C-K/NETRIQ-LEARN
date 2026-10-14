@@ -501,13 +501,14 @@ export const IncidentDetailDrawer = ({
                   </div>
                 </div>
 
-                {/* 3. RECOMMENDED SOC COUNTERMEASURES & RUNBOOK */}
+                {/* 3. SUGGESTED SOC HANDLING GUIDANCE */}
                 <SOCCountermeasurePlaybook
                   incidentId={incident?.id || incident?._id || incident?.incident_code}
                   threatType={incident?.description || incident?.title}
                   confidence={confidence}
                   isInternal={srcIp.startsWith('192.168.') || srcIp.startsWith('10.')}
                   responseAction={action}
+                  theme="dark"
                 />
 
                 {/* 4. 100% REAL EVALUATED TRAFFIC FLOWS FOR THIS HOST */}

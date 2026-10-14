@@ -27,99 +27,7 @@ import { predictionService } from '../services/prediction';
 import { responseService } from '../services/response';
 import { SOCCountermeasurePlaybook } from '../components/SOCCountermeasurePlaybook';
 
-// Canonical baseline seeds ensuring complete representation across all layers and severities
-const BASELINE_SEEDS = [
-  {
-    id: 'INC-L1-CRIT',
-    uniqueId: 'SEED-L1-CRIT',
-    layer: 'Layer 1',
-    type: 'SYN Flood Volumetric DDoS Attack',
-    severity: 'CRITICAL',
-    src_ip: '198.51.100.77',
-    dst_ip: '10.0.0.1:80',
-    timestamp: 'Today, 2:38 PM',
-    prediction: 'SYN Flood Volumetric DDoS',
-    confidence: 0.988,
-    model: 'XGBoostFusion_v1.0 (L1 Fast-Path)',
-    status: 'Edge Mitigated',
-    mitre: 'T1498 - Network Denial of Service',
-    summary: 'Ingress traffic surge with 98% unacknowledged SYN packets exhausting connection state tables.',
-    shap_features: [
-      {
-        feature: 'syn_flag_ratio',
-        plainTitle: 'Connection Flood Concentration',
-        value: '0.99 (99% SYN ratio)',
-        baseline: '0.01 (Normal)',
-        impact: 0.48,
-        direction: 'increases_risk',
-        explanation: 'Extreme concentration of initial SYN packets with zero ACK completions.',
-      },
-      {
-        feature: 'packet_rate_surge',
-        plainTitle: 'Ingress Packet Velocity',
-        value: '8,500 pkts/s',
-        baseline: '32 pkts/s',
-        impact: 0.35,
-        direction: 'increases_risk',
-        explanation: 'Packet arrival rate exceeded the 99th percentile edge baseline by 260x.',
-      },
-    ],
-  },
-  {
-    id: 'INC-L1-MED',
-    uniqueId: 'SEED-L1-MED',
-    layer: 'Layer 1',
-    type: 'Suspicious External Ingress DNS Tunneling Probe',
-    severity: 'MEDIUM',
-    src_ip: '198.51.100.12',
-    dst_ip: '10.0.0.1:53',
-    timestamp: 'Today, 1:45 PM',
-    prediction: 'DNS Subdomain Query Anomaly',
-    confidence: 0.812,
-    model: 'RandomForest_v1.2 (L1 Fast-Path)',
-    status: 'Logged & Inspected',
-    mitre: 'T1071.004 - Application Layer Protocol: DNS',
-    summary: 'High-entropy TXT and subdomain queries detected on edge ingress interface.',
-    shap_features: [
-      {
-        feature: 'query_entropy',
-        plainTitle: 'Domain Label Entropy',
-        value: '4.82 (High Randomness)',
-        baseline: '2.10 (Standard)',
-        impact: 0.32,
-        direction: 'increases_risk',
-        explanation: 'Anomalous base64-encoded strings detected inside DNS question records.',
-      },
-    ],
-  },
-  {
-    id: 'INC-L2-MED',
-    uniqueId: 'SEED-L2-MED',
-    layer: 'Layer 2',
-    type: 'Internal Subnet Port & NetBIOS Sweep Probe',
-    severity: 'MEDIUM',
-    src_ip: '192.168.1.140',
-    dst_ip: '192.168.1.255',
-    timestamp: 'Today, 1:12 PM',
-    prediction: 'Internal Discovery Burst',
-    confidence: 0.845,
-    model: 'IsolationForest_v1.1 (L2 Zero-Trust)',
-    status: 'Active Investigation',
-    mitre: 'T1018 - Remote System Discovery',
-    summary: 'Unauthenticated broadcast discovery requests sent across local VLAN broadcast segment.',
-    shap_features: [
-      {
-        feature: 'broadcast_ratio',
-        plainTitle: 'Subnet Broadcast Volume',
-        value: '42 probes in 5s',
-        baseline: '1 probe / 5m',
-        impact: 0.28,
-        direction: 'increases_risk',
-        explanation: 'Device attempted to discover neighboring active hosts via unmanaged broadcasts.',
-      },
-    ],
-  },
-];
+
 
 export const ThreatDetection = () => {
   const [threats, setThreats] = useState([]);
@@ -279,21 +187,14 @@ export const ThreatDetection = () => {
         });
       });
 
-      // Merge baseline seeds to guarantee every layer and severity is represented
-      BASELINE_SEEDS.forEach((seed) => {
-        if (!merged.some((m) => m.uniqueId === seed.uniqueId)) {
-          merged.push(seed);
-        }
-      });
-
       setThreats(merged);
       if (merged.length > 0) {
         setSelectedThreatId(merged[0].uniqueId || merged[0].id);
       }
     } catch (err) {
       console.error('Failed to load threats from database:', err);
-      setThreats(BASELINE_SEEDS);
-      setSelectedThreatId(BASELINE_SEEDS[0].uniqueId);
+      setThreats([]);
+      setSelectedThreatId(null);
     } finally {
       setLoading(false);
     }

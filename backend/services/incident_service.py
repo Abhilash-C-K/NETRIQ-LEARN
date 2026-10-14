@@ -208,7 +208,7 @@ class IncidentService:
                 is_internal = True
             response_action = incident.get("response_action")
         else:
-            inc_lower = str(incident_id).lower()
+            inc_lower = incident_id.lower()
             if "crit" in inc_lower or "ddos" in inc_lower or "syn" in inc_lower:
                 threat_type = "SYN Flood Volumetric DDoS Attack"
                 confidence = 0.98

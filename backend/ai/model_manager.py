@@ -96,7 +96,7 @@ class ModelManager:
             def __init__(self):
                 self.vocabulary_ = {"4624": 0, "4625": 1, "4672": 2, "4688": 3, "7045": 4, "1102": 5}
             def transform(self, raw_documents):
-                import scipy.sparse as sp
+                import scipy.sparse as sp  # type: ignore
                 doc = raw_documents[0] if raw_documents else ""
                 tokens = doc.split()
                 counts = [tokens.count(k) for k in self.vocabulary_]
@@ -134,8 +134,7 @@ class ModelManager:
         self.load_models()
         if traffic_type in self._metadata and isinstance(self._metadata[traffic_type], dict):
             return self._metadata[traffic_type].get("threshold", 0.5)
-        thresholds = self._metadata.get("thresholds", {})
-        return float(thresholds.get(traffic_type.value, 0.5))
+        return 0.5
 
     def get_scaler(self) -> Any:
         self.load_models()
@@ -149,7 +148,7 @@ class ModelManager:
         self.load_models()
         return getattr(self, "_vectorizer", None)
 
-    def get_metadata(self) -> Dict[str, Any]:
+    def get_metadata(self) -> Dict[TrafficType, Dict[str, Any]]:
         self.load_models()
         return self._metadata
 

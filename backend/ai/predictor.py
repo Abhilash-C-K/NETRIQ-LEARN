@@ -21,7 +21,7 @@ class Predictor:
         try:
 
             model = self.model_manager.get_model(traffic_type)
-            model_name = str(self.model_manager.get_model_name(traffic_type))
+            model_name = self.model_manager.get_model_name(traffic_type)
             raw_thresh = self.model_manager.get_threshold(traffic_type)
             threshold = float(raw_thresh) if isinstance(raw_thresh, (int, float)) else 0.5
 
@@ -59,7 +59,7 @@ class Predictor:
             if hasattr(model, "predict_proba"):
                 probs = model.predict_proba(feature_vector)[0]
                 specialist_prob = float(probs[1]) if len(probs) > 1 else float(probs[0])
-                verdict = bool(specialist_prob >= threshold)
+                verdict = specialist_prob >= threshold
                 confidence = specialist_prob * 100.0
             else:
                 pred = model.predict(feature_vector)[0]

@@ -5,11 +5,38 @@ import { setAccessToken, setUnauthenticatedHandler } from '../services/api';
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [capabilities, setCapabilities] = useState([]);
-  const [accessToken, setAccessTokenState] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('netriq_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [role, setRole] = useState(() => {
+    try {
+      const saved = localStorage.getItem('netriq_user');
+      return saved ? (JSON.parse(saved).role || 'viewer').toLowerCase() : null;
+    } catch {
+      return null;
+    }
+  });
+  const [capabilities, setCapabilities] = useState(() => {
+    try {
+      const saved = localStorage.getItem('netriq_user');
+      return saved ? (JSON.parse(saved).capabilities || []) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [accessToken, setAccessTokenState] = useState(() => {
+    return (typeof window !== 'undefined' ? localStorage.getItem('netriq_access_token') : null);
+  });
+  const [isLoading, setIsLoading] = useState(() => {
+    const hasToken = typeof window !== 'undefined' && (localStorage.getItem('netriq_access_token') || localStorage.getItem('netriq_refresh_token'));
+    const hasUser = typeof window !== 'undefined' && localStorage.getItem('netriq_user');
+    return !(hasToken && hasUser);
+  });
 
   const logout = useCallback(async () => {
     try {
@@ -20,6 +47,8 @@ export const AuthProvider = ({ children }) => {
       setCapabilities([]);
       setAccessTokenState(null);
       setAccessToken(null);
+      localStorage.removeItem('netriq_user');
+      localStorage.removeItem('netriq_access_token');
       localStorage.removeItem('netriq_refresh_token');
     }
   }, []);
@@ -32,30 +61,61 @@ export const AuthProvider = ({ children }) => {
 
   // Session Restore on Mount
   useEffect(() => {
+    let isCancelled = false;
+
     const initAuth = async () => {
+      const existingToken = localStorage.getItem('netriq_access_token');
       const refreshToken = localStorage.getItem('netriq_refresh_token');
-      if (!refreshToken) {
+
+      if (!existingToken && !refreshToken) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const token = await authService.refresh();
-        setAccessToken(token);
-        setAccessTokenState(token);
+        if (existingToken) {
+          setAccessToken(existingToken);
+        }
+        // Validate / refresh user info
         const userData = await authService.getCurrentUser();
-        setUser(userData);
-        setRole(userData.role?.toLowerCase() || 'viewer');
-        setCapabilities(userData.capabilities || []);
+        if (!isCancelled) {
+          setUser(userData);
+          setRole(userData.role?.toLowerCase() || 'viewer');
+          setCapabilities(userData.capabilities || []);
+          localStorage.setItem('netriq_user', JSON.stringify(userData));
+        }
       } catch (err) {
-        console.warn('Session restore failed:', err);
-        await logout();
+        // If current token failed and refresh token is available, try refreshing
+        if (refreshToken) {
+          try {
+            const newToken = await authService.refresh();
+            if (!isCancelled) {
+              setAccessToken(newToken);
+              setAccessTokenState(newToken);
+              const userData = await authService.getCurrentUser();
+              setUser(userData);
+              setRole(userData.role?.toLowerCase() || 'viewer');
+              setCapabilities(userData.capabilities || []);
+              localStorage.setItem('netriq_user', JSON.stringify(userData));
+            }
+          } catch (refreshErr) {
+            console.warn('Session refresh failed:', refreshErr);
+            if (!isCancelled) await logout();
+          }
+        } else {
+          if (!isCancelled) await logout();
+        }
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     };
 
     initAuth();
+    return () => {
+      isCancelled = true;
+    };
   }, [logout]);
 
   const login = async (username, password) => {
@@ -69,6 +129,7 @@ export const AuthProvider = ({ children }) => {
     const userRole = (userData.role || 'viewer').toLowerCase();
     setRole(userRole);
     setCapabilities(userData.capabilities || []);
+    localStorage.setItem('netriq_user', JSON.stringify(userData));
     return userData;
   };
 

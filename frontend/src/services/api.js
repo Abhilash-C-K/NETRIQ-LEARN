@@ -1,12 +1,19 @@
 import axios from 'axios';
 
-let inMemoryAccessToken = null;
+let inMemoryAccessToken = typeof window !== 'undefined' ? localStorage.getItem('netriq_access_token') : null;
 let onUnauthenticatedHandler = null;
 let isRefreshing = false;
 let failedQueue = [];
 
 export const setAccessToken = (token) => {
   inMemoryAccessToken = token;
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('netriq_access_token', token);
+    } else {
+      localStorage.removeItem('netriq_access_token');
+    }
+  }
 };
 
 export const getAccessToken = () => inMemoryAccessToken;

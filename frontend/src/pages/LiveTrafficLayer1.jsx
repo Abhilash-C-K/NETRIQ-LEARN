@@ -56,6 +56,7 @@ export const LiveTrafficLayer1 = () => {
   const [flows, setFlows] = useState([]);
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [simulating, setSimulating] = useState(false);
 
   // Load real logs from MongoDB and merge with baseline flows for complete coverage
   const loadRealFlows = async () => {

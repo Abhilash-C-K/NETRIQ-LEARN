@@ -337,7 +337,8 @@ export const Reports = () => {
                       </span>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
           </div>

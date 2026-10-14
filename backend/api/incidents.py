@@ -28,3 +28,12 @@ async def update_incident(incident_id: str, req: IncidentUpdateReq):
     except Exception as e:
         logger.error(f"Failed to update incident {incident_id}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to update incident")
+
+@router.get("/{incident_id}/countermeasures", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
+async def get_incident_countermeasures(incident_id: str):
+    try:
+        return await incident_service.get_countermeasures(incident_id)
+    except Exception as e:
+        logger.error(f"Failed to get countermeasures for {incident_id}: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate countermeasures")
+

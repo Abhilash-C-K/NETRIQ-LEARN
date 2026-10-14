@@ -25,6 +25,7 @@ import {
 import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
 import { responseService } from '../services/response';
+import { SOCCountermeasurePlaybook } from '../components/SOCCountermeasurePlaybook';
 
 // Canonical baseline seeds ensuring complete representation across all layers and severities
 const BASELINE_SEEDS = [
@@ -730,17 +731,14 @@ export const ThreatDetection = () => {
               )}
 
               {/* RECOMMENDED SOC PLAYBOOK ACTION */}
-              {plainDiagnosis && (
-                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
-                  <div className="font-bold flex items-center gap-1.5 text-amber-950">
-                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    <span>Recommended SOC Countermeasure:</span>
-                  </div>
-                  <p className="text-[11px] text-amber-800 leading-relaxed">
-                    {plainDiagnosis.recommendation}
-                  </p>
-                </div>
-              )}
+              <SOCCountermeasurePlaybook
+                incidentId={activeThreat.rawId || activeThreat.id}
+                threatType={activeThreat.type}
+                confidence={activeThreat.confidence}
+                isInternal={activeThreat.layer === 'Layer 2'}
+                responseAction={activeThreat.prediction}
+                topFeatures={activeThreat.shap_features}
+              />
             </div>
           ) : (
             <div className="p-12 text-center text-[#687d9a]">Select an incident to view SHAP explanations.</div>

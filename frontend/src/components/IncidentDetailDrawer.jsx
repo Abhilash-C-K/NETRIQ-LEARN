@@ -6,6 +6,7 @@ import { DeviceActivityDrawer } from './DeviceActivityDrawer';
 import { historyService } from '../services/history';
 import { monitoringService } from '../services/monitoring';
 import { useAuth } from '../context/AuthContext';
+import { SOCCountermeasurePlaybook } from './SOCCountermeasurePlaybook';
 import {
   ShieldAlert,
   Server,
@@ -500,7 +501,16 @@ export const IncidentDetailDrawer = ({
                   </div>
                 </div>
 
-                {/* 3. 100% REAL EVALUATED TRAFFIC FLOWS FOR THIS HOST */}
+                {/* 3. RECOMMENDED SOC COUNTERMEASURES & RUNBOOK */}
+                <SOCCountermeasurePlaybook
+                  incidentId={incident?.id || incident?._id || incident?.incident_code}
+                  threatType={incident?.description || incident?.title}
+                  confidence={confidence}
+                  isInternal={srcIp.startsWith('192.168.') || srcIp.startsWith('10.')}
+                  responseAction={action}
+                />
+
+                {/* 4. 100% REAL EVALUATED TRAFFIC FLOWS FOR THIS HOST */}
                 <div className="bg-[#4a3330] border border-[#6b4c45] rounded-lg overflow-hidden">
                   <div className="p-4 border-b border-[#6b4c45] flex items-center justify-between">
                     <div>

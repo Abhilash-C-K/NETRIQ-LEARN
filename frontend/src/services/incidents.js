@@ -23,4 +23,13 @@ export const incidentService = {
     const response = await api.patch(`/incidents/${incidentId}`, payload);
     return response.data;
   },
+
+  /**
+   * Retrieves tailored NIST SP 800-61 countermeasures & SOC runbook for an incident.
+   */
+  async getCountermeasures(incidentId) {
+    const response = await api.get(`/incidents/${incidentId}/countermeasures`);
+    return response.data;
+  },
 };
+

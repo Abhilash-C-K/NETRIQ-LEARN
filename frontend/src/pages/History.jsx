@@ -15,6 +15,7 @@ import {
   ChevronRight,
   ShieldCheck,
   ArrowDown,
+  Search,
 } from 'lucide-react';
 
 export const History = () => {
@@ -28,6 +29,7 @@ export const History = () => {
 
   // Filters & Pagination
   const [severity, setSeverity] = useState('ALL');
+  const [searchQuery, setSearchQuery] = useState('');
   const [offset, setOffset] = useState(0);
   const limit = 50;
 
@@ -40,6 +42,7 @@ export const History = () => {
         severity,
         limit,
         offset,
+        search: searchQuery.trim() || null,
       });
       setLogs(data);
     } catch (err) {
@@ -48,7 +51,7 @@ export const History = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [canViewLogs, severity, offset]);
+  }, [canViewLogs, severity, offset, searchQuery]);
 
   useEffect(() => {
     fetchLogs();
@@ -158,26 +161,42 @@ export const History = () => {
       {/* Filter & Pagination Bar */}
       <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
         <CardContent className="p-3.5 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <Filter className="w-4 h-4 text-[#9AA8B2]" />
-            <span className="text-xs text-[#9AA8B2] font-sans font-medium">Severity:</span>
-            <div className="flex items-center gap-1 bg-[#101820] p-1 rounded-lg border border-[#2A3944] text-xs font-sans">
-              {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => {
-                    setSeverity(s);
-                    setOffset(0);
-                  }}
-                  className={`px-2.5 py-0.5 rounded font-medium transition-colors cursor-pointer ${
-                    severity === s
-                      ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
-                      : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-2 text-[#9AA8B2]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setOffset(0);
+                }}
+                placeholder="Search IP, prediction..."
+                className="pl-8 pr-2.5 py-1 rounded bg-[#101820] border border-[#2A3944] text-xs text-[#E7ECEF] placeholder:text-[#687883] focus:outline-none focus:border-[#cc5500] w-52 font-mono"
+              />
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Filter className="w-4 h-4 text-[#9AA8B2]" />
+              <span className="text-xs text-[#9AA8B2] font-sans font-medium">Severity:</span>
+              <div className="flex items-center gap-1 bg-[#101820] p-1 rounded-lg border border-[#2A3944] text-xs font-sans">
+                {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => {
+                      setSeverity(s);
+                      setOffset(0);
+                    }}
+                    className={`px-2.5 py-0.5 rounded font-medium transition-colors cursor-pointer ${
+                      severity === s
+                        ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
+                        : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
+                    }`}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 

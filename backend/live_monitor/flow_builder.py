@@ -11,22 +11,41 @@ class FlowKey:
         self.dst_port = dst_port
         self.protocol = str(protocol).upper()
 
-    def get_key_and_direction(self):
+    def get_canonical_key(self):
         fwd_tuple = (self.src_ip, self.dst_ip, self.src_port, self.dst_port, self.protocol)
         bwd_tuple = (self.dst_ip, self.src_ip, self.dst_port, self.src_port, self.protocol)
-        
-        if fwd_tuple <= bwd_tuple:
-            return fwd_tuple, "FORWARD"
-        else:
-            return bwd_tuple, "BACKWARD"
+        return min(fwd_tuple, bwd_tuple)
+
+    def get_key_and_direction(self):
+        key = self.get_canonical_key()
+        fwd_tuple = (self.src_ip, self.dst_ip, self.src_port, self.dst_port, self.protocol)
+        return key, "FORWARD" if key == fwd_tuple else "BACKWARD"
 
 class FlowData:
     """
     Data structure storing bidirectional packet statistics for a single network flow.
+    Preserves initiator (sender) and responder (destination) identity from the first packet.
     """
-    def __init__(self, key_tuple, start_time):
+    def __init__(self, key_tuple, start_time, initiator_ip=None, responder_ip=None, initiator_port=None, responder_port=None, protocol=None):
         self.key_tuple = key_tuple
-        self.src_ip, self.dst_ip, self.src_port, self.dst_port, self.protocol = key_tuple
+        
+        # When initiator details are explicitly provided, use them to preserve flow direction
+        if initiator_ip is not None:
+            self.src_ip = initiator_ip
+            self.dst_ip = responder_ip
+            self.src_port = initiator_port
+            self.dst_port = responder_port
+            self.protocol = str(protocol).upper() if protocol else (key_tuple[4] if key_tuple else 'IP')
+        elif key_tuple:
+            self.src_ip, self.dst_ip, self.src_port, self.dst_port, self.protocol = key_tuple
+        else:
+            self.src_ip, self.dst_ip, self.src_port, self.dst_port, self.protocol = "", "", 0, 0, "IP"
+
+        self.initiator_ip = self.src_ip
+        self.responder_ip = self.dst_ip
+        self.initiator_port = self.src_port
+        self.responder_port = self.dst_port
+
         self.start_time = start_time
         self.last_time = start_time
         
@@ -123,14 +142,23 @@ class FlowBuilder:
             pkt_info['src_port'], pkt_info['dst_port'],
             pkt_info['protocol']
         )
-        key_tuple, direction = fk.get_key_and_direction()
+        key_tuple = fk.get_canonical_key()
         
         if key_tuple not in self.active_flows:
-            flow_data = FlowData(key_tuple, now)
-            flow_data.initiator_ip = pkt_info['src_ip']
+            flow_data = FlowData(
+                key_tuple=key_tuple,
+                start_time=now,
+                initiator_ip=pkt_info['src_ip'],
+                responder_ip=pkt_info['dst_ip'],
+                initiator_port=pkt_info['src_port'],
+                responder_port=pkt_info['dst_port'],
+                protocol=pkt_info['protocol']
+            )
             self.active_flows[key_tuple] = flow_data
             
         flow = self.active_flows[key_tuple]
+        # Direction is relative to the initiator who opened the flow
+        direction = "FORWARD" if (pkt_info['src_ip'] == flow.src_ip and pkt_info['src_port'] == flow.src_port) else "BACKWARD"
         flags = pkt_info.get('flags', {})
         header_len = pkt_info.get('header_len', 20)
         pkt_len = pkt_info.get('length', 60)

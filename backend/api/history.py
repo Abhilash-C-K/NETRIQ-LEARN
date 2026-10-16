@@ -16,8 +16,23 @@ async def get_raw_logs(req: Request, query: LogQuery = Depends()):
         filters = {}
         if query.severity and query.severity.upper() != "ALL":
             filters["severity"] = query.severity.lower()
-        if query.src_ip:
-            filters["src_ip"] = query.src_ip
+        if query.search:
+            s = query.search.strip()
+            filters["$or"] = [
+                {"src_ip": {"$regex": s, "$options": "i"}},
+                {"dst_ip": {"$regex": s, "$options": "i"}},
+                {"prediction": {"$regex": s, "$options": "i"}},
+            ]
+        elif query.ip:
+            filters["$or"] = [
+                {"src_ip": query.ip.strip()},
+                {"dst_ip": query.ip.strip()},
+            ]
+        else:
+            if query.src_ip:
+                filters["src_ip"] = query.src_ip.strip()
+            if query.dst_ip:
+                filters["dst_ip"] = query.dst_ip.strip()
         if query.start_time is not None:
             filters.setdefault("timestamp", {})["$gte"] = query.start_time
         if query.end_time is not None:

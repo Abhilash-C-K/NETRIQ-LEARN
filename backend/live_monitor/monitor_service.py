@@ -16,9 +16,12 @@ from typing import Dict, Any, Optional
 from backend.live_monitor.heuristic_fallback import HeuristicFallback
 from backend.ai.risk_engine import classify_risk
 from backend.ai.decision_engine import decide
-from backend.ai.contracts import PredictionResult, Action
+from backend.ai.contracts import PredictionResult, Action, RiskCategory
 from backend.response.response_engine import ResponseEngine
 from backend.utils.validators import is_internal_ip
+from backend.database.collections import threats_repo
+from backend.websocket.events import LiveVerdictEvent
+from backend.websocket.broadcaster import broadcaster
 
 logger = get_logger(__name__)
 
@@ -190,6 +193,8 @@ class MonitorService:
                     # 1. Scope & Decision Formulation
                     src_ip = getattr(flow, 'src_ip', '')
                     dst_ip = getattr(flow, 'dst_ip', '')
+                    src_port = getattr(flow, 'src_port', 0)
+                    dst_port = getattr(flow, 'dst_port', 0)
                     is_internal = is_internal_ip(src_ip) or is_internal_ip(dst_ip)
                     
                     threat_level_name = result_dict.get("threat_level", "LOW")
@@ -200,8 +205,8 @@ class MonitorService:
                     decision = decide(risk=risk_cat, confidence=confidence, is_internal=is_internal)
                     
                     logger.debug(
-                        f"[MonitorService] Flow {src_ip}:{flow.src_port} -> "
-                        f"{dst_ip}:{flow.dst_port} | "
+                        f"[MonitorService] Flow {src_ip}:{src_port} -> "
+                        f"{dst_ip}:{dst_port} | "
                         f"verdict={'ANOMALY' if is_anomaly else 'BENIGN'} "
                         f"confidence={confidence}% | action={decision.action.value}"
                     )
@@ -218,8 +223,8 @@ class MonitorService:
                     context = {
                         "src_ip": src_ip,
                         "dst_ip": dst_ip,
-                        "src_port": getattr(flow, 'src_port', 0),
-                        "dst_port": getattr(flow, 'dst_port', 0),
+                        "src_port": src_port,
+                        "dst_port": dst_port,
                         "protocol": getattr(flow, 'protocol', 'IP'),
                         "sni": getattr(flow, 'sni', None),
                         "reason": decision.reason
@@ -238,8 +243,8 @@ class MonitorService:
                         "timestamp": getattr(flow, 'last_time', 0.0),
                         "src_ip": src_ip,
                         "dst_ip": dst_ip,
-                        "src_port": getattr(flow, 'src_port', 0),
-                        "dst_port": getattr(flow, 'dst_port', 0),
+                        "src_port": src_port,
+                        "dst_port": dst_port,
                         "protocol": getattr(flow, 'protocol', 'IP'),
                         "sni": getattr(flow, 'sni', None),
                         "prediction": result_dict.get("prediction", "BENIGN"),

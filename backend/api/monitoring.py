@@ -46,3 +46,13 @@ async def get_network_telemetry():
     except Exception as e:
         logger.error(f"Failed to get network telemetry: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve network telemetry")
+
+
+@router.get("/local-topology", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
+async def get_local_topology():
+    """Returns actual real devices discovered on the active local network interface via ARP and system routing."""
+    try:
+        return monitoring_service.get_local_topology()
+    except Exception as e:
+        logger.error(f"Failed to get local network topology: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to discover local network topology")

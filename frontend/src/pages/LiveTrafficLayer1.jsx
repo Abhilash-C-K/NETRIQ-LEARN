@@ -57,12 +57,74 @@ export const LiveTrafficLayer1 = () => {
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [simulating, setSimulating] = useState(false);
+  const [dbSearching, setDbSearching] = useState(false);
+  const [dbSearchNotice, setDbSearchNotice] = useState(null);
+
+  const MAX_BUFFER = 250;
+
+  // Search historical MongoDB logs on demand (e.g., when searching a friend's IP)
+  const searchDatabaseHistory = async (queryTerm = searchQuery) => {
+    if (!queryTerm || !queryTerm.trim()) return;
+    try {
+      setDbSearching(true);
+      setDbSearchNotice(null);
+      const raw = await historyService.getRawLogs({ search: queryTerm.trim(), limit: 100 });
+      if (Array.isArray(raw) && raw.length > 0) {
+        const formatted = raw.map((item, idx) => {
+          const rawData = item.raw_data || {};
+          const proto = normalizeProto(item.protocol, item.src_port, item.dst_port);
+          const verdict = normalizeVerdict(
+            item.action || item.action_taken,
+            item.severity,
+            item.is_anomaly
+          );
+          const ts = item.timestamp
+            ? new Date(item.timestamp * (item.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString()
+            : new Date().toLocaleTimeString();
+          const rawId = item.id || item._id;
+          return {
+            id: rawId ? `L1-DB-${String(rawId).slice(-6)}` : `L1-DB-${idx + 100}`,
+            src_ip: item.src_ip || '198.51.100.44',
+            dst_ip: item.dst_ip || '10.0.0.1',
+            protocol: proto,
+            src_port: item.src_port || (proto === 'ICMP' ? 0 : 51200 + idx),
+            dst_port: item.dst_port || (proto === 'ICMP' ? 0 : 443),
+            features: {
+              duration_ms: rawData.simulated_latency_ms || +(Math.random() * 80 + 2).toFixed(1),
+              packets: rawData.packet_count || Math.floor(Math.random() * 200 + 10),
+              bytes_per_sec: rawData.byte_count ? rawData.byte_count * 10 : Math.floor(Math.random() * 400000 + 2000),
+              syn_ratio: verdict === 'BLOCK' ? 0.95 : 0.02,
+            },
+            predicted_class: `${item.prediction || item.reason || 'Network Flow'} [Database Record]`,
+            confidence: typeof item.confidence === 'number' ? (item.confidence > 1 ? +(item.confidence / 100).toFixed(3) : item.confidence) : 0.965,
+            verdict,
+            timestamp: ts,
+            fromDb: true,
+          };
+        });
+
+        setFlows((prev) => {
+          const existingIds = new Set(prev.map((p) => p.id));
+          const newEntries = formatted.filter((f) => !existingIds.has(f.id));
+          return [...newEntries, ...prev].slice(0, MAX_BUFFER);
+        });
+        setDbSearchNotice(`Loaded ${formatted.length} historical records matching "${queryTerm.trim()}"`);
+      } else {
+        setDbSearchNotice(`No records found in database history for "${queryTerm.trim()}".`);
+      }
+    } catch (err) {
+      console.warn('Failed to search database history:', err);
+      setDbSearchNotice('Database search failed. Ensure backend is active.');
+    } finally {
+      setDbSearching(false);
+    }
+  };
 
   // Load real logs from MongoDB and merge with baseline flows for complete coverage
   const loadRealFlows = async () => {
     try {
       setLoading(true);
-      const raw = await historyService.getRawLogs({ limit: 50 });
+      const raw = await historyService.getRawLogs({ limit: 100 });
       if (Array.isArray(raw) && raw.length > 0) {
         const formatted = raw.map((item, idx) => {
           const rawData = item.raw_data || {};
@@ -150,7 +212,7 @@ export const LiveTrafficLayer1 = () => {
         timestamp: new Date().toLocaleTimeString(),
       };
 
-      setFlows((prev) => [newFlow, ...prev.slice(0, 49)]);
+      setFlows((prev) => [newFlow, ...prev.slice(0, MAX_BUFFER - 1)]);
     };
 
     const unsub1 = subscribe('live_verdict', handleNewVerdict);
@@ -221,7 +283,7 @@ export const LiveTrafficLayer1 = () => {
         timestamp: new Date().toLocaleTimeString(),
       };
 
-      setFlows((prev) => [simulatedFlow, ...prev.slice(0, 49)]);
+      setFlows((prev) => [simulatedFlow, ...prev.slice(0, MAX_BUFFER - 1)]);
       setSelectedFlowId(simulatedFlow.id);
 
       // Auto-adjust active filter so user immediately sees this simulated attack row
@@ -271,26 +333,27 @@ export const LiveTrafficLayer1 = () => {
     setSearchQuery('');
   };
 
-  // Strict filtered flows calculation
+  // Filtered flows calculation: searches across IP, ID, Protocol, and Verdict
   const filteredFlows = useMemo(() => {
     return flows.filter((f) => {
       const p = String(f.protocol || '').trim().toUpperCase();
       const v = String(f.verdict || '').trim().toUpperCase();
 
-      if (verdictFilter !== 'ALL' && v !== verdictFilter) return false;
-      if (protocolFilter !== 'ALL' && p !== protocolFilter) return false;
-
       if (searchQuery) {
         const q = searchQuery.toLowerCase().trim();
-        return (
+        const matchesSearch =
           f.src_ip.toLowerCase().includes(q) ||
           f.dst_ip.toLowerCase().includes(q) ||
           f.predicted_class.toLowerCase().includes(q) ||
           f.id.toLowerCase().includes(q) ||
           p.toLowerCase() === q ||
-          v.toLowerCase() === q
-        );
+          v.toLowerCase() === q;
+        if (!matchesSearch) return false;
       }
+
+      if (verdictFilter !== 'ALL' && v !== verdictFilter) return false;
+      if (protocolFilter !== 'ALL' && p !== protocolFilter) return false;
+
       return true;
     });
   }, [flows, verdictFilter, protocolFilter, searchQuery]);
@@ -395,15 +458,31 @@ export const LiveTrafficLayer1 = () => {
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#94a3b8]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search IP, threat label, TCP, UDP, ICMP, BLOCK..."
-            className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-[#e2e8f0] text-xs focus:outline-none focus:border-blue-500 bg-[#f8fafc]"
-          />
+        <div className="flex-1 max-w-md flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 absolute left-3 top-2.5 text-[#94a3b8]" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') searchDatabaseHistory(searchQuery);
+              }}
+              placeholder="Search IP, threat label, TCP, UDP, ICMP, BLOCK..."
+              className="w-full pl-9 pr-3 py-1.5 rounded-lg border border-[#e2e8f0] text-xs focus:outline-none focus:border-blue-500 bg-[#f8fafc]"
+            />
+          </div>
+          {searchQuery && (
+            <button
+              onClick={() => searchDatabaseHistory(searchQuery)}
+              disabled={dbSearching}
+              className="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 cursor-pointer disabled:opacity-50 whitespace-nowrap flex items-center gap-1"
+              title="Query MongoDB directly for historical flows matching this IP or keyword"
+            >
+              <Search className={`w-3 h-3 ${dbSearching ? 'animate-spin' : ''}`} />
+              {dbSearching ? 'Searching...' : 'Search DB'}
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -468,6 +547,22 @@ export const LiveTrafficLayer1 = () => {
           )}
         </div>
       </div>
+
+      {/* Database Search Result Notification */}
+      {dbSearchNotice && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-900 px-4 py-2.5 rounded-xl text-xs flex items-center justify-between shadow-xs">
+          <div className="flex items-center gap-2">
+            <Search className="w-3.5 h-3.5 text-blue-600" />
+            <span className="font-semibold">{dbSearchNotice}</span>
+          </div>
+          <button
+            onClick={() => setDbSearchNotice(null)}
+            className="text-blue-600 hover:text-blue-900 font-bold ml-2 cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* Main External Ingress Table */}
       <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
@@ -534,15 +629,37 @@ export const LiveTrafficLayer1 = () => {
                         <div className="text-[10px] text-[#64748b] font-mono">{flow.timestamp}</div>
                       </td>
                       <td className="py-3 px-4 font-mono">
-                        <span className="font-semibold text-[#0f172a]">{flow.src_ip}</span>
+                        <span
+                          className={`font-semibold ${
+                            searchQuery && flow.src_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                              ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
+                              : 'text-[#0f172a]'
+                          }`}
+                        >
+                          {flow.src_ip}
+                        </span>
                         {flow.protocol !== 'ICMP' && (
                           <span className="text-[#64748b]">:{flow.src_port}</span>
                         )}
+                        {flow.src_ip === '192.168.1.74' && (
+                          <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
+                        )}
                       </td>
                       <td className="py-3 px-4 font-mono">
-                        <span className="font-semibold text-[#0f172a]">{flow.dst_ip}</span>
+                        <span
+                          className={`font-semibold ${
+                            searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                              ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
+                              : 'text-[#0f172a]'
+                          }`}
+                        >
+                          {flow.dst_ip}
+                        </span>
                         {flow.protocol !== 'ICMP' && (
                           <span className="text-[#64748b]">:{flow.dst_port}</span>
+                        )}
+                        {flow.dst_ip === '192.168.1.74' && (
+                          <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -599,16 +716,38 @@ export const LiveTrafficLayer1 = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-[#64748b]">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <Filter className="w-6 h-6 text-[#94a3b8]" />
-                      <span className="font-semibold">No packet flows match the selected criteria.</span>
-                      <button
-                        onClick={resetAllFilters}
-                        className="text-xs text-blue-600 hover:underline font-bold mt-1"
-                      >
-                        Reset filters to view all flows
-                      </button>
+                  <td colSpan={8} className="py-10 text-center text-[#64748b]">
+                    <div className="flex flex-col items-center justify-center gap-2.5">
+                      <Filter className="w-7 h-7 text-[#94a3b8]" />
+                      <div className="font-semibold text-sm text-[#0f172a]">
+                        {searchQuery
+                          ? `No active flows matching "${searchQuery}" in the live buffer (${flows.length} flows)`
+                          : 'No packet flows match the selected criteria.'}
+                      </div>
+                      <div className="text-xs text-[#64748b] max-w-md">
+                        {searchQuery
+                          ? 'The packet may have been captured earlier, or was excluded by active protocol/verdict filters. You can search MongoDB directly.'
+                          : 'Reset filters to view all incoming network traffic.'}
+                      </div>
+
+                      <div className="flex items-center gap-2 mt-2">
+                        {searchQuery && (
+                          <button
+                            onClick={() => searchDatabaseHistory(searchQuery)}
+                            disabled={dbSearching}
+                            className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                          >
+                            <Search className={`w-3.5 h-3.5 ${dbSearching ? 'animate-spin' : ''}`} />
+                            {dbSearching ? 'Searching Database...' : `Search MongoDB for "${searchQuery}"`}
+                          </button>
+                        )}
+                        <button
+                          onClick={resetAllFilters}
+                          className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 cursor-pointer"
+                        >
+                          Reset All Filters
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>

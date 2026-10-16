@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { setAccessToken } from '../services/api';
 import { Lock, User, ShieldAlert, ArrowRight, ShieldCheck, Shield } from 'lucide-react';
 
 export const Login = () => {
@@ -11,6 +12,12 @@ export const Login = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Clear any stale/expired tokens so fresh login attempts aren't contaminated
+    setAccessToken(null);
+    localStorage.removeItem('netriq_access_token');
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

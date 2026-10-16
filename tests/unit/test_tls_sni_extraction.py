@@ -67,7 +67,7 @@ class TestTLSSNIExtraction(unittest.TestCase):
         mock_flow.sni = "youtube.com"
 
         features = FeatureExtractor.extract_features(mock_flow)
-        self.assertEqual(len(features), 71, "FeatureExtractor schema MUST contain exactly 71 ML features.")
+        self.assertEqual(len(features), 79, "FeatureExtractor schema MUST contain exactly 79 ML features.")
         self.assertNotIn("sni", features, "SNI metadata MUST NOT be included as an ML feature.")
 
     def test_2_sni_parsing_success_client_hello(self):

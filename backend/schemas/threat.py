@@ -8,6 +8,9 @@ class LogQuery(BaseModel):
     start_time: Optional[float] = None
     end_time: Optional[float] = None
     src_ip: Optional[str] = None
+    dst_ip: Optional[str] = None
+    ip: Optional[str] = None
+    search: Optional[str] = None
 
 class RawLog(BaseModel):
     id: Optional[str] = None

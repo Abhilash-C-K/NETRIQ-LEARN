@@ -79,6 +79,96 @@ class MonitoringService:
                 logger.error(f"Failed to start live monitor: {e}", exc_info=True)
                 raise
 
+    def get_local_topology(self) -> Dict[str, Any]:
+        """Discovers real host IP, default gateway, and connected ARP neighbors on the active local network."""
+        import socket
+        import subprocess
+        import re
+
+        host_ip = "127.0.0.1"
+        gateway_ip = None
+
+        # 1. Discover host IP via active socket
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            host_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            pass
+
+        # 2. Discover default gateway via route print
+        try:
+            out = subprocess.check_output(["route", "print", "0.0.0.0"], text=True)
+            m = re.search(r"0\.0\.0\.0\s+0\.0\.0\.0\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", out)
+            if m:
+                gateway_ip, route_iface = m.groups()
+                if not host_ip or host_ip == "127.0.0.1":
+                    host_ip = route_iface
+        except Exception as e:
+            logger.debug(f"Could not determine gateway via route print: {e}")
+
+        devices = []
+        # Add Host Device
+        devices.append({
+            "ip": host_ip,
+            "label": f"This PC ({host_ip})",
+            "type": "workstation",
+            "is_host": True,
+            "is_gateway": False,
+            "mac": "Local Host Interface",
+            "status": "NORMAL",
+        })
+
+        # Add Gateway if known
+        if gateway_ip and gateway_ip != host_ip:
+            devices.append({
+                "ip": gateway_ip,
+                "label": f"Wi-Fi Router Gateway ({gateway_ip})",
+                "type": "router",
+                "is_host": False,
+                "is_gateway": True,
+                "mac": "Default Gateway",
+                "status": "NORMAL",
+            })
+
+        # 3. Discover real ARP neighbors on the active local subnet
+        try:
+            arp_out = subprocess.check_output(["arp", "-a"], text=True)
+            for line in arp_out.splitlines():
+                m = re.search(r"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9a-fA-F-]+)\s+(\w+)", line)
+                if m:
+                    ip, mac, typ = m.groups()
+                    if ip in (host_ip, gateway_ip):
+                        if ip == gateway_ip:
+                            for d in devices:
+                                if d["ip"] == gateway_ip:
+                                    d["mac"] = mac.replace("-", ":").upper()
+                        continue
+                    if ip.startswith("224.") or ip.startswith("239.") or ip.endswith(".255") or ip.endswith(".0"):
+                        continue
+                    host_subnet = ".".join(host_ip.split(".")[:3])
+                    if ip.startswith(host_subnet):
+                        devices.append({
+                            "ip": ip,
+                            "label": f"Connected Device ({ip})",
+                            "type": "workstation",
+                            "is_host": False,
+                            "is_gateway": False,
+                            "mac": mac.replace("-", ":").upper(),
+                            "status": "NORMAL",
+                        })
+        except Exception as e:
+            logger.debug(f"Could not query ARP table: {e}")
+
+        return {
+            "host_ip": host_ip,
+            "gateway_ip": gateway_ip,
+            "subnet": f"{'.'.join(host_ip.split('.')[:3])}.0/24",
+            "device_count": len(devices),
+            "devices": devices,
+        }
+
     async def stop(self, role: Role) -> bool:
         """Stops the live monitoring pipeline. Idempotent."""
         async with self.lock:

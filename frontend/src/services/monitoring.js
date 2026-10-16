@@ -20,4 +20,9 @@ export const monitoringService = {
     const response = await api.get('/monitoring/telemetry');
     return response.data;
   },
+
+  async getLocalTopology() {
+    const response = await api.get('/monitoring/local-topology');
+    return response.data;
+  },
 };

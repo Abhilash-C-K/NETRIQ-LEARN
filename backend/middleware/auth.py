@@ -18,6 +18,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
     _PUBLIC_PREFIXES = ("/api/v1/auth/login", "/api/v1/auth/refresh", "/docs", "/openapi", "/redoc")
 
     async def dispatch(self, request: Request, call_next):
+        # Paths that never require token validation (login, refresh, docs, health)
+        path = request.url.path
+        if any(path.startswith(prefix) for prefix in self._PUBLIC_PREFIXES) or path in ("/health", "/api/v1/health"):
+            request.state.user = None
+            return await call_next(request)
+
         auth_header = request.headers.get("Authorization")
 
         if not auth_header:

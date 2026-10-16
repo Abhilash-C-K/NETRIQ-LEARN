@@ -14,7 +14,7 @@ class HistoryService:
         - Targeted Device Trail (src_ip specified): Viewers can view connection metadata, but raw_data and internal telemetry are stripped.
         - Admin & Analyst receive full log details.
         """
-        is_targeted_device_query = bool(filters.get("src_ip"))
+        is_targeted_device_query = bool(filters.get("src_ip")) or bool(filters.get("dst_ip")) or bool(filters.get("$or"))
 
         if role == Role.VIEWER and not is_targeted_device_query:
             logger.warning("Viewer role attempted to access bulk raw logs. Denied at service layer.")

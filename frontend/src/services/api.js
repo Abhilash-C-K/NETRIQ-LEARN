@@ -40,10 +40,14 @@ const api = axios.create({
   },
 });
 
-// Request Interceptor: Attach bearer token if available in memory
+// Request Interceptor: Attach bearer token if available in memory (except for public auth routes)
 api.interceptors.request.use(
   (config) => {
-    if (inMemoryAccessToken && !config.headers.Authorization) {
+    const isPublicAuthRoute =
+      config.url?.includes('/auth/login') ||
+      config.url?.includes('/auth/refresh');
+
+    if (inMemoryAccessToken && !config.headers.Authorization && !isPublicAuthRoute) {
       config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
     }
     return config;

@@ -160,12 +160,6 @@ class IncidentService:
             "created_at": time.time(),
             "updated_at": time.time(),
             "affected_assets": [target_ip],
-            "src_ip": target_ip,
-            "dst_ip": "185.220.101.5",
-            "src_port": 51002,
-            "dst_port": 443,
-            "protocol": "TCP",
-            "confidence": getattr(prediction, 'confidence', 96.5),
             "response_action": action.value,
             "response_success": success
         }

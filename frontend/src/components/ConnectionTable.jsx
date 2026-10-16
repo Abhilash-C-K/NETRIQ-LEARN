@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { SeverityBadge } from './SeverityBadge';
 import { Network, Globe } from 'lucide-react';
+import { getFriendlyDomainInfo } from '../utils/domain';
 
 export const ConnectionTable = ({ entries, onSelectDevice }) => {
   const [filterSeverity, setFilterSeverity] = useState('ALL');
@@ -107,17 +108,25 @@ export const ConnectionTable = ({ entries, onSelectDevice }) => {
                         )}
                       </td>
                       <td className="py-2.5 px-4 font-mono text-[11px]">
-                        {sni ? (
-                          <div>
-                            <span className="flex items-center gap-1 text-[#7895B2] font-semibold">
-                              <Globe className="w-3 h-3 text-[#7895B2]" />
-                              <span className="truncate max-w-[180px]" title={sni}>{sni}</span>
-                            </span>
-                            <span className="text-[10px] text-[#687883] block">
-                              {dstIp}:{dstPort}
-                            </span>
-                          </div>
-                        ) : (
+                        {sni ? (() => {
+                          const info = getFriendlyDomainInfo(sni);
+                          return (
+                            <div>
+                              <span className="flex items-center gap-1 text-[#7895B2] font-semibold">
+                                <Globe className="w-3 h-3 text-[#7895B2] shrink-0" />
+                                <span className="truncate max-w-[170px]" title={`${info.raw} (${dstIp})`}>{info.display}</span>
+                                {info.alias && (
+                                  <span className="text-[9px] font-normal px-1 rounded bg-[#202D36] text-[#cc5500] border border-[#3b4c5a] shrink-0">
+                                    {info.alias}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="text-[10px] text-[#687883] block">
+                                {dstIp}:{dstPort}
+                              </span>
+                            </div>
+                          );
+                        })() : (
                           <span className="text-[#7895B2]">
                             {dstIp}:{dstPort}
                           </span>

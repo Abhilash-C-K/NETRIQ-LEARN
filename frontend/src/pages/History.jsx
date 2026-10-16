@@ -18,6 +18,7 @@ import {
   Search,
   Globe,
 } from 'lucide-react';
+import { getFriendlyDomainInfo } from '../utils/domain';
 
 export const History = () => {
   const { hasCapability, role } = useAuth();
@@ -284,18 +285,28 @@ export const History = () => {
 
                   {/* Destination: sage/steel (#7895B2 / #cc5500) */}
                   <td className="py-3 px-4 text-[11px] whitespace-nowrap">
-                    {log.sni ? (
-                      <div>
-                        <div className="flex items-center gap-1 font-sans font-bold text-blue-700">
-                          <Globe className="w-3 h-3 text-blue-500 shrink-0" />
-                          <span className="truncate max-w-[200px]" title={log.sni}>{log.sni}</span>
+                    {log.sni ? (() => {
+                      const info = getFriendlyDomainInfo(log.sni);
+                      return (
+                        <div>
+                          <div className="flex items-center gap-1 font-sans font-bold text-blue-700">
+                            <Globe className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span className="truncate max-w-[200px]" title={`${info.raw} (${log.dst_ip})`}>
+                              {info.display}
+                            </span>
+                            {info.alias && (
+                              <span className="text-[9px] font-semibold px-1 py-0.2 rounded bg-blue-50 text-blue-600 border border-blue-200 shrink-0">
+                                {info.alias}
+                              </span>
+                            )}
+                          </div>
+                          <div className="font-mono text-[10px] text-[#687883] mt-0.5">
+                            <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
+                            <span>{log.dst_port ? `:${log.dst_port}` : ''}</span>
+                          </div>
                         </div>
-                        <div className="font-mono text-[10px] text-[#687883] mt-0.5">
-                          <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
-                          <span>{log.dst_port ? `:${log.dst_port}` : ''}</span>
-                        </div>
-                      </div>
-                    ) : (
+                      );
+                    })() : (
                       <div className="font-mono">
                         <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
                         <span className="text-[#687883]">{log.dst_port ? `:${log.dst_port}` : ''}</span>

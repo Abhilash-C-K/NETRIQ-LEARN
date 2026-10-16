@@ -30,6 +30,17 @@ class HistoryService:
                 sort_by=sort_order
             )
 
+            try:
+                from backend.services.dns_resolver import dns_resolver
+                for doc in docs:
+                    if not doc.get("sni"):
+                        resolved = dns_resolver.get_domain(doc.get("dst_ip")) or dns_resolver.get_domain(doc.get("src_ip"))
+                        if resolved:
+                            doc["sni"] = resolved
+                            doc["domain"] = resolved
+            except Exception:
+                pass
+
             if role == Role.VIEWER:
                 # Sanitize records for Viewer: strip raw feature vectors/payloads
                 sanitized = []

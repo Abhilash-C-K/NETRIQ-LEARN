@@ -15,6 +15,7 @@ import {
   Clock,
   Zap,
   RotateCcw,
+  Globe,
 } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { historyService } from '../services/history';
@@ -86,6 +87,7 @@ export const LiveTrafficLayer1 = () => {
             id: rawId ? `L1-DB-${String(rawId).slice(-6)}` : `L1-DB-${idx + 100}`,
             src_ip: item.src_ip || '198.51.100.44',
             dst_ip: item.dst_ip || '10.0.0.1',
+            sni: item.sni || item.domain || null,
             protocol: proto,
             src_port: item.src_port || (proto === 'ICMP' ? 0 : 51200 + idx),
             dst_port: item.dst_port || (proto === 'ICMP' ? 0 : 443),
@@ -146,6 +148,7 @@ export const LiveTrafficLayer1 = () => {
             id: displayId,
             src_ip: item.src_ip || '198.51.100.44',
             dst_ip: item.dst_ip || '10.0.0.1',
+            sni: item.sni || item.domain || null,
             protocol: proto,
             src_port: item.src_port || (proto === 'ICMP' ? 0 : 51200 + idx),
             dst_port: item.dst_port || (proto === 'ICMP' ? 0 : 443),
@@ -197,6 +200,7 @@ export const LiveTrafficLayer1 = () => {
         id: payload.id ? `L1-${String(payload.id).substring(0, 7)}` : `L1-${Math.floor(1000 + Math.random() * 9000)}`,
         src_ip: payload.src_ip || '198.51.100.12',
         dst_ip: payload.dst_ip || '10.0.0.1',
+        sni: payload.sni || payload.domain || null,
         protocol: proto,
         src_port: payload.src_port || (proto === 'ICMP' ? 0 : Math.floor(Math.random() * 40000 + 10000)),
         dst_port: payload.dst_port || (proto === 'ICMP' ? 0 : 443),
@@ -344,6 +348,7 @@ export const LiveTrafficLayer1 = () => {
         const matchesSearch =
           f.src_ip.toLowerCase().includes(q) ||
           f.dst_ip.toLowerCase().includes(q) ||
+          (f.sni && f.sni.toLowerCase().includes(q)) ||
           f.predicted_class.toLowerCase().includes(q) ||
           f.id.toLowerCase().includes(q) ||
           p.toLowerCase() === q ||
@@ -589,7 +594,7 @@ export const LiveTrafficLayer1 = () => {
               <tr className="bg-[#f8fafc] border-b border-[#e2e8f0] text-[#64748b] font-semibold">
                 <th className="py-2.5 px-4">Flow ID / Timestamp</th>
                 <th className="py-2.5 px-4">Source IP & Port</th>
-                <th className="py-2.5 px-4">Destination IP & Port</th>
+                <th className="py-2.5 px-4">Destination Domain / IP</th>
                 <th className="py-2.5 px-4">Protocol</th>
                 <th className="py-2.5 px-4">Extracted Traffic Features</th>
                 <th className="py-2.5 px-4">Predicted Threat Class</th>
@@ -645,21 +650,56 @@ export const LiveTrafficLayer1 = () => {
                           <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-mono">
-                        <span
-                          className={`font-semibold ${
-                            searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                              ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
-                              : 'text-[#0f172a]'
-                          }`}
-                        >
-                          {flow.dst_ip}
-                        </span>
-                        {flow.protocol !== 'ICMP' && (
-                          <span className="text-[#64748b]">:{flow.dst_port}</span>
-                        )}
-                        {flow.dst_ip === '192.168.1.74' && (
-                          <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
+                      <td className="py-3 px-4">
+                        {flow.sni ? (
+                          <div>
+                            <div className="flex items-center gap-1.5 font-sans font-bold text-blue-700 text-xs">
+                              <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                              <span
+                                className={`truncate max-w-[210px] ${
+                                  searchQuery && flow.sni.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                                    ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
+                                    : ''
+                                }`}
+                                title={flow.sni}
+                              >
+                                {flow.sni}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-[#64748b] font-mono mt-0.5 flex items-center gap-1">
+                              <span
+                                className={
+                                  searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                                    ? 'bg-amber-100 text-amber-900 px-1 rounded font-bold'
+                                    : ''
+                                }
+                              >
+                                {flow.dst_ip}
+                              </span>
+                              {flow.protocol !== 'ICMP' && <span>:{flow.dst_port}</span>}
+                              {flow.dst_ip === '192.168.1.74' && (
+                                <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="font-mono">
+                            <span
+                              className={`font-semibold ${
+                                searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                                  ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
+                                  : 'text-[#0f172a]'
+                              }`}
+                            >
+                              {flow.dst_ip}
+                            </span>
+                            {flow.protocol !== 'ICMP' && (
+                              <span className="text-[#64748b]">:{flow.dst_port}</span>
+                            )}
+                            {flow.dst_ip === '192.168.1.74' && (
+                              <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="py-3 px-4">

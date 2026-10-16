@@ -163,9 +163,15 @@ class FlowBuilder:
         header_len = pkt_info.get('header_len', 20)
         pkt_len = pkt_info.get('length', 60)
         
-        # Retain the first non-None SNI seen across packets in the flow
+        # Retain the first non-None SNI seen across packets in the flow, or dynamically resolve via DNS resolver
         if not flow.sni and pkt_info.get('sni'):
             flow.sni = pkt_info['sni']
+        elif not flow.sni:
+            try:
+                from backend.services.dns_resolver import dns_resolver
+                flow.sni = dns_resolver.get_domain(flow.dst_ip) or dns_resolver.get_domain(flow.src_ip)
+            except Exception:
+                pass
 
         flow.add_packet(pkt_len, direction, flags, now, header_len)
         

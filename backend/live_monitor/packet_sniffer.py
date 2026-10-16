@@ -267,12 +267,48 @@ class PacketSniffer:
                 'sni': None,
             }
 
+            # Attempt DNS resolution and registration for UDP traffic (port 53/5353)
+            if proto_name == "UDP" and (src_port in (53, 5353) or dst_port in (53, 5353)):
+                try:
+                    from backend.services.dns_resolver import dns_resolver
+                    dns_resolver.register_dns_packet(pkt)
+                except Exception:
+                    pass
+
             # Attempt TLS SNI metadata extraction for TCP traffic on monitored HTTPS ports
+            extracted_sni = None
             if proto_name == "TCP":
                 import backend.config.config as config
                 monitored_ports = getattr(config, "SNI_MONITORED_PORTS", [443, 8443])
                 if src_port in monitored_ports or dst_port in monitored_ports:
-                    pkt_dict['sni'] = self._extract_sni(pkt)
+                    extracted_sni = self._extract_sni(pkt)
+                    if extracted_sni:
+                        try:
+                            from backend.services.dns_resolver import dns_resolver
+                            target_ip = dst_ip if dst_port in monitored_ports else src_ip
+                            dns_resolver.register_mapping(target_ip, extracted_sni)
+                        except Exception:
+                            pass
+                elif src_port in (80, 8080) or dst_port in (80, 8080):
+                    # Attempt plaintext HTTP Host header extraction
+                    try:
+                        raw_payload = bytes(tcp.payload) if hasattr(tcp, 'payload') and tcp.payload else None
+                        if raw_payload and (raw_payload.startswith(b"GET ") or raw_payload.startswith(b"POST ") or raw_payload.startswith(b"HEAD ") or raw_payload.startswith(b"CONNECT ")):
+                            import re
+                            host_match = re.search(rb"\r\nHost:\s*([^\r\n:]+)", raw_payload, re.IGNORECASE)
+                            if host_match:
+                                http_host = host_match.group(1).decode("utf-8", errors="ignore").strip()
+                                extracted_sni = http_host
+                                from backend.services.dns_resolver import dns_resolver
+                                dns_resolver.register_mapping(dst_ip, http_host)
+                    except Exception:
+                        pass
+
+            try:
+                from backend.services.dns_resolver import dns_resolver
+                pkt_dict['sni'] = extracted_sni or dns_resolver.get_domain(dst_ip) or dns_resolver.get_domain(src_ip)
+            except Exception:
+                pkt_dict['sni'] = extracted_sni
 
             try:
                 self.packet_queue.put_nowait(pkt_dict)

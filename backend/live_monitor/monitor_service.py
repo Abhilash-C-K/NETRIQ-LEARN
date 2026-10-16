@@ -220,13 +220,22 @@ class MonitorService:
                         explainability_top_features=[]
                     )
 
+                    flow_sni = getattr(flow, 'sni', None)
+                    if not flow_sni:
+                        try:
+                            from backend.services.dns_resolver import dns_resolver
+                            flow_sni = dns_resolver.resolve_flow_domain(flow, src_ip, dst_ip)
+                        except Exception:
+                            flow_sni = None
+
                     context = {
                         "src_ip": src_ip,
                         "dst_ip": dst_ip,
                         "src_port": src_port,
                         "dst_port": dst_port,
                         "protocol": getattr(flow, 'protocol', 'IP'),
-                        "sni": getattr(flow, 'sni', None),
+                        "sni": flow_sni,
+                        "domain": flow_sni,
                         "reason": decision.reason
                     }
 
@@ -246,7 +255,8 @@ class MonitorService:
                         "src_port": src_port,
                         "dst_port": dst_port,
                         "protocol": getattr(flow, 'protocol', 'IP'),
-                        "sni": getattr(flow, 'sni', None),
+                        "sni": flow_sni,
+                        "domain": flow_sni,
                         "prediction": result_dict.get("prediction", "BENIGN"),
                         "confidence": confidence,
                         "severity": risk_cat.value,

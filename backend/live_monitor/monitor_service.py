@@ -4,6 +4,7 @@ Async-compatible orchestrator for the live packet capture pipeline.
 Wraps PacketSniffer → FlowBuilder → FeatureExtractor → LivePredictor in a background asyncio task.
 """
 
+import time
 import asyncio
 from backend.utils.logger import get_logger
 from backend.live_monitor.packet_sniffer import PacketSniffer
@@ -123,6 +124,12 @@ class MonitorService:
         self._stop_event.clear()
         self.sniffer.start()
         self._task = asyncio.create_task(self._run_loop(), name="live_monitor_pipeline")
+
+        def _on_pipeline_done(t):
+            if not t.cancelled() and t.exception():
+                logger.error(f"[MonitorService] Pipeline task crashed: {t.exception()}", exc_info=t.exception())
+        self._task.add_done_callback(_on_pipeline_done)
+
         logger.info(f"[MonitorService] Pipeline started (dataset={self.dataset_name}, interface={self.interface or 'default'}).")
 
     async def stop(self):
@@ -148,14 +155,23 @@ class MonitorService:
         """
         from backend.ai.contracts import RiskCategory, Action
         from backend.database.collections import threats_repo
-        from backend.websocket.broadcaster import broadcaster
-        from backend.websocket.events import LiveVerdictEvent
+        from backend.websocket.events import LiveVerdictEvent, MonitorStatusEvent
+        from backend.services.monitoring_service import monitoring_service
 
         loop = asyncio.get_event_loop()
         self._loop = loop
         logger.info("[MonitorService] Capture loop active.")
+        last_status_broadcast_time = time.time()
 
         while not self._stop_event.is_set():
+            now = time.time()
+            if now - last_status_broadcast_time >= 1.0:
+                last_status_broadcast_time = now
+                try:
+                    asyncio.create_task(broadcaster.publish(MonitorStatusEvent(payload=monitoring_service.get_status())))
+                except Exception:
+                    pass
+
             # Offload blocking queue.get to executor to stay async-safe
             pkt = await loop.run_in_executor(None, self._get_packet_blocking)
 

@@ -160,6 +160,8 @@ class IncidentService:
             "created_at": time.time(),
             "updated_at": time.time(),
             "affected_assets": [target_ip],
+            "src_ip": target_ip,
+            "confidence": round(float(prediction.confidence), 2),
             "response_action": action.value,
             "response_success": success
         }

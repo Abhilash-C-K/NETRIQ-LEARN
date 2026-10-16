@@ -17,8 +17,7 @@ class Broadcaster:
         """
         logger.debug(f"Publishing event: {event.event_type.value} to {event.target_audience}")
         
-        # We spawn a background task to avoid blocking the caller (e.g. the live monitor pipeline)
-        asyncio.create_task(self._fanout(event))
+        await self._fanout(event)
         
     async def _fanout(self, event: Event):
         tasks = [manager.broadcast_to_role(role, event) for role in set(event.target_audience)]

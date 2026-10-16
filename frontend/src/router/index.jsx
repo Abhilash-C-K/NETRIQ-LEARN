@@ -6,6 +6,7 @@ import { Splash } from '../pages/Splash';
 import { Login } from '../pages/Login';
 import { Dashboard } from '../pages/Dashboard';
 import { LiveTrafficLayer1 } from '../pages/LiveTrafficLayer1';
+import { Monitoring } from '../pages/Monitoring';
 import { InternalNetworkLayer2 } from '../pages/InternalNetworkLayer2';
 import { ThreatDetection } from '../pages/ThreatDetection';
 import { DeviceQuarantine } from '../pages/DeviceQuarantine';
@@ -38,7 +39,7 @@ export const AppRouter = () => {
 
         {/* 02. Live Traffic - External (Pre-Firewall Ingress) */}
         <Route path="/traffic-layer1" element={<LiveTrafficLayer1 />} />
-        <Route path="/monitoring" element={<LiveTrafficLayer1 />} />
+        <Route path="/monitoring" element={<Monitoring />} />
 
         {/* 03. Internal Network - Internal (Topology & Lateral Movement via React Flow) */}
         <Route path="/network-layer2" element={<InternalNetworkLayer2 />} />

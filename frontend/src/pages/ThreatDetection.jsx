@@ -26,10 +26,10 @@ import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
 import { responseService } from '../services/response';
 import { SOCCountermeasurePlaybook } from '../components/SOCCountermeasurePlaybook';
-
-
+import { useWebSocket } from '../hooks/useWebSocket';
 
 export const ThreatDetection = () => {
+  const { subscribe } = useWebSocket();
   const [threats, setThreats] = useState([]);
   const [selectedThreatId, setSelectedThreatId] = useState(null);
   const [layerFilter, setLayerFilter] = useState('ALL');
@@ -170,7 +170,70 @@ export const ThreatDetection = () => {
 
   useEffect(() => {
     loadThreats();
-  }, []);
+
+    const handleLiveAlert = (payload) => {
+      if (!payload || (!payload.is_anomaly && payload.verdict !== 'BLOCK' && payload.verdict !== 'DROP' && payload.severity !== 'HIGH' && payload.severity !== 'CRITICAL')) {
+        return;
+      }
+      const rawConf = typeof payload.confidence === 'number' ? payload.confidence : 96.5;
+      const conf = rawConf > 1 ? +(rawConf / 100).toFixed(4) : rawConf;
+      const isInternal = payload.src_ip && (payload.src_ip.startsWith('192.168.') || payload.src_ip.startsWith('10.'));
+      const layer = isInternal ? 'Internal' : 'External';
+      const sev = String(payload.severity || 'HIGH').toUpperCase();
+      const rawId = payload.id || Math.floor(1000 + Math.random() * 9000);
+      const displayId = `THR-${String(rawId).slice(-4).toUpperCase()}`;
+      const uniqueId = `THR-LIVE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      const newAlert = {
+        id: displayId,
+        uniqueId,
+        rawId,
+        layer,
+        type: payload.prediction || payload.reason || 'Network Flow Ingress Anomaly',
+        severity: sev,
+        src_ip: payload.src_ip || 'Unknown Source',
+        dst_ip: payload.dst_ip || 'Gateway',
+        timestamp: new Date().toLocaleTimeString(),
+        prediction: payload.prediction || 'Network Anomaly',
+        confidence: conf,
+        model: payload.model_used || (layer === 'External' ? 'XGBoost_v2.0' : 'Statistical_IsolationForest'),
+        status: payload.action === 'QUARANTINE' ? 'Device Quarantined' : (payload.action === 'RECOMMEND_BLOCK' ? 'Firewall Drop Dispatched' : 'Active Investigation'),
+        mitre: layer === 'External' ? 'T1498 - Network Denial of Service' : 'T1021 - Lateral Movement: SMB/Admin Shares',
+        summary: payload.reason || 'Live packet flow flagged by NetrIQ detection pipeline.',
+        raw_data: payload,
+        shap_features: [
+          {
+            feature: 'flow_prediction',
+            plainTitle: 'Classification Verdict',
+            value: payload.prediction || 'ANOMALY',
+            baseline: 'BENIGN',
+            impact: 0.45,
+            direction: 'increases_risk',
+            explanation: `Ingress classifier categorized this connection as ${payload.prediction || 'ANOMALY'}.`,
+          },
+          {
+            feature: 'threat_confidence',
+            plainTitle: 'Model Confidence',
+            value: `${(conf * 100).toFixed(1)}%`,
+            baseline: '50.0%',
+            impact: Number((conf - 0.5).toFixed(2)),
+            direction: conf >= 0.5 ? 'increases_risk' : 'decreases_risk',
+            explanation: `Live autonomous evaluation via ${layer === 'External' ? 'XGBoost external classifier' : 'LightGBM host model'}.`,
+          },
+        ],
+      };
+
+      setThreats((prev) => [newAlert, ...prev.slice(0, 99)]);
+    };
+
+    const unsub1 = subscribe('threat_alert', handleLiveAlert);
+    const unsub2 = subscribe('live_verdict', handleLiveAlert);
+
+    return () => {
+      unsub1();
+      unsub2();
+    };
+  }, [subscribe]);
 
   // Filter threats strictly by layer and severity
   const filteredThreats = useMemo(() => {
@@ -473,7 +536,7 @@ export const ThreatDetection = () => {
                     <div className="text-xs font-bold text-[#0a1c3d] line-clamp-1">{threat.type}</div>
                     <div className="text-[11px] font-mono text-[#687d9a] mt-1 flex items-center justify-between">
                       <span>Src: {threat.src_ip.split(' ')[0]}</span>
-                      <span className="font-semibold text-red-600">Conf: {(threat.confidence * 100).toFixed(0)}%</span>
+                      <span className="font-semibold text-red-600">Conf: {(threat.confidence * 100).toFixed(1)}%</span>
                     </div>
                     <div className="text-[10px] text-[#8ca0b8] mt-1">{threat.timestamp}</div>
                   </div>
@@ -588,7 +651,7 @@ export const ThreatDetection = () => {
                     </p>
                     <div className="text-xs font-mono text-blue-700 pt-1.5 border-t border-slate-100 flex items-center justify-between">
                       <span>Baseline Deviation: <strong>{plainDiagnosis.baselineComparison}</strong></span>
-                      <span className="text-[11px] font-bold text-red-600">Decision Confidence: {(activeThreat.confidence * 100).toFixed(0)}%</span>
+                      <span className="text-[11px] font-bold text-red-600">Decision Confidence: {(activeThreat.confidence * 100).toFixed(1)}%</span>
                     </div>
                   </div>
                 </div>

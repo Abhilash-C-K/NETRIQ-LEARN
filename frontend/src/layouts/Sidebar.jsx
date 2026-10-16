@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import api from '../services/api';
 import {
   LayoutDashboard,
   Activity,
   AlertTriangle,
+  Network,
   Monitor,
   ShieldAlert,
   FileText,
@@ -13,6 +15,36 @@ import {
 export const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [systemHealth, setSystemHealth] = useState({
+    status: 'healthy',
+    components: { database: 'online', model_manager: 'online', live_monitor: 'running' },
+  });
+  const [lastUpdated, setLastUpdated] = useState('Just now');
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchHealth = async () => {
+      try {
+        const res = await api.get('/health');
+        if (isMounted && res.data) {
+          setSystemHealth(res.data);
+          setLastUpdated(new Date().toLocaleTimeString());
+        }
+      } catch (err) {
+        if (isMounted) {
+          setSystemHealth((prev) => ({ ...prev, status: 'degraded' }));
+        }
+      }
+    };
+
+    fetchHealth();
+    const interval = setInterval(fetchHealth, 10000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const navItems = [
     {
@@ -24,7 +56,6 @@ export const Sidebar = () => {
     {
       id: 'live-traffic',
       path: '/traffic-layer1',
-      aliases: ['/monitoring'],
       label: 'Live Traffic',
       icon: Activity,
     },
@@ -36,9 +67,16 @@ export const Sidebar = () => {
       icon: AlertTriangle,
     },
     {
-      id: 'system-status',
+      id: 'internal-network',
       path: '/network-layer2',
-      aliases: ['/analytics', '/internal-network'],
+      aliases: ['/internal-network'],
+      label: 'Internal Network',
+      icon: Network,
+    },
+    {
+      id: 'system-status',
+      path: '/monitoring',
+      aliases: ['/analytics'],
       label: 'System Status',
       icon: Monitor,
     },
@@ -209,19 +247,31 @@ export const Sidebar = () => {
         </div>
       </div>
 
-      {/* Bottom Status Card matching screenshot */}
+      {/* Bottom Status Card - Connected to live backend health */}
       <div className="p-4 relative z-10">
         <div className="bg-[#05235f]/80 backdrop-blur border border-[#0d3b8f] rounded-2xl p-4 shadow-lg">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-sm shadow-emerald-400/50 animate-pulse" />
-            <span className="text-xs font-semibold text-white">System Online</span>
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                systemHealth.status === 'healthy'
+                  ? 'bg-[#10b981] shadow-emerald-400/50'
+                  : 'bg-[#f59e0b] shadow-amber-400/50'
+              } shadow-sm animate-pulse`}
+            />
+            <span className="text-xs font-semibold text-white">
+              {systemHealth.status === 'healthy' ? 'System Online' : 'System Degraded'}
+            </span>
           </div>
-          <p className="text-[11px] text-slate-300 mt-1">All systems operational</p>
+          <p className="text-[11px] text-slate-300 mt-1">
+            {systemHealth.components?.live_monitor === 'running'
+              ? 'NIDS sniffer actively capturing'
+              : 'All core services operational'}
+          </p>
         </div>
 
         <div className="mt-3 px-1 text-[11px] text-slate-400">
           <div className="text-slate-400 text-[10px]">Last Updated</div>
-          <div className="text-slate-300 font-medium">Oct 1, 2026 10:24 AM</div>
+          <div className="text-slate-300 font-medium">{lastUpdated}</div>
         </div>
       </div>
     </aside>

@@ -65,14 +65,42 @@ export const Monitoring = () => {
 
     const unsub1 = subscribe('live_verdict', handleVerdict);
     const unsub2 = subscribe('threat_alert', handleVerdict);
-    const unsub3 = subscribe('sniffer_status', handleStatus);
+    const unsub3 = subscribe('monitor_status', handleStatus);
+    const unsub4 = subscribe('sniffer_status', handleStatus);
 
     return () => {
       unsub1();
       unsub2();
       unsub3();
+      unsub4();
     };
   }, [subscribe]);
+
+  const handleStart = async () => {
+    try {
+      setIsLoading(true);
+      await monitoringService.start();
+      await fetchStatus();
+    } catch (err) {
+      console.error('Failed to start sniffer:', err);
+      setError('Failed to start packet capture engine.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStop = async () => {
+    try {
+      setIsLoading(true);
+      await monitoringService.stop();
+      await fetchStatus();
+    } catch (err) {
+      console.error('Failed to stop sniffer:', err);
+      setError('Failed to stop packet capture engine.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSimulateThreat = async () => {
     try {
@@ -88,7 +116,7 @@ export const Monitoring = () => {
         severity: data.risk_level?.toUpperCase() || (data.verdict ? 'HIGH' : 'LOW'),
         action: data.action?.toUpperCase() || (data.verdict ? 'QUARANTINE' : 'NOTIFY'),
         verdict: data.verdict,
-        confidence: data.confidence || 0.96,
+        confidence: typeof data.confidence === 'number' ? (data.confidence > 1 ? +(data.confidence / 100).toFixed(4) : data.confidence) : 0.96,
         timestamp: new Date().toISOString(),
         reason: data.reason,
       };
@@ -99,7 +127,7 @@ export const Monitoring = () => {
   };
 
   const isRunning = status?.is_running ?? false;
-  const metrics = status?.metrics || {};
+  const metrics = status?.operational_metrics || status?.metrics || {};
 
   const terminalLogs = feed.map(
     (item) =>
@@ -111,7 +139,8 @@ export const Monitoring = () => {
       {/* 1. Sniffer Control & Statistics (Hierarchy: Capture status -> Statistics) */}
       <SnifferControlPanel
         status={status}
-        onStatusChange={setStatus}
+        onStart={handleStart}
+        onStop={handleStop}
         isLoading={isLoading}
       />
 

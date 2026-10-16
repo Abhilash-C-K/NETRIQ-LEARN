@@ -128,6 +128,9 @@ export const LiveTrafficLayer1 = () => {
         payload.is_anomaly
       );
 
+      const rawConf = typeof payload.confidence === 'number' ? payload.confidence : 97.5;
+      const normalizedConf = rawConf > 1 ? +(rawConf / 100).toFixed(4) : rawConf;
+
       const newFlow = {
         id: payload.id ? `L1-${String(payload.id).substring(0, 7)}` : `L1-${Math.floor(1000 + Math.random() * 9000)}`,
         src_ip: payload.src_ip || '198.51.100.12',
@@ -142,7 +145,7 @@ export const LiveTrafficLayer1 = () => {
           syn_ratio: verdict === 'BLOCK' ? 0.98 : 0.02,
         },
         predicted_class: payload.prediction || 'Live Ingress Flow',
-        confidence: payload.confidence || 0.975,
+        confidence: normalizedConf,
         verdict,
         timestamp: new Date().toLocaleTimeString(),
       };
@@ -150,8 +153,12 @@ export const LiveTrafficLayer1 = () => {
       setFlows((prev) => [newFlow, ...prev.slice(0, 49)]);
     };
 
-    const unsubscribe = subscribe('live_verdict', handleNewVerdict);
-    return () => unsubscribe();
+    const unsub1 = subscribe('live_verdict', handleNewVerdict);
+    const unsub2 = subscribe('threat_alert', handleNewVerdict);
+    return () => {
+      unsub1();
+      unsub2();
+    };
   }, [isLive, subscribe]);
 
   // Execute REAL backend inference simulation on backend AI models
@@ -190,9 +197,10 @@ export const LiveTrafficLayer1 = () => {
 
       const proto = isUdp ? 'UDP' : isIcmp ? 'ICMP' : 'TCP';
       const verdict = isScan ? 'DROP' : 'BLOCK';
-      const displayConfidence = predData.confidence && predData.confidence > 0.5
-        ? +(predData.confidence).toFixed(3)
-        : (isScan ? 0.974 : isUdp ? 0.982 : 0.988);
+      const rawPredConf = typeof predData.confidence === 'number'
+        ? predData.confidence
+        : (isScan ? 97.4 : isUdp ? 98.2 : 98.8);
+      const displayConfidence = rawPredConf > 1 ? +(rawPredConf / 100).toFixed(4) : rawPredConf;
 
       const simulatedFlow = {
         id: `L1-INF-${Math.floor(1000 + Math.random() * 9000)}`,

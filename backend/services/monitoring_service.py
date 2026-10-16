@@ -34,6 +34,15 @@ class MonitoringService:
         
         interface = getattr(live_monitor, "interface", None)
         
+        flow_builder = getattr(live_monitor, "flow_builder", None)
+        active_flows = len(flow_builder.active_flows) if flow_builder and hasattr(flow_builder, "active_flows") else 0
+
+        op_metrics = {
+            "queue_drop_count": queue_drop_count,
+            "non_ip_count": non_ip_count,
+            "malformed_ip_count": malformed_ip_count
+        }
+
         return {
             "is_running": self._is_running,
             "mode": "active" if self._is_running else "stopped",
@@ -41,12 +50,9 @@ class MonitoringService:
             "uptime_seconds": round(uptime, 2),
             "packets_captured": getattr(sniffer, "packets_captured", 0) if hasattr(sniffer, "packets_captured") else 0,
             "flows_processed": getattr(live_monitor, "flows_processed", 0) if hasattr(live_monitor, "flows_processed") else 0,
-            "active_flows": 0,
-            "operational_metrics": {
-                "queue_drop_count": queue_drop_count,
-                "non_ip_count": non_ip_count,
-                "malformed_ip_count": malformed_ip_count
-            }
+            "active_flows": active_flows,
+            "operational_metrics": op_metrics,
+            "metrics": op_metrics
         }
 
     async def start(self, role: Role) -> bool:

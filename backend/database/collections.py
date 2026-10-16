@@ -98,6 +98,17 @@ class ThreatRepository(BaseRepository):
     def __init__(self):
         super().__init__("threats")
 
+    def _prepare_doc(self, doc: dict) -> dict:
+        clean = super()._prepare_doc(doc)
+        # Ensure redundant / bloat attributes are never persisted to the high-volume collection
+        clean.pop("risk_category", None)
+        clean.pop("action_taken", None)
+        clean.pop("raw_data", None)
+        clean.pop("source", None)
+        clean.pop("model_used", None)
+        clean.pop("reason", None)
+        return clean
+
     async def get_dashboard_stats(self, time_range_start: float, time_range_end: float, severity: Optional[str] = None) -> List[dict]:
         """
         Specialized method leveraging the compound index for the dashboard.

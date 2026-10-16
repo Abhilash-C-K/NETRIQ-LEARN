@@ -21,8 +21,7 @@ class ResponseLogger:
             "action_taken": action.value,
             "target_ip": target_ip,
             "outcome": outcome,
-            "success": success,
-            "context": context or {}
+            "success": success
         }
         
         try:

@@ -249,23 +249,11 @@ async def run_injection():
                 "protocol": f["protocol"],
                 "sni": f["sni"],
                 "severity": f["severity"],
-                "risk_category": f["severity"].lower(),
                 "action": f["action"],
-                "action_taken": f["action"],
                 "prediction": f["prediction"],
                 "confidence": f["confidence"],
                 "is_anomaly": f["is_anomaly"],
-                "is_internal": f["is_internal"],
-                "reason": f["reason"],
-                "model_used": "XGBoostFusionEnsemble",
-                "source": "sandbox_generator",
-                "raw_data": {
-                    "synthetic": True,
-                    "simulated_latency_ms": 1.42,
-                    "packet_count": 84,
-                    "byte_count": 42180,
-                    "device_role": data["role"]
-                }
+                "is_internal": f["is_internal"]
             }
             await threats_col.insert_one(doc)
             total_inserted += 1
@@ -276,7 +264,7 @@ async def run_injection():
     print("[Sandbox] Ensuring test incidents exist with affected assets...")
     incidents_to_seed = [
         {
-            "id": "inc-sandbox-105",
+            "incident_code": "inc-sandbox-105",
             "status": "active",
             "severity": "CRITICAL",
             "description": "Critical CobaltStrike C2 Beaconing and Exfiltration attempt detected from engineering workstation.",
@@ -288,7 +276,7 @@ async def run_injection():
             "notes": "Automated Layer 2 SDN quarantine triggered. Pending SOC forensic analysis."
         },
         {
-            "id": "inc-sandbox-50",
+            "incident_code": "inc-sandbox-50",
             "status": "investigating",
             "severity": "HIGH",
             "description": "Lateral reconnaissance and SSH credential stuffing targeting internal subnet services.",
@@ -303,7 +291,7 @@ async def run_injection():
 
     for inc in incidents_to_seed:
         await incidents_col.update_one(
-            {"id": inc["id"]},
+            {"incident_code": inc["incident_code"]},
             {"$set": inc},
             upsert=True
         )

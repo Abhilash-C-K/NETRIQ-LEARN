@@ -254,7 +254,7 @@ class PacketSniffer:
                 proto_name = "ICMP"
                 header_len = 8
 
-            pkt_dict = {
+            pkt_dict: Dict[str, Any] = {
                 'src_ip': src_ip,
                 'dst_ip': dst_ip,
                 'src_port': src_port,
@@ -276,7 +276,7 @@ class PacketSniffer:
                     pass
 
             # Attempt TLS SNI metadata extraction for TCP traffic on monitored HTTPS ports
-            extracted_sni = None
+            extracted_sni: Optional[str] = None
             if proto_name == "TCP":
                 import backend.config.config as config
                 monitored_ports = getattr(config, "SNI_MONITORED_PORTS", [443, 8443])
@@ -286,7 +286,8 @@ class PacketSniffer:
                         try:
                             from backend.services.dns_resolver import dns_resolver
                             target_ip = dst_ip if dst_port in monitored_ports else src_ip
-                            dns_resolver.register_mapping(target_ip, extracted_sni)
+                            if not dns_resolver.is_private_ip(target_ip):
+                                dns_resolver.register_mapping(target_ip, extracted_sni)
                         except Exception:
                             pass
                 elif src_port in (80, 8080) or dst_port in (80, 8080):
@@ -300,13 +301,18 @@ class PacketSniffer:
                                 http_host = host_match.group(1).decode("utf-8", errors="ignore").strip()
                                 extracted_sni = http_host
                                 from backend.services.dns_resolver import dns_resolver
-                                dns_resolver.register_mapping(dst_ip, http_host)
+                                if not dns_resolver.is_private_ip(dst_ip):
+                                    dns_resolver.register_mapping(dst_ip, http_host)
                     except Exception:
                         pass
 
             try:
                 from backend.services.dns_resolver import dns_resolver
-                pkt_dict['sni'] = extracted_sni or dns_resolver.get_domain(dst_ip) or dns_resolver.get_domain(src_ip)
+                pkt_dict['sni'] = (
+                    extracted_sni
+                    or (dns_resolver.get_domain(dst_ip) if not dns_resolver.is_private_ip(dst_ip) else None)
+                    or (dns_resolver.get_domain(src_ip) if not dns_resolver.is_private_ip(src_ip) else None)
+                )
             except Exception:
                 pkt_dict['sni'] = extracted_sni
 

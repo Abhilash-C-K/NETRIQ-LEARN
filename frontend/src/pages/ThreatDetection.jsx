@@ -21,6 +21,7 @@ import {
   FileCheck,
   Zap,
   RotateCcw,
+  Globe,
 } from 'lucide-react';
 import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
@@ -143,6 +144,7 @@ export const ThreatDetection = () => {
           severity: sev,
           src_ip: thr.src_ip || 'Unknown Source',
           dst_ip: thr.dst_ip || 'Gateway',
+          sni: thr.sni || thr.domain || null,
           timestamp: thr.timestamp ? new Date(thr.timestamp * (thr.timestamp < 10000000000 ? 1000 : 1)).toLocaleString() : 'Recent',
           prediction: thr.prediction || 'Network Anomaly',
           confidence: conf,
@@ -193,6 +195,7 @@ export const ThreatDetection = () => {
         severity: sev,
         src_ip: payload.src_ip || 'Unknown Source',
         dst_ip: payload.dst_ip || 'Gateway',
+        sni: payload.sni || payload.domain || null,
         timestamp: new Date().toLocaleTimeString(),
         prediction: payload.prediction || 'Network Anomaly',
         confidence: conf,
@@ -538,6 +541,12 @@ export const ThreatDetection = () => {
                       <span>Src: {threat.src_ip.split(' ')[0]}</span>
                       <span className="font-semibold text-red-600">Conf: {(threat.confidence * 100).toFixed(1)}%</span>
                     </div>
+                    {threat.sni && (
+                      <div className="text-[11px] font-sans font-bold text-blue-700 mt-1 flex items-center gap-1">
+                        <Globe className="w-3 h-3 text-blue-500 shrink-0" />
+                        <span className="truncate">{threat.sni}</span>
+                      </div>
+                    )}
                     <div className="text-[10px] text-[#8ca0b8] mt-1">{threat.timestamp}</div>
                   </div>
                 );
@@ -606,7 +615,17 @@ export const ThreatDetection = () => {
                 </div>
                 <div>
                   <span className="text-[#687d9a] text-[10px] block font-semibold">Target Destination</span>
-                  <span className="font-mono font-bold text-[#0a1c3d]">{activeThreat.dst_ip}</span>
+                  {activeThreat.sni ? (
+                    <div>
+                      <span className="font-sans font-bold text-blue-700 flex items-center gap-1">
+                        <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                        <span className="truncate max-w-[180px]">{activeThreat.sni}</span>
+                      </span>
+                      <span className="font-mono text-[10px] text-[#687d9a]">{activeThreat.dst_ip}</span>
+                    </div>
+                  ) : (
+                    <span className="font-mono font-bold text-[#0a1c3d]">{activeThreat.dst_ip}</span>
+                  )}
                 </div>
                 <div>
                   <span className="text-[#687d9a] text-[10px] block font-semibold">Classifier Model</span>

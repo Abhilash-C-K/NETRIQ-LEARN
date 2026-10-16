@@ -169,7 +169,10 @@ class FlowBuilder:
         elif not flow.sni:
             try:
                 from backend.services.dns_resolver import dns_resolver
-                flow.sni = dns_resolver.get_domain(flow.dst_ip) or dns_resolver.get_domain(flow.src_ip)
+                flow.sni = (
+                    (dns_resolver.get_domain(flow.dst_ip) if not dns_resolver.is_private_ip(flow.dst_ip) else None)
+                    or (dns_resolver.get_domain(flow.src_ip) if not dns_resolver.is_private_ip(flow.src_ip) else None)
+                )
             except Exception:
                 pass
 

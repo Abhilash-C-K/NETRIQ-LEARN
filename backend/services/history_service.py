@@ -34,7 +34,10 @@ class HistoryService:
                 from backend.services.dns_resolver import dns_resolver
                 for doc in docs:
                     if not doc.get("sni"):
-                        resolved = dns_resolver.get_domain(doc.get("dst_ip")) or dns_resolver.get_domain(doc.get("src_ip"))
+                        resolved = (
+                            (dns_resolver.get_domain(doc.get("dst_ip")) if not dns_resolver.is_private_ip(doc.get("dst_ip")) else None)
+                            or (dns_resolver.get_domain(doc.get("src_ip")) if not dns_resolver.is_private_ip(doc.get("src_ip")) else None)
+                        )
                         if resolved:
                             doc["sni"] = resolved
                             doc["domain"] = resolved

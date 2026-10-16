@@ -108,10 +108,15 @@ export const ConnectionTable = ({ entries, onSelectDevice }) => {
                       </td>
                       <td className="py-2.5 px-4 font-mono text-[11px]">
                         {sni ? (
-                          <span className="flex items-center gap-1 text-[#7895B2] font-medium">
-                            <Globe className="w-3 h-3 text-[#7895B2]" />
-                            {sni}
-                          </span>
+                          <div>
+                            <span className="flex items-center gap-1 text-[#7895B2] font-semibold">
+                              <Globe className="w-3 h-3 text-[#7895B2]" />
+                              <span className="truncate max-w-[180px]" title={sni}>{sni}</span>
+                            </span>
+                            <span className="text-[10px] text-[#687883] block">
+                              {dstIp}:{dstPort}
+                            </span>
+                          </div>
                         ) : (
                           <span className="text-[#7895B2]">
                             {dstIp}:{dstPort}

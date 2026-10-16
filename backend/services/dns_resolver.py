@@ -23,12 +23,30 @@ class DynamicDnsResolver:
         self._pending_lookups: Set[str] = set()
         self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="dns_resolver_worker")
 
+    @staticmethod
+    def is_private_ip(ip: Optional[str]) -> bool:
+        if not ip:
+            return True
+        try:
+            import ipaddress
+            return ipaddress.ip_address(ip).is_private
+        except ValueError:
+            return False
+
     def _clean_domain(self, raw_domain: Optional[str]) -> Optional[str]:
         if not raw_domain:
             return None
         domain = raw_domain.strip().rstrip(".").lower()
+        # Filter out local machine name (e.g. "shiva")
+        try:
+            local_host = socket.gethostname().lower()
+            if domain == local_host or domain.startswith(local_host + "."):
+                return None
+        except Exception:
+            pass
+
         # Filter out invalid, internal reverse arpa, or local mDNS suffixes
-        if not domain or domain.endswith(".in-addr.arpa") or domain.endswith(".ip6.arpa"):
+        if not domain or domain.endswith(".in-addr.arpa") or domain.endswith(".ip6.arpa") or domain.endswith(".local"):
             return None
         # Filter out if it's just an IP address itself
         try:
@@ -126,8 +144,8 @@ class DynamicDnsResolver:
         if not ip:
             return None
         
-        # Don't resolve loopback or unassigned
-        if ip in ("127.0.0.1", "::1", "0.0.0.0", "unknown"):
+        # Don't resolve loopback, unassigned, or private LAN IPs
+        if ip in ("127.0.0.1", "::1", "0.0.0.0", "unknown") or self.is_private_ip(ip):
             return None
 
         with self._lock:
@@ -147,23 +165,24 @@ class DynamicDnsResolver:
     def resolve_flow_domain(self, flow: Any, src_ip: Optional[str] = None, dst_ip: Optional[str] = None) -> Optional[str]:
         """
         Resolves domain/hostname for a flow using SNI, cached DNS, or reverse DNS.
+        Guarantees that private LAN IPs / local hostname (Shiva) are NEVER returned.
         """
         sni = getattr(flow, "sni", None)
         if sni:
             clean = self._clean_domain(sni)
             if clean:
-                if dst_ip:
+                if dst_ip and not self.is_private_ip(dst_ip):
                     self.register_mapping(dst_ip, clean)
                 return clean
 
-        # Check destination IP first (most flows are client -> server)
-        if dst_ip:
+        # Check destination IP first if external
+        if dst_ip and not self.is_private_ip(dst_ip):
             dom = self.get_domain(dst_ip)
             if dom:
                 return dom
 
-        # Check source IP next (server -> client response)
-        if src_ip:
+        # Check source IP next if external
+        if src_ip and not self.is_private_ip(src_ip):
             dom = self.get_domain(src_ip)
             if dom:
                 return dom

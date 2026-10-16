@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ArrowDown,
   Search,
+  Globe,
 } from 'lucide-react';
 
 export const History = () => {
@@ -282,13 +283,23 @@ export const History = () => {
                   </td>
 
                   {/* Destination: sage/steel (#7895B2 / #cc5500) */}
-                  <td className="py-3 px-4 font-mono text-[11px] whitespace-nowrap">
-                    <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
-                    <span className="text-[#687883]">{log.dst_port ? `:${log.dst_port}` : ''}</span>
-                    {log.sni && (
-                      <span className="block text-[10px] text-[#cc5500] font-sans">
-                        {log.sni}
-                      </span>
+                  <td className="py-3 px-4 text-[11px] whitespace-nowrap">
+                    {log.sni ? (
+                      <div>
+                        <div className="flex items-center gap-1 font-sans font-bold text-blue-700">
+                          <Globe className="w-3 h-3 text-blue-500 shrink-0" />
+                          <span className="truncate max-w-[200px]" title={log.sni}>{log.sni}</span>
+                        </div>
+                        <div className="font-mono text-[10px] text-[#687883] mt-0.5">
+                          <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
+                          <span>{log.dst_port ? `:${log.dst_port}` : ''}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="font-mono">
+                        <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
+                        <span className="text-[#687883]">{log.dst_port ? `:${log.dst_port}` : ''}</span>
+                      </div>
                     )}
                   </td>
 

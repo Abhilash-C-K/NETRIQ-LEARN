@@ -20,6 +20,14 @@ class MonitoringService:
         self._last_subnet_sweep: float = 0.0
         self._sweep_in_progress: bool = False
         self._sweep_lock = threading.Lock()
+        
+        # Prime active subnet cache immediately in background thread
+        try:
+            h_ip, gw_ip = self._get_network_endpoints()
+            self._sweep_in_progress = True
+            threading.Thread(target=self._run_subnet_sweep, args=(h_ip, gw_ip), daemon=True).start()
+        except Exception:
+            pass
 
     @property
     def lock(self) -> asyncio.Lock:
@@ -84,10 +92,41 @@ class MonitoringService:
                 logger.error(f"Failed to start live monitor: {e}", exc_info=True)
                 raise
 
+    def _get_network_endpoints(self) -> tuple[str, Optional[str]]:
+        """Discovers real host IP and default gateway IP without hardcoded defaults."""
+        import socket
+        import subprocess
+        import re
+
+        host_ip = "127.0.0.1"
+        gateway_ip = None
+
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            host_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            pass
+
+        try:
+            out = subprocess.check_output(["route", "print", "0.0.0.0"], text=True)
+            m = re.search(r"0\.0\.0\.0\s+0\.0\.0\.0\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", out)
+            if m:
+                gateway_ip, route_iface = m.groups()
+                if not host_ip or host_ip == "127.0.0.1":
+                    host_ip = route_iface
+        except Exception as e:
+            logger.debug(f"Could not determine gateway via route print: {e}")
+
+        return host_ip, gateway_ip
+
     def _run_subnet_sweep(self, host_ip: str, gateway_ip: Optional[str]) -> None:
         """
         Actively probes the entire local Wi-Fi subnet in parallel using Win32 SendARP.
         Discovers all connected physical systems, smartphones, and routers on the LAN.
+        Queries the Wi-Fi router's DNS server directly for exact registered hostnames.
+        Prunes disconnected devices dynamically.
         """
         import ctypes
         import struct
@@ -118,27 +157,66 @@ class MonitoringService:
             base = '.'.join(base_parts) + '.'
             all_ips = [f"{base}{i}" for i in range(1, 255)]
 
-            with ThreadPoolExecutor(max_workers=128) as pool:
-                results = list(pool.map(win_send_arp, all_ips))
+            with ThreadPoolExecutor(max_workers=96) as pool:
+                arp_results = [r for r in pool.map(win_send_arp, all_ips) if r[1]]
 
-            from backend.services.dns_resolver import dns_resolver
+            import dns.resolver, dns.reversename
+            router_res = dns.resolver.Resolver()
+            if gateway_ip:
+                router_res.nameservers = [gateway_ip]
+            router_res.timeout = 0.4
+            router_res.lifetime = 0.4
 
             new_neighbors = {}
-            for ip, mac in results:
+            for ip, mac in arp_results:
                 if not mac:
                     continue
                 if ip in (host_ip, gateway_ip):
                     continue
 
-                resolved_name = dns_resolver.resolve_ip_sync(ip, timeout=0.1)
+                hostname = None
+                # Query local gateway DNS for real device hostname (Samsung, Tapo, Laptop, etc.)
+                try:
+                    rev = dns.reversename.from_address(ip)
+                    ans = router_res.resolve(rev, "PTR")
+                    if ans:
+                        raw = str(ans[0]).rstrip(".")
+                        for suff in [".domain.name", ".lan", ".home", ".local", ".corp"]:
+                            if raw.lower().endswith(suff):
+                                raw = raw[:-len(suff)]
+                        clean_name = raw.replace("-", " ").strip()
+                        if clean_name and not clean_name.endswith(".in-addr.arpa"):
+                            hostname = clean_name
+                except Exception:
+                    pass
+
+                # If no DNS hostname, check if randomized MAC (smartphones) or workstation
                 last_octet = ip.split('.')[-1]
-                hostname = resolved_name or f"Device-{last_octet}"
+                is_random_mac = False
+                try:
+                    is_random_mac = (int(mac.split(':')[0], 16) & 2) != 0
+                except Exception:
+                    pass
+
+                if not hostname:
+                    if is_random_mac:
+                        hostname = f"Smartphone ({last_octet})"
+                    else:
+                        hostname = f"Workstation ({last_octet})"
+
+                # Determine device type
+                dev_type = "workstation"
+                h_lower = hostname.lower()
+                if "router" in h_lower or "gateway" in h_lower or "gw" in h_lower:
+                    dev_type = "router"
+                elif "plug" in h_lower or "p110" in h_lower or "iot" in h_lower or "cam" in h_lower or "smart" in h_lower:
+                    dev_type = "server"
 
                 new_neighbors[ip] = {
                     "ip": ip,
                     "hostname": hostname,
-                    "label": f"{resolved_name} ({ip})" if resolved_name else f"Connected Device ({ip})",
-                    "type": "workstation",
+                    "label": f"{hostname} ({ip})",
+                    "type": dev_type,
                     "is_host": False,
                     "is_gateway": False,
                     "mac": mac,
@@ -146,51 +224,35 @@ class MonitoringService:
                 }
 
             with self._sweep_lock:
-                self._active_neighbors.update(new_neighbors)
+                # Replace dict completely to prune disconnected systems
+                self._active_neighbors = new_neighbors
                 self._last_subnet_sweep = time.time()
                 self._sweep_in_progress = False
+                logger.info(f"Subnet sweep completed: {len(new_neighbors)} verified active devices discovered on {base}0/24.")
 
         except Exception as e:
-            logger.debug(f"Active subnet sweep encountered error: {e}")
+            logger.warning(f"Active subnet sweep encountered error: {e}")
             with self._sweep_lock:
                 self._sweep_in_progress = False
 
     def get_local_topology(self) -> Dict[str, Any]:
         """
         Discovers real host IP, default gateway, and all active devices on the local Wi-Fi network.
-        Combines immediate OS ARP table with non-blocking active subnet sweeps.
+        Filters strictly by active subnet to eliminate phantom IPs from WSL/Hyper-V/VirtualBox.
+        Uses verified active neighbor cache with background refreshing.
         """
         import socket
         import subprocess
         import re
 
-        host_ip = "127.0.0.1"
-        gateway_ip = None
+        host_ip, gateway_ip = self._get_network_endpoints()
+        base_prefix = '.'.join(host_ip.split('.')[:3]) + '.'
 
-        # 1. Discover host IP via active socket
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            host_ip = s.getsockname()[0]
-            s.close()
-        except Exception:
-            pass
-
-        # 2. Discover default gateway via route print
-        try:
-            out = subprocess.check_output(["route", "print", "0.0.0.0"], text=True)
-            m = re.search(r"0\.0\.0\.0\s+0\.0\.0\.0\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", out)
-            if m:
-                gateway_ip, route_iface = m.groups()
-                if not host_ip or host_ip == "127.0.0.1":
-                    host_ip = route_iface
-        except Exception as e:
-            logger.debug(f"Could not determine gateway via route print: {e}")
-
-        # Trigger background active subnet sweep if not recently run
+        # Trigger background active subnet sweep if cache is older than 25s or empty
         now = time.time()
         with self._sweep_lock:
-            if (now - self._last_subnet_sweep > 25) and not self._sweep_in_progress:
+            needs_sweep = (now - self._last_subnet_sweep > 25) or (len(self._active_neighbors) == 0)
+            if needs_sweep and not self._sweep_in_progress:
                 self._sweep_in_progress = True
                 threading.Thread(target=self._run_subnet_sweep, args=(host_ip, gateway_ip), daemon=True).start()
 
@@ -201,7 +263,7 @@ class MonitoringService:
         except Exception:
             pass
 
-        # Add Host Device with resolved system name
+        # 1. Add Host Device with resolved system name
         devices.append({
             "ip": host_ip,
             "hostname": hostname,
@@ -213,8 +275,17 @@ class MonitoringService:
             "status": "NORMAL",
         })
 
-        # Add Gateway if known
+        # 2. Add Gateway if known
+        gateway_mac = "Default Gateway"
         if gateway_ip and gateway_ip != host_ip:
+            try:
+                arp_out = subprocess.check_output(["arp", "-a", gateway_ip], text=True)
+                m = re.search(r"([0-9a-fA-F-]{17})", arp_out)
+                if m:
+                    gateway_mac = m.group(1).replace("-", ":").upper()
+            except Exception:
+                pass
+
             devices.append({
                 "ip": gateway_ip,
                 "hostname": "Wi-Fi Router Gateway",
@@ -222,7 +293,7 @@ class MonitoringService:
                 "type": "router",
                 "is_host": False,
                 "is_gateway": True,
-                "mac": "Default Gateway",
+                "mac": gateway_mac,
                 "status": "NORMAL",
             })
 
@@ -230,58 +301,119 @@ class MonitoringService:
         if gateway_ip:
             seen_ips.add(gateway_ip)
 
-        # 3. Read immediate OS ARP neighbors
-        try:
-            arp_out = subprocess.check_output(["arp", "-a"], text=True)
-            for line in arp_out.splitlines():
-                m = re.search(r"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9a-fA-F-]+)\s+(\w+)", line)
-                if m:
-                    ip, mac, typ = m.groups()
-                    if ip in seen_ips:
-                        if ip == gateway_ip:
-                            for d in devices:
-                                if d["ip"] == gateway_ip:
-                                    d["mac"] = mac.replace("-", ":").upper()
-                        continue
-                    if ip.startswith("224.") or ip.startswith("239.") or ip.endswith(".255") or ip.endswith(".0"):
-                        continue
-
-                    seen_ips.add(ip)
-                    last_octet = ip.split('.')[-1]
-                    device_hostname = f"Device-{last_octet}"
-                    devices.append({
-                        "ip": ip,
-                        "hostname": device_hostname,
-                        "label": f"Connected Device ({ip})",
-                        "type": "workstation",
-                        "is_host": False,
-                        "is_gateway": False,
-                        "mac": mac.replace("-", ":").upper(),
-                        "status": "NORMAL",
-                    })
-        except Exception as e:
-            logger.debug(f"Could not query ARP table: {e}")
-
-        # 4. Merge all active devices discovered by subnet sweep
+        # 3. Merge verified active neighbors from subnet sweep
         with self._sweep_lock:
-            for ip, dev_info in self._active_neighbors.items():
-                if ip not in seen_ips:
-                    seen_ips.add(ip)
-                    devices.append(dev_info)
-                else:
-                    # Update MAC or hostname if richer info found
-                    for d in devices:
-                        if d["ip"] == ip:
-                            if dev_info.get("mac") and d["mac"] in ("00:00:00:00:00:00", "Default Gateway", "Local Host Interface"):
-                                d["mac"] = dev_info["mac"]
-                            if dev_info.get("hostname") and not d["hostname"].startswith("Device-"):
-                                d["hostname"] = dev_info["hostname"]
-                                d["label"] = dev_info["label"]
+            cached_neighbors = dict(self._active_neighbors)
+
+        for ip, dev_info in cached_neighbors.items():
+            if ip not in seen_ips and ip.startswith(base_prefix):
+                seen_ips.add(ip)
+                devices.append(dev_info)
+
+        # 4. If cache was empty, supplement with immediate OS ARP table filtered STRICTLY to active subnet prefix
+        if len(devices) <= 2:
+            try:
+                import ctypes, struct
+                def fast_arp_check(ip_str):
+                    try:
+                        dest_ip = socket.inet_aton(ip_str)
+                        dest_ip_le = struct.unpack('<I', dest_ip)[0]
+                        mac_buf = (ctypes.c_byte * 6)()
+                        mac_len = ctypes.c_ulong(6)
+                        res = ctypes.windll.iphlpapi.SendARP(ctypes.c_ulong(dest_ip_le), ctypes.c_ulong(0), ctypes.byref(mac_buf), ctypes.byref(mac_len))
+                        if res == 0:
+                            return ':'.join(f'{b & 0xff:02X}' for b in mac_buf)
+                    except Exception:
+                        pass
+                    return None
+
+                arp_out = subprocess.check_output(["arp", "-a"], text=True)
+                for line in arp_out.splitlines():
+                    m = re.search(r"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9a-fA-F-]+)\s+(\w+)", line)
+                    if m:
+                        ip, mac_raw, typ = m.groups()
+                        # STRICT FILTER: must be on active Wi-Fi subnet!
+                        if not ip.startswith(base_prefix):
+                            continue
+                        if ip in seen_ips:
+                            continue
+                        if ip.endswith(".255") or ip.endswith(".0"):
+                            continue
+
+                        real_mac = fast_arp_check(ip)
+                        if not real_mac:
+                            continue
+
+                        seen_ips.add(ip)
+                        formatted_mac = real_mac or mac_raw.replace("-", ":").upper()
+                        is_random = False
+                        try:
+                            is_random = (int(formatted_mac.split(':')[0], 16) & 2) != 0
+                        except Exception:
+                            pass
+
+                        dev_name = None
+                        try:
+                            import dns.resolver, dns.reversename
+                            router_res = dns.resolver.Resolver()
+                            if gateway_ip:
+                                router_res.nameservers = [gateway_ip]
+                            router_res.timeout = 0.3
+                            router_res.lifetime = 0.3
+                            rev = dns.reversename.from_address(ip)
+                            ans = router_res.resolve(rev, "PTR")
+                            if ans:
+                                raw = str(ans[0]).rstrip(".")
+                                for suff in [".domain.name", ".lan", ".home", ".local", ".corp"]:
+                                    if raw.lower().endswith(suff):
+                                        raw = raw[:-len(suff)]
+                                clean_name = raw.replace("-", " ").strip()
+                                if clean_name and not clean_name.endswith(".in-addr.arpa"):
+                                    dev_name = clean_name
+                        except Exception:
+                            pass
+
+                        last_octet = ip.split('.')[-1]
+                        if not dev_name:
+                            dev_name = f"Smartphone ({last_octet})" if is_random else f"Workstation ({last_octet})"
+
+                        dev_type = "workstation"
+                        h_lower = dev_name.lower()
+                        if "router" in h_lower or "gateway" in h_lower or "gw" in h_lower:
+                            dev_type = "router"
+                        elif "plug" in h_lower or "p110" in h_lower or "iot" in h_lower or "cam" in h_lower or "smart" in h_lower:
+                            dev_type = "server"
+
+                        devices.append({
+                            "ip": ip,
+                            "hostname": dev_name,
+                            "label": f"{dev_name} ({ip})",
+                            "type": dev_type,
+                            "is_host": False,
+                            "is_gateway": False,
+                            "mac": formatted_mac,
+                            "status": "NORMAL",
+                        })
+            except Exception as e:
+                logger.debug(f"Could not query immediate ARP table: {e}")
+
+        # Deterministic sort: Gateway first, Host PC second, then IP numerical order
+        def sort_key(d):
+            if d.get("is_gateway"):
+                return (0, 0)
+            if d.get("is_host"):
+                return (1, 0)
+            try:
+                return (2, int(d["ip"].split(".")[-1]))
+            except Exception:
+                return (2, 999)
+
+        devices.sort(key=sort_key)
 
         return {
             "host_ip": host_ip,
             "gateway_ip": gateway_ip,
-            "subnet": f"{'.'.join(host_ip.split('.')[:3])}.0/24",
+            "subnet": f"{base_prefix}0/24",
             "device_count": len(devices),
             "devices": devices,
         }

@@ -146,9 +146,9 @@ export const InternalNetworkLayer2 = () => {
   const [topologyMeta, setTopologyMeta] = useState(null);
 
   // Load real telemetry devices from Host OS & MongoDB
-  const loadTopologyData = async (mode = viewMode) => {
+  const loadTopologyData = async (mode = viewMode, isSilent = false) => {
     try {
-      setLoading(true);
+      if (!isSilent) setLoading(true);
       const [localTopology, incidents, threats] = await Promise.all([
         monitoringService.getLocalTopology().catch(() => null),
         incidentService.getIncidents(50).catch(() => []),
@@ -162,90 +162,106 @@ export const InternalNetworkLayer2 = () => {
         if (localTopology && Array.isArray(localTopology.devices) && localTopology.devices.length > 0) {
           setTopologyMeta(localTopology);
 
-          const realNodes = localTopology.devices.map((d, idx) => {
-            const matchingThreats = internalThreats.filter((t) => t.src_ip === d.ip || t.dst_ip === d.ip);
-            const isQuar =
-              realIncidents.some(
-                (i) =>
-                  (i.src_ip === d.ip || (Array.isArray(i.affected_assets) && i.affected_assets.includes(d.ip))) &&
-                  (i.response_action === 'quarantine' || String(i.description || '').includes('QUARANTINE'))
-              ) || matchingThreats.some((t) => t.action === 'QUARANTINE');
+          setNodes((prevNodes) => {
+            const prevMap = new Map((prevNodes || []).map((n) => [n.id, n]));
 
-            const hasCritical = matchingThreats.some((t) => t.severity === 'CRITICAL' || t.is_anomaly);
-            const hasWarning = matchingThreats.some((t) => t.severity === 'HIGH' || t.severity === 'MEDIUM');
+            const realNodes = localTopology.devices.map((d, idx) => {
+              const matchingThreats = internalThreats.filter((t) => t.src_ip === d.ip || t.dst_ip === d.ip);
+              const isQuar =
+                realIncidents.some(
+                  (i) =>
+                    (i.src_ip === d.ip || (Array.isArray(i.affected_assets) && i.affected_assets.includes(d.ip))) &&
+                    (i.response_action === 'quarantine' || String(i.description || '').includes('QUARANTINE'))
+                ) || matchingThreats.some((t) => t.action === 'QUARANTINE');
 
-            const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
+              const hasCritical = matchingThreats.some((t) => t.severity === 'CRITICAL' || t.is_anomaly);
+              const hasWarning = matchingThreats.some((t) => t.severity === 'HIGH' || t.severity === 'MEDIUM');
 
-            // Layout: Gateway top-left, Host PC top-right, all discovered subnet devices in a clean responsive grid below
-            let xPos = 480;
-            let yPos = 80;
-            if (d.is_gateway) {
-              xPos = 120;
-              yPos = 80;
-            } else if (!d.is_host) {
-              const peerIdx = idx - (localTopology.devices.some((x) => x.is_gateway && x.is_host) ? 1 : 2);
-              const col = Math.max(0, peerIdx) % 3;
-              const row = Math.floor(Math.max(0, peerIdx) / 3);
-              xPos = 60 + col * 260;
-              yPos = 240 + row * 130;
-            }
+              const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
 
-            const ports = Array.from(
-              new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))
-            ).slice(0, 4);
+              // Layout: Gateway top-left, Host PC top-right, all discovered subnet devices in a clean responsive grid below
+              let xPos = 480;
+              let yPos = 80;
+              if (d.is_gateway) {
+                xPos = 120;
+                yPos = 80;
+              } else if (!d.is_host) {
+                const peerIdx = idx - (localTopology.devices.some((x) => x.is_gateway && x.is_host) ? 1 : 2);
+                const col = Math.max(0, peerIdx) % 3;
+                const row = Math.floor(Math.max(0, peerIdx) / 3);
+                xPos = 60 + col * 260;
+                yPos = 240 + row * 130;
+              }
 
-            const hostname = d.hostname || (d.is_host ? 'Host PC' : d.is_gateway ? 'Wi-Fi Gateway' : `Device-${d.ip.split('.').pop()}`);
-            const friendlyLabel = d.is_host
-              ? `${hostname} (This PC)`
-              : d.is_gateway
-              ? `Wi-Fi Router Gateway`
-              : `${hostname} (${d.ip})`;
+              const nodeId = `dev-${d.ip.replace(/\./g, '-')}`;
+              const existingNode = prevMap.get(nodeId);
+              const position = existingNode ? existingNode.position : { x: xPos, y: yPos };
 
-            return {
-              id: `dev-${d.ip.replace(/\./g, '-')}`,
-              type: 'socDevice',
-              position: { x: xPos, y: yPos },
-              data: {
-                id: `dev-${d.ip.replace(/\./g, '-')}`,
-                label: friendlyLabel,
-                hostname: hostname,
-                ip: d.ip,
-                mac: d.mac || '00:00:00:00:00:00',
-                type: d.type || (d.is_gateway ? 'router' : 'workstation'),
-                vlan: d.is_gateway ? 'Default Gateway / Access Point' : 'Active Local Wi-Fi Subnet',
-                status,
-                riskScore: isQuar ? 98 : hasCritical ? 92 : hasWarning ? 65 : 8,
-                openPorts: ports.length > 0 ? ports : (d.is_host ? [8000, 5173, 27017] : [80, 443, 53]),
-                details: d.is_host
-                  ? `Local machine (${hostname} - ${d.ip}) running NetrIQ IDS/IPS on active Wi-Fi interface.`
-                  : d.is_gateway
-                  ? `Physical Wi-Fi router gateway (${d.ip}). MAC: ${d.mac}.`
-                  : `Physical device detected on the local Wi-Fi subnet via ARP discovery.`,
-                isRealDevice: true,
-              },
-            };
+              const ports = Array.from(
+                new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))
+              ).slice(0, 4);
+
+              const hostname = d.hostname || (d.is_host ? 'Host PC' : d.is_gateway ? 'Wi-Fi Gateway' : `Workstation (${d.ip.split('.').pop()})`);
+              const friendlyLabel = d.is_host
+                ? `${hostname} (This PC)`
+                : d.is_gateway
+                ? `Wi-Fi Router Gateway`
+                : `${hostname} (${d.ip})`;
+
+              return {
+                id: nodeId,
+                type: 'socDevice',
+                position,
+                data: {
+                  id: nodeId,
+                  label: friendlyLabel,
+                  hostname: hostname,
+                  ip: d.ip,
+                  mac: d.mac || '00:00:00:00:00:00',
+                  type: d.type || (d.is_gateway ? 'router' : 'workstation'),
+                  vlan: d.is_gateway ? 'Default Gateway / Access Point' : 'Active Local Wi-Fi Subnet',
+                  status,
+                  riskScore: isQuar ? 98 : hasCritical ? 92 : hasWarning ? 65 : 8,
+                  openPorts: ports.length > 0 ? ports : (d.is_host ? [8000, 5173, 27017] : [80, 443, 53]),
+                  details: d.is_host
+                    ? `Local machine (${hostname} - ${d.ip}) running NetrIQ IDS/IPS on active Wi-Fi interface.`
+                    : d.is_gateway
+                    ? `Physical Wi-Fi router gateway (${d.ip}). MAC: ${d.mac}.`
+                    : `Physical device detected on the local Wi-Fi subnet via ARP discovery.`,
+                  isRealDevice: true,
+                },
+              };
+            });
+
+            // Update edges: Connect Gateway to all local devices on the subnet
+            const realEdges = [];
+            const gwNode = realNodes.find((n) => n.data.type === 'router') || realNodes[0];
+            realNodes.forEach((n) => {
+              if (n.id !== gwNode.id) {
+                realEdges.push({
+                  id: `edge-${gwNode.id}-${n.id}`,
+                  source: gwNode.id,
+                  target: n.id,
+                  animated: true,
+                  label: 'Wi-Fi Link (Active)',
+                  labelStyle: { fill: '#2563eb', fontSize: 10, fontWeight: 700 },
+                  style: { stroke: '#2563eb', strokeWidth: 2 },
+                });
+              }
+            });
+
+            setEdges(realEdges);
+
+            setSelectedNode((prevSelected) => {
+              if (prevSelected) {
+                const found = realNodes.find((n) => n.id === prevSelected.id);
+                if (found) return found;
+              }
+              return realNodes.find((n) => n.data.ip === localTopology.host_ip) || realNodes[0];
+            });
+
+            return realNodes;
           });
-
-          // Edges: Connect Gateway to all local devices on the subnet
-          const realEdges = [];
-          const gwNode = realNodes.find((n) => n.data.type === 'router') || realNodes[0];
-          realNodes.forEach((n) => {
-            if (n.id !== gwNode.id) {
-              realEdges.push({
-                id: `edge-${gwNode.id}-${n.id}`,
-                source: gwNode.id,
-                target: n.id,
-                animated: true,
-                label: 'Wi-Fi Link (Active)',
-                labelStyle: { fill: '#2563eb', fontSize: 10, fontWeight: 700 },
-                style: { stroke: '#2563eb', strokeWidth: 2 },
-              });
-            }
-          });
-
-          setNodes(realNodes);
-          setEdges(realEdges);
-          setSelectedNode(realNodes.find((n) => n.data.ip === localTopology.host_ip) || realNodes[0]);
         } else {
           // Fallback gracefully for live Wi-Fi mode when backend topology list is empty
           const fallbackHostIp = localTopology?.host_ip || (window?.location?.hostname || '127.0.0.1');
@@ -399,10 +415,10 @@ export const InternalNetworkLayer2 = () => {
   };
 
   useEffect(() => {
-    loadTopologyData(viewMode);
+    loadTopologyData(viewMode, false);
     const interval = setInterval(() => {
-      loadTopologyData(viewMode);
-    }, 6000);
+      loadTopologyData(viewMode, true);
+    }, 20000);
     return () => clearInterval(interval);
   }, [viewMode]);
 
@@ -497,7 +513,7 @@ export const InternalNetworkLayer2 = () => {
           </div>
 
           <button
-            onClick={() => loadTopologyData(viewMode)}
+            onClick={() => loadTopologyData(viewMode, false)}
             className="px-3 py-1.5 rounded-lg border border-[#e2e8f0] hover:bg-[#f8fafc] text-xs font-medium text-[#475569] flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-[#64748b] ${loading ? 'animate-spin' : ''}`} />
@@ -537,7 +553,7 @@ export const InternalNetworkLayer2 = () => {
             <span>Interactive Topology (Live DB Endpoints)</span>
           </div>
 
-          {loading && (
+          {loading && nodes.length === 0 && (
             <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
               <RefreshCw className="w-6 h-6 text-purple-600 animate-spin" />
               <p className="text-xs font-semibold text-slate-700">Scanning Wi-Fi subnet & physical telemetry...</p>
@@ -545,7 +561,7 @@ export const InternalNetworkLayer2 = () => {
           )}
 
           <ReactFlow
-            key={`${viewMode}-${nodes.length}`}
+            key={viewMode}
             nodes={nodes}
             edges={edges}
             onNodesChange={onNodesChange}

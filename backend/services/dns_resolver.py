@@ -21,7 +21,7 @@ class DynamicDnsResolver:
         self._lock = threading.Lock()
         self._ip_to_domain: Dict[str, str] = {}
         self._pending_lookups: Set[str] = set()
-        self._executor = ThreadPoolExecutor(max_workers=4, thread_name_prefix="dns_resolver_worker")
+        self._executor = ThreadPoolExecutor(max_workers=16, thread_name_prefix="dns_resolver_worker")
 
     @staticmethod
     def is_private_ip(ip: Optional[str]) -> bool:
@@ -143,17 +143,41 @@ class DynamicDnsResolver:
             except Exception:
                 pass
 
-            # Check if this matches default gateway
+            # Discover default gateway IP
+            gateway_ip = None
             try:
                 import subprocess, re
                 out = subprocess.check_output(["route", "print", "0.0.0.0"], text=True)
                 m = re.search(r"0\.0\.0\.0\s+0\.0\.0\.0\s+([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)", out)
-                if m and m.group(1) == ip:
-                    return f"Wi-Fi Router Gateway ({ip})"
+                if m:
+                    gateway_ip = m.group(1)
+                    if ip == gateway_ip:
+                        return f"Wi-Fi Router Gateway ({ip})"
             except Exception:
                 pass
 
-            # Fast PTR query for local mDNS / LAN name
+            # 1. Query the local router's DNS server directly for the real device name
+            if gateway_ip:
+                try:
+                    import dns.resolver, dns.reversename
+                    router_res = dns.resolver.Resolver()
+                    router_res.nameservers = [gateway_ip]
+                    router_res.timeout = 0.5
+                    router_res.lifetime = 0.6
+                    rev = dns.reversename.from_address(ip)
+                    ans = router_res.resolve(rev, "PTR")
+                    if ans:
+                        raw = str(ans[0]).rstrip(".")
+                        for suff in [".domain.name", ".home", ".lan", ".local", ".corp"]:
+                            if raw.lower().endswith(suff):
+                                raw = raw[:-len(suff)]
+                        clean_name = raw.replace("-", " ").strip()
+                        if clean_name and not clean_name.endswith(".in-addr.arpa"):
+                            return clean_name
+                except Exception:
+                    pass
+
+            # 2. Fast PTR query for local mDNS / LAN name via standard resolver
             ptr_resolver = self._get_ptr_resolver()
             if ptr_resolver:
                 try:
@@ -161,13 +185,28 @@ class DynamicDnsResolver:
                     rev = dns.reversename.from_address(ip)
                     ans = ptr_resolver.resolve(rev, "PTR")
                     if ans:
-                        name = str(ans[0]).rstrip(".")
-                        if name and not name.endswith(".in-addr.arpa"):
-                            return name
+                        raw = str(ans[0]).rstrip(".")
+                        for suff in [".domain.name", ".home", ".lan", ".local", ".corp"]:
+                            if raw.lower().endswith(suff):
+                                raw = raw[:-len(suff)]
+                        clean_name = raw.replace("-", " ").strip()
+                        if clean_name and not clean_name.endswith(".in-addr.arpa"):
+                            return clean_name
                 except Exception:
                     pass
 
-            return f"Local Network Device ({ip})"
+            try:
+                import subprocess, re
+                arp_chk = subprocess.check_output(["arp", "-a", ip], text=True)
+                m_mac = re.search(r"([0-9a-fA-F-]{17})", arp_chk)
+                if m_mac:
+                    mac_str = m_mac.group(1).replace("-", ":")
+                    if (int(mac_str.split(':')[0], 16) & 2) != 0:
+                        return f"Smartphone ({ip})"
+            except Exception:
+                pass
+
+            return f"Workstation ({ip})"
 
         # B. Handle External Public IPs
         # 1. Ultra-fast DNS PTR lookup (0.01s - 0.05s)

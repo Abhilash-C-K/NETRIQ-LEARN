@@ -98,30 +98,73 @@ export const Dashboard = () => {
         if (incidentsList.length > 0) setIncidents(incidentsList);
 
         // 1. Dynamic Summary KPIs from real telemetry
-        const blockedCount = threatsList.filter((t) => t.action === 'RECOMMEND_BLOCK' || t.action === 'QUARANTINE' || t.verdict === 'BLOCK').length;
-        const quarantinedCount = incidentsList.filter((i) => i.response_action === 'quarantine' || String(i.description).includes('QUARANTINE')).length;
-        const benignCount = threatsList.filter((t) => !t.is_anomaly && t.prediction !== 'MALICIOUS').length;
+        const actualThreatRecords = threatsList.filter(
+          (t) =>
+            t.is_anomaly ||
+            t.action === 'RECOMMEND_BLOCK' ||
+            t.action === 'QUARANTINE' ||
+            t.verdict === 'BLOCK' ||
+            t.prediction === 'MALICIOUS' ||
+            String(t.severity).toUpperCase() === 'HIGH' ||
+            String(t.severity).toUpperCase() === 'CRITICAL'
+        );
+        const quarantinedCount = incidentsList.filter(
+          (i) => i.response_action === 'quarantine' || String(i.description).includes('QUARANTINE')
+        ).length;
+        const benignCount = threatsList.filter((t) => !t.is_anomaly && t.prediction === 'BENIGN').length;
         const normalPct = threatsList.length > 0 ? ((benignCount / threatsList.length) * 100).toFixed(1) + '%' : '100%';
 
+        // Compute actual wire byte volume across observed flows
+        const totalBytes = threatsList.reduce((acc, t) => {
+          const bytes = t.raw_data?.byte_count || t.bytes_transferred || (t.protocol === 'TCP' ? 1460 : 512);
+          return acc + bytes;
+        }, 0);
+
+        let trafficStr = '0.0 MB';
+        if (totalBytes >= 1024 * 1024 * 1024) {
+          trafficStr = `${(totalBytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+        } else if (totalBytes >= 1024 * 1024) {
+          trafficStr = `${(totalBytes / (1024 * 1024)).toFixed(1)} MB`;
+        } else {
+          trafficStr = `${Math.max(1, Math.round(totalBytes / 1024))} KB`;
+        }
+
+        const totalThreatsDetected = actualThreatRecords.length + (incidentsList ? incidentsList.length : 0);
+
         setSummary({
-          total_traffic_gb: s.total_threats_blocked ? `${(s.total_threats_blocked * 0.08).toFixed(1)} GB` : `${(threatsList.length * 0.14).toFixed(1)} GB`,
-          detected_threats: s.total_threats_blocked || threatsList.length || 0,
+          total_traffic_gb: trafficStr,
+          detected_threats: totalThreatsDetected,
           quarantined_devices: quarantinedCount,
           normal_traffic_pct: normalPct,
+          total_flows: threatsList.length,
+          benign_count: benignCount,
         });
 
-        // 2. Dynamic Top Threat Sources
-        if (threatsList.length > 0) {
+        // 2. Dynamic Top Threat Sources (Only populated from actual threats & incidents)
+        const threatEntities = [
+          ...actualThreatRecords.map((t) => ({
+            ip: t.src_ip,
+            type: t.prediction || t.reason || 'Network Anomaly',
+            severity: t.severity || 'High',
+          })),
+          ...incidentsList.map((inc) => ({
+            ip: inc.src_ip || (inc.affected_assets && inc.affected_assets[0]) || 'Unknown',
+            type: inc.description || 'AI Incident',
+            severity: inc.severity || 'High',
+          })),
+        ];
+
+        if (threatEntities.length > 0) {
           const ipMap = {};
-          threatsList.forEach((t) => {
-            const ip = t.src_ip;
+          threatEntities.forEach((t) => {
+            const ip = t.ip;
             if (!ip) return;
             if (!ipMap[ip]) {
               ipMap[ip] = {
                 ip,
-                type: t.prediction || t.reason || 'Network Anomaly',
+                type: t.type,
                 count: 0,
-                risk: String(t.severity || 'Medium').charAt(0).toUpperCase() + String(t.severity || 'medium').slice(1).toLowerCase(),
+                risk: String(t.severity || 'High').charAt(0).toUpperCase() + String(t.severity || 'high').slice(1).toLowerCase(),
               };
             }
             ipMap[ip].count += 1;
@@ -456,8 +499,8 @@ export const Dashboard = () => {
               <div className="text-2xl font-extrabold text-[#0a1c3d] tracking-tight mt-0.5">
                 {summary.total_traffic_gb}
               </div>
-              <div className="text-xs font-semibold text-[#10b981] mt-0.5 flex items-center gap-0.5">
-                <span>↑</span> 8.2%
+              <div className="text-xs font-semibold text-[#0284c7] mt-0.5 flex items-center gap-1">
+                <span>●</span> {summary.total_flows || threats.length || 0} live flows
               </div>
             </div>
           </div>
@@ -488,8 +531,12 @@ export const Dashboard = () => {
               <div className="text-2xl font-extrabold text-[#0a1c3d] tracking-tight mt-0.5">
                 {summary.detected_threats}
               </div>
-              <div className="text-xs font-semibold text-[#ef4444] mt-0.5 flex items-center gap-0.5">
-                <span>↑</span> 2 new
+              <div
+                className={`text-xs font-semibold mt-0.5 flex items-center gap-1 ${
+                  summary.detected_threats > 0 ? 'text-[#ef4444]' : 'text-[#10b981]'
+                }`}
+              >
+                <span>●</span> {summary.detected_threats > 0 ? `${summary.detected_threats} flagged` : 'Subnet clean'}
               </div>
             </div>
           </div>
@@ -520,8 +567,12 @@ export const Dashboard = () => {
               <div className="text-2xl font-extrabold text-[#0a1c3d] tracking-tight mt-0.5">
                 {summary.quarantined_devices}
               </div>
-              <div className="text-xs font-semibold text-[#f59e0b] mt-0.5 flex items-center gap-0.5">
-                <span>↑</span> 1 new
+              <div
+                className={`text-xs font-semibold mt-0.5 flex items-center gap-1 ${
+                  summary.quarantined_devices > 0 ? 'text-[#f59e0b]' : 'text-[#687d9a]'
+                }`}
+              >
+                <span>●</span> {summary.quarantined_devices > 0 ? `${summary.quarantined_devices} isolated` : '0 isolated'}
               </div>
             </div>
           </div>
@@ -552,8 +603,8 @@ export const Dashboard = () => {
               <div className="text-2xl font-extrabold text-[#0a1c3d] tracking-tight mt-0.5">
                 {summary.normal_traffic_pct}
               </div>
-              <div className="text-xs font-semibold text-[#10b981] mt-0.5 flex items-center gap-0.5">
-                <span>↑</span> 0.5%
+              <div className="text-xs font-semibold text-[#10b981] mt-0.5 flex items-center gap-1">
+                <span>●</span> {summary.benign_count ?? threats.length} clean flows
               </div>
             </div>
           </div>
@@ -619,12 +670,12 @@ export const Dashboard = () => {
                   tickLine={false}
                 />
                 <YAxis
-                  domain={[0, 200]}
-                  ticks={[0, 50, 100, 150, 200]}
+                  domain={[0, 'auto']}
+                  allowDecimals={false}
                   tick={{ fontSize: 11, fill: '#8ca0b8' }}
                   axisLine={false}
                   tickLine={false}
-                  label={{ value: 'Traffic (Mbps)', angle: -90, position: 'insideLeft', offset: 25, fontSize: 11, fill: '#8ca0b8' }}
+                  label={{ value: 'Active Flows', angle: -90, position: 'insideLeft', offset: 25, fontSize: 11, fill: '#8ca0b8' }}
                 />
                 <Tooltip
                   contentStyle={{

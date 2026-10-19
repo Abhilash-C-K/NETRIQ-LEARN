@@ -154,6 +154,27 @@ class IncidentService:
         Triggered by ResponseEngine when an enforcement action is taken.
         Links the threat to an incident record and fires notifications.
         """
+        # Incident Correlation: If an active incident already exists for this target IP, correlate & update it
+        try:
+            existing_active = await incidents_repo.list(
+                filter_query={"src_ip": target_ip, "status": "active"},
+                limit=1,
+                sort_by=[("created_at", -1)]
+            )
+            if existing_active:
+                inc = existing_active[0]
+                inc_id = inc.get("id")
+                event_count = inc.get("event_count", 1) + 1
+                await incidents_repo.update(inc_id, {
+                    "updated_at": time.time(),
+                    "event_count": event_count,
+                    "confidence": max(float(inc.get("confidence", 0) or 0), round(float(prediction.confidence), 2)),
+                })
+                logger.debug(f"Correlated and updated existing active incident {inc_id} for target {target_ip} (event_count={event_count})")
+                return
+        except Exception as e:
+            logger.warning(f"Could not check existing incidents for {target_ip}: {e}")
+
         # Create Incident record
         incident_doc = {
             "status": "active",
@@ -161,6 +182,7 @@ class IncidentService:
             "description": f"AI Verdict ({prediction.model_used}): {action.name} executed against {target_ip}",
             "created_at": time.time(),
             "updated_at": time.time(),
+            "event_count": 1,
             "affected_assets": [target_ip],
             "src_ip": target_ip,
             "confidence": round(float(prediction.confidence), 2),
@@ -168,7 +190,6 @@ class IncidentService:
             "response_success": success
         }
 
-        
         try:
             incident_id = await incidents_repo.create(incident_doc)
             logger.info(f"Created Incident {incident_id} for target {target_ip}")

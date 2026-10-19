@@ -138,8 +138,12 @@ export const Dashboard = () => {
           trafficStr = `${Math.max(1, Math.round(totalBytes / 1024))} KB`;
         }
 
-        // Live threat count: only real anomalies on the wire plus genuinely active incidents
-        const totalThreatsDetected = actualThreatRecords.length + activeIncidents.length;
+        // Live threat count: genuinely active security incidents plus any distinct un-incidented wire threat sources
+        const activeIncidentIps = new Set(activeIncidents.map((i) => i.src_ip).filter(Boolean));
+        const unIncidentedAnomalies = new Set(
+          actualThreatRecords.filter((t) => t.src_ip && !activeIncidentIps.has(t.src_ip)).map((t) => t.src_ip)
+        );
+        const totalThreatsDetected = activeIncidents.length + unIncidentedAnomalies.size;
 
         setSummary({
           total_traffic_gb: trafficStr,
@@ -361,15 +365,16 @@ export const Dashboard = () => {
           return 'Others';
         };
 
-        // Combine anomalies on the wire AND active incidents so the donut is always in sync with detected threats
-        const anomalies = threatsList.filter((t) => t.is_anomaly || (t.prediction && t.prediction !== 'BENIGN'));
-        anomalies.forEach((t) => {
-          const cat = categorizeThreat(t.prediction || t.reason);
+        // Categorize each active incident into the donut
+        activeIncidents.forEach((inc) => {
+          const cat = categorizeThreat(inc.description || inc.severity);
           catCounts[cat] += 1;
         });
 
-        activeIncidents.forEach((inc) => {
-          const cat = categorizeThreat(inc.description || inc.severity);
+        // Add any distinct un-incidented wire anomaly sources
+        unIncidentedAnomalies.forEach((ip) => {
+          const wireThreat = actualThreatRecords.find((t) => t.src_ip === ip);
+          const cat = categorizeThreat(wireThreat?.prediction || wireThreat?.reason);
           catCounts[cat] += 1;
         });
 
@@ -435,10 +440,6 @@ export const Dashboard = () => {
           time: nowTime,
         };
         setRecentAlerts((prev) => [newAlert, ...prev.slice(0, 4)]);
-        setSummary((prev) => ({
-          ...prev,
-          detected_threats: (prev.detected_threats || 0) + 1,
-        }));
       }
 
       // Live Traffic Timeline updates with real incoming flow counts
@@ -481,10 +482,8 @@ export const Dashboard = () => {
         time: nowTime,
       };
       setRecentAlerts((prev) => [newAlert, ...prev.slice(0, 4)]);
-      setSummary((prev) => ({
-        ...prev,
-        detected_threats: (prev.detected_threats || 0) + 1,
-      }));
+      // Refresh dashboard state to reflect accurate reconciled ground truth
+      fetchDashboardData(false);
     };
 
     const handleQuarantine = (payload) => {

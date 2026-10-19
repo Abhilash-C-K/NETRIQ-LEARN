@@ -203,13 +203,17 @@ class MonitorService:
                     confidence = result_dict.get("confidence", 0.0)
                     is_anomaly = result_dict.get("is_anomaly", False)
                     
-                    # Filter out standard benign local multicast, DNS, DHCP, NTP, and normal outbound web browsing from false positive triggers
+                    # Filter out standard benign local multicast, DNS, DHCP, NTP, push notifications (FCM/APNS: 5228), and normal outbound web browsing from false positive triggers
                     is_benign_infra = (
-                        dst_port in (53, 67, 68, 80, 443, 8080, 8443, 123, 137, 138, 1900, 5353, 5355) or
-                        src_port in (53, 67, 68, 80, 443, 8080, 8443, 123, 137, 138, 1900, 5353, 5355) or
+                        dst_port in (53, 67, 68, 80, 443, 8080, 8443, 123, 137, 138, 1900, 5222, 5223, 5228, 5229, 5230, 5353, 5355) or
+                        src_port in (53, 67, 68, 80, 443, 8080, 8443, 123, 137, 138, 1900, 5222, 5223, 5228, 5229, 5230, 5353, 5355) or
                         str(dst_ip).startswith("224.") or str(dst_ip).startswith("239.") or str(dst_ip).endswith(".255") or
                         str(src_ip).endswith(".1") or str(dst_ip).endswith(".1") or
-                        src_ip in ("127.0.0.1", "0.0.0.0") or dst_ip in ("127.0.0.1", "0.0.0.0")
+                        src_ip in ("127.0.0.1", "0.0.0.0") or dst_ip in ("127.0.0.1", "0.0.0.0") or
+                        str(dst_ip).startswith("142.250.") or str(dst_ip).startswith("142.251.") or
+                        str(dst_ip).startswith("172.217.") or str(dst_ip).startswith("172.253.") or
+                        str(dst_ip).startswith("192.178.") or str(dst_ip).startswith("34.54.") or
+                        str(dst_ip).startswith("35.")
                     )
                     if is_benign_infra:
                         is_anomaly = False

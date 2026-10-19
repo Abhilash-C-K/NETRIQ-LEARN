@@ -111,9 +111,11 @@ class ResponseEngine:
         # 3. Log Audit Trail
         await self.logger.log_action(action, target_ip, outcome_msg, success, context)
         
-        # 4. (Optional) Trigger Incident Service
-        # We spawn a background task so it doesn't delay the live monitor
-        asyncio.create_task(self._notify_incident_service(target_ip, prediction, action, success))
+        # 4. Trigger Incident Service for high-impact events (QUARANTINE or CRITICAL attacks)
+        # Prevents routine heuristic flow noise from flooding the SIEM incident queue
+        is_critical_event = (action == Action.QUARANTINE) or (getattr(prediction, 'risk_category', None) and getattr(prediction.risk_category, 'value', '') == 'CRITICAL')
+        if is_critical_event:
+            asyncio.create_task(self._notify_incident_service(target_ip, prediction, action, success))
         
         return success
 

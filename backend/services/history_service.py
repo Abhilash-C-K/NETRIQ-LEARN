@@ -41,6 +41,8 @@ class HistoryService:
                         if resolved:
                             doc["sni"] = resolved
                             doc["domain"] = resolved
+                    if not doc.get("src_domain") and not dns_resolver.is_private_ip(doc.get("src_ip")):
+                        doc["src_domain"] = dns_resolver.get_domain(doc.get("src_ip"))
             except Exception:
                 pass
 
@@ -57,6 +59,7 @@ class HistoryService:
                         "dst_port": doc.get("dst_port", 0),
                         "protocol": doc.get("protocol", "TCP"),
                         "sni": doc.get("sni"),
+                        "src_domain": doc.get("src_domain"),
                         "prediction": doc.get("prediction", "BENIGN"),
                         "confidence": doc.get("confidence", 0.0),
                         "severity": doc.get("severity", "LOW"),

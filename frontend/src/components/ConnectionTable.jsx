@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { SeverityBadge } from './SeverityBadge';
 import { Network, Globe, Laptop, Router } from 'lucide-react';
-import { getFriendlyDomainInfo, getDeviceInfo } from '../utils/domain';
+import {
+  getFriendlyDomainInfo,
+  getDeviceInfo,
+  getCachedDomain,
+  requestIpReverseDns,
+  isLocalPrivateIp,
+} from '../utils/domain';
+import { monitoringService } from '../services/monitoring';
 
 export const ConnectionTable = ({
   entries,
@@ -156,14 +163,20 @@ export const ConnectionTable = ({
                   const action = item.action || item.decision?.action || 'NOTIFY';
 
                   const isHeuristic = modelUsed.toLowerCase().includes('heuristic');
+                  const cleanSrcIp = srcIp.split(':')[0].trim();
                   const srcDevice = devices.find((d) => srcIp.includes(d.ip));
                   const dstDevice = devices.find((d) => dstIp.includes(d.ip));
+                  const srcDomain = item.src_domain || getCachedDomain(cleanSrcIp);
+
+                  if (!srcDevice && !srcDomain && !isLocalPrivateIp(cleanSrcIp)) {
+                    requestIpReverseDns(cleanSrcIp, monitoringService.resolveIpDns);
+                  }
 
                   return (
                     <tr key={item.id || idx} className="hover:bg-[#202D36] transition-colors">
                       <td className="py-2.5 px-4 text-[#9AA8B2] font-mono text-[11px]">{timestamp}</td>
                       <td className="py-2.5 px-4 font-semibold text-[#E7ECEF] font-mono">
-                        {srcDevice && (
+                        {srcDevice ? (
                           <div className="flex items-center gap-1 mb-0.5">
                             <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
                               srcDevice.is_host 
@@ -174,7 +187,22 @@ export const ConnectionTable = ({
                               <span>{srcDevice.hostname || srcDevice.label}</span>
                             </span>
                           </div>
-                        )}
+                        ) : srcDomain ? (() => {
+                          const info = getFriendlyDomainInfo(srcDomain);
+                          return (
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-indigo-950/60 text-indigo-300 border-indigo-500/40">
+                                <Globe className="w-2.5 h-2.5 text-indigo-400 shrink-0" />
+                                <span className="truncate max-w-[150px]" title={info.raw}>{info.display}</span>
+                                {info.alias && (
+                                  <span className="text-[9px] font-normal px-1 rounded bg-[#202D36] text-[#cc5500] border border-[#3b4c5a]">
+                                    {info.alias}
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                          );
+                        })() : null}
                         {onSelectDevice ? (
                           <button
                             type="button"

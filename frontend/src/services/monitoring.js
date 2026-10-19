@@ -25,4 +25,16 @@ export const monitoringService = {
     const response = await api.get('/monitoring/local-topology');
     return response.data;
   },
+
+  async resolveIpDns(ip) {
+    if (!ip) return null;
+    const response = await api.get('/monitoring/resolve-dns', { params: { ip } });
+    return response.data?.domain || null;
+  },
+
+  async resolveIpDnsBatch(ips = []) {
+    if (!ips || ips.length === 0) return {};
+    const response = await api.post('/monitoring/resolve-dns-batch', { ips });
+    return response.data?.results || {};
+  },
 };

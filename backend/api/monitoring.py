@@ -56,3 +56,31 @@ async def get_local_topology():
     except Exception as e:
         logger.error(f"Failed to get local network topology: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to discover local network topology")
+
+
+@router.get("/resolve-dns", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
+async def resolve_ip_dns(ip: str):
+    """Dynamically resolves any IP (Source or Destination) to its domain name via real reverse DNS."""
+    try:
+        from backend.services.dns_resolver import dns_resolver
+        domain = dns_resolver.resolve_ip_sync(ip, timeout=1.2)
+        return {"ip": ip, "domain": domain}
+    except Exception as e:
+        logger.debug(f"Failed to reverse resolve IP {ip}: {e}")
+        return {"ip": ip, "domain": None}
+
+
+@router.post("/resolve-dns-batch", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
+async def resolve_ip_dns_batch(payload: dict):
+    """Dynamically resolves a batch of IPs to domain names via real reverse DNS."""
+    try:
+        from backend.services.dns_resolver import dns_resolver
+        ips = payload.get("ips", [])
+        results = {}
+        for ip in ips[:50]:
+            results[ip] = dns_resolver.get_domain(ip) or dns_resolver.resolve_ip_sync(ip, timeout=0.3)
+        return {"results": results}
+    except Exception as e:
+        logger.debug(f"Batch DNS resolution failed: {e}")
+        return {"results": {}}
+

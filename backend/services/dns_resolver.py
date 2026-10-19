@@ -112,29 +112,55 @@ class DynamicDnsResolver:
             # Graceful degrade - never interfere with core sniffer
             logger.debug(f"[dns_resolver] DNS packet parsing skipped: {e}")
 
-    def _async_reverse_lookup(self, ip: str) -> None:
-        """Worker function for reverse DNS lookup (socket.gethostbyaddr)."""
+    def _do_reverse_lookup(self, ip: str) -> Optional[str]:
+        """Performs real OS reverse DNS lookup via gethostbyaddr and getnameinfo."""
         try:
-            # First attempt gethostbyaddr
             hostname, aliases, _ = socket.gethostbyaddr(ip)
             clean = self._clean_domain(hostname)
             if clean:
-                with self._lock:
-                    self._ip_to_domain[ip] = clean
-                    return
+                return clean
         except Exception:
             pass
 
         try:
-            # Secondary attempt getnameinfo
             name_info = socket.getnameinfo((ip, 0), socket.NI_NAMEREQD)
             if name_info and name_info[0]:
                 clean = self._clean_domain(name_info[0])
                 if clean:
-                    with self._lock:
-                        self._ip_to_domain[ip] = clean
+                    return clean
         except Exception:
             pass
+        return None
+
+    def _async_reverse_lookup(self, ip: str) -> None:
+        """Worker function for asynchronous reverse DNS lookup."""
+        clean = self._do_reverse_lookup(ip)
+        if clean:
+            with self._lock:
+                self._ip_to_domain[ip] = clean
+
+    def resolve_ip_sync(self, ip: str, timeout: float = 1.2) -> Optional[str]:
+        """
+        Dynamically resolves an IP to its real domain name via reverse DNS.
+        Uses real OS resolver with no hardcoded tables.
+        """
+        if not ip or ip in ("127.0.0.1", "::1", "0.0.0.0", "unknown") or self.is_private_ip(ip):
+            return None
+
+        with self._lock:
+            if ip in self._ip_to_domain:
+                return self._ip_to_domain[ip]
+
+        try:
+            future = self._executor.submit(self._do_reverse_lookup, ip)
+            clean = future.result(timeout=timeout)
+            if clean:
+                with self._lock:
+                    self._ip_to_domain[ip] = clean
+                return clean
+        except Exception:
+            pass
+        return None
 
     def get_domain(self, ip: Optional[str]) -> Optional[str]:
         """

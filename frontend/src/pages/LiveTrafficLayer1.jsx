@@ -24,7 +24,12 @@ import { useWebSocket } from '../hooks/useWebSocket';
 import { historyService } from '../services/history';
 import { predictionService } from '../services/prediction';
 import { monitoringService } from '../services/monitoring';
-import { getFriendlyDomainInfo } from '../utils/domain';
+import {
+  getFriendlyDomainInfo,
+  getCachedDomain,
+  requestIpReverseDns,
+  isLocalPrivateIp,
+} from '../utils/domain';
 
 // Normalization utilities
 const normalizeProto = (proto, srcPort, dstPort) => {
@@ -104,6 +109,7 @@ export const LiveTrafficLayer1 = () => {
             src_ip: item.src_ip || '198.51.100.44',
             dst_ip: item.dst_ip || '10.0.0.1',
             sni: item.sni || item.domain || null,
+            src_domain: item.src_domain || null,
             protocol: proto,
             src_port: item.src_port || (proto === 'ICMP' ? 0 : 51200 + idx),
             dst_port: item.dst_port || (proto === 'ICMP' ? 0 : 443),
@@ -165,6 +171,7 @@ export const LiveTrafficLayer1 = () => {
             src_ip: item.src_ip || '198.51.100.44',
             dst_ip: item.dst_ip || '10.0.0.1',
             sni: item.sni || item.domain || null,
+            src_domain: item.src_domain || null,
             protocol: proto,
             src_port: item.src_port || (proto === 'ICMP' ? 0 : 51200 + idx),
             dst_port: item.dst_port || (proto === 'ICMP' ? 0 : 443),
@@ -225,6 +232,7 @@ export const LiveTrafficLayer1 = () => {
         src_ip: payload.src_ip || '198.51.100.12',
         dst_ip: payload.dst_ip || '10.0.0.1',
         sni: payload.sni || payload.domain || null,
+        src_domain: payload.src_domain || null,
         protocol: proto,
         src_port: payload.src_port || (proto === 'ICMP' ? 0 : Math.floor(Math.random() * 40000 + 10000)),
         dst_port: payload.dst_port || (proto === 'ICMP' ? 0 : 443),
@@ -729,38 +737,95 @@ export const LiveTrafficLayer1 = () => {
                         <div className="font-mono font-semibold text-[#0f172a]">{flow.id}</div>
                         <div className="text-[10px] text-[#64748b] font-mono">{flow.timestamp}</div>
                       </td>
-                      <td className="py-3 px-4 font-mono">
-                        <span
-                          className={`font-semibold ${
-                            searchQuery && flow.src_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                              ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
-                              : 'text-[#0f172a]'
-                          }`}
-                        >
-                          {flow.src_ip}
-                        </span>
-                        {flow.protocol !== 'ICMP' && (
-                          <span className="text-[#64748b]">:{flow.src_port}</span>
-                        )}
+                      <td className="py-3 px-4">
                         {(() => {
                           const clean = flow.src_ip.split(' ')[0].split(':')[0];
                           const dev = devices.find((d) => d.ip === clean);
+                          const srcDomain = flow.src_domain || getCachedDomain(clean);
+
+                          if (!dev && !srcDomain && !isLocalPrivateIp(clean)) {
+                            requestIpReverseDns(clean, monitoringService.resolveIpDns);
+                          }
+
                           if (dev) {
                             return (
-                              <span
-                                className="ml-1.5 px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-sans font-bold border border-purple-200 inline-flex items-center gap-1 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedDevice(selectedDevice === dev.ip ? 'ALL' : dev.ip);
-                                }}
-                                title={`Physical System: ${dev.hostname || dev.label}. Click to isolate traffic.`}
-                              >
-                                <Laptop className="w-2.5 h-2.5 text-purple-600" />
-                                {dev.hostname || (dev.is_host ? 'Host PC' : 'Gateway')}
-                              </span>
+                              <div>
+                                <div className="flex items-center gap-1.5 font-sans font-bold text-purple-700 text-xs mb-0.5">
+                                  {dev.is_host ? <Laptop className="w-3.5 h-3.5 text-purple-600 shrink-0" /> : <Router className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                                  <span
+                                    className="cursor-pointer hover:underline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDevice(selectedDevice === dev.ip ? 'ALL' : dev.ip);
+                                    }}
+                                    title={`Physical System: ${dev.hostname || dev.label}. Click to isolate traffic.`}
+                                  >
+                                    {dev.hostname || dev.label}
+                                  </span>
+                                  {dev.is_host && (
+                                    <span className="text-[9px] px-1 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-200 font-normal">
+                                      Host PC
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] font-mono text-[#64748b]">
+                                  <span className={searchQuery && flow.src_ip.toLowerCase().includes(searchQuery.toLowerCase().trim()) ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold' : ''}>
+                                    {flow.src_ip}
+                                  </span>
+                                  {flow.protocol !== 'ICMP' && `:${flow.src_port}`}
+                                </div>
+                              </div>
                             );
                           }
-                          return null;
+
+                          if (srcDomain) {
+                            const info = getFriendlyDomainInfo(srcDomain);
+                            return (
+                              <div>
+                                <div className="flex items-center gap-1.5 font-sans font-bold text-indigo-700 text-xs mb-0.5">
+                                  <Globe className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                                  <span
+                                    className={`truncate max-w-[210px] ${
+                                      searchQuery && (srcDomain.toLowerCase().includes(searchQuery.toLowerCase().trim()) || (info.alias && info.alias.toLowerCase().includes(searchQuery.toLowerCase().trim())))
+                                        ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
+                                        : ''
+                                    }`}
+                                    title={`${info.raw} (${flow.src_ip})`}
+                                  >
+                                    {info.display}
+                                  </span>
+                                  {info.alias && (
+                                    <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-normal">
+                                      {info.alias}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[11px] font-mono text-[#64748b]">
+                                  <span className={searchQuery && flow.src_ip.toLowerCase().includes(searchQuery.toLowerCase().trim()) ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold' : ''}>
+                                    {flow.src_ip}
+                                  </span>
+                                  {flow.protocol !== 'ICMP' && `:${flow.src_port}`}
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="font-mono text-xs">
+                              <span
+                                className={`font-semibold ${
+                                  searchQuery && flow.src_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                                    ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
+                                    : 'text-[#0f172a]'
+                                }`}
+                              >
+                                {flow.src_ip}
+                              </span>
+                              {flow.protocol !== 'ICMP' && (
+                                <span className="text-[#64748b]">:{flow.src_port}</span>
+                              )}
+                            </div>
+                          );
                         })()}
                       </td>
                       <td className="py-3 px-4">

@@ -94,3 +94,40 @@ export const getDeviceInfo = (ip, devices = []) => {
   return devices.find((d) => d.ip === cleanIp) || null;
 };
 
+// Real-time in-memory reverse DNS cache
+const reverseDnsCache = new Map();
+const inflightLookups = new Set();
+
+export const getCachedDomain = (ip) => {
+  if (!ip) return null;
+  const cleanIp = ip.split(':')[0].trim();
+  return reverseDnsCache.get(cleanIp) || null;
+};
+
+export const setCachedDomain = (ip, domain) => {
+  if (!ip || !domain) return;
+  const cleanIp = ip.split(':')[0].trim();
+  reverseDnsCache.set(cleanIp, domain);
+};
+
+export const requestIpReverseDns = (ip, resolveFn) => {
+  if (!ip || isLocalPrivateIp(ip)) return;
+  const cleanIp = ip.split(':')[0].trim();
+  if (reverseDnsCache.has(cleanIp) || inflightLookups.has(cleanIp)) return;
+
+  inflightLookups.add(cleanIp);
+  if (typeof resolveFn === 'function') {
+    resolveFn(cleanIp)
+      .then((domain) => {
+        if (domain) {
+          reverseDnsCache.set(cleanIp, domain);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        inflightLookups.delete(cleanIp);
+      });
+  }
+};
+
+

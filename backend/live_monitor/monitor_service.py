@@ -228,6 +228,14 @@ class MonitorService:
                         except Exception:
                             flow_sni = None
 
+                    src_domain = None
+                    try:
+                        from backend.services.dns_resolver import dns_resolver
+                        if src_ip and not dns_resolver.is_private_ip(src_ip):
+                            src_domain = dns_resolver.get_domain(src_ip)
+                    except Exception:
+                        src_domain = None
+
                     context = {
                         "src_ip": src_ip,
                         "dst_ip": dst_ip,
@@ -236,6 +244,7 @@ class MonitorService:
                         "protocol": getattr(flow, 'protocol', 'IP'),
                         "sni": flow_sni,
                         "domain": flow_sni,
+                        "src_domain": src_domain,
                         "reason": decision.reason
                     }
 
@@ -257,6 +266,7 @@ class MonitorService:
                         "protocol": getattr(flow, 'protocol', 'IP'),
                         "sni": flow_sni,
                         "domain": flow_sni,
+                        "src_domain": src_domain,
                         "prediction": result_dict.get("prediction", "BENIGN"),
                         "confidence": confidence,
                         "severity": risk_cat.value,

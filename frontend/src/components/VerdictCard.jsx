@@ -13,6 +13,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
     id,
     prediction_id,
     sni,
+    src_domain,
     reason,
   } = threat || {};
 
@@ -48,9 +49,9 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
       return `Internal host ${src_ip} isolated due to anomalous behavior.`;
     }
     if (normAction === 'RECOMMEND_BLOCK') {
-      return `External source ${src_ip} flagged for External firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
+      return `External source ${src_domain || src_ip} flagged for External firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
     }
-    return `Traffic flow ${src_ip} → ${sni || `${dst_ip}:${dst_port}`} evaluated as verified benign payload.`;
+    return `Traffic flow ${src_domain ? `${src_domain} (${src_ip})` : src_ip} → ${sni || `${dst_ip}:${dst_port}`} evaluated as verified benign payload.`;
   };
 
   const actionBadgeStyles = {
@@ -67,7 +68,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
         {/* Connection & Target Identifier */}
         <div className="flex items-center gap-3 min-w-[280px]">
           <div className="w-9 h-9 rounded-lg bg-[#3b2a27] border border-[#6b4c45] flex items-center justify-center text-[#c4956a] shrink-0">
-            {sni ? <Globe className="w-4 h-4 text-[#c4956a]" /> : <Terminal className="w-4 h-4 text-[#d4bfb0]" />}
+            {sni || src_domain ? <Globe className="w-4 h-4 text-[#c4956a]" /> : <Terminal className="w-4 h-4 text-[#d4bfb0]" />}
           </div>
           <div>
             <div className="flex items-center gap-2 font-mono text-sm font-semibold text-[#f8f4e7]">
@@ -78,10 +79,10 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
                   className="hover:text-[#cc5500] hover:underline cursor-pointer focus:outline-none"
                   title={`View device activity trail for ${src_ip}`}
                 >
-                  {src_ip}
+                  {src_domain ? `${src_domain} (${src_ip})` : src_ip}
                 </button>
               ) : (
-                <span>{src_ip}</span>
+                <span>{src_domain ? `${src_domain} (${src_ip})` : src_ip}</span>
               )}
               <ArrowRight className="w-3.5 h-3.5 text-[#a08070]" />
               <span className="text-[#d4bfb0]">{sni || `${dst_ip}:${dst_port}`}</span>

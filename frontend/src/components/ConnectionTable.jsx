@@ -1,13 +1,32 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { SeverityBadge } from './SeverityBadge';
-import { Network, Globe } from 'lucide-react';
-import { getFriendlyDomainInfo } from '../utils/domain';
+import { Network, Globe, Laptop, Router } from 'lucide-react';
+import { getFriendlyDomainInfo, getDeviceInfo } from '../utils/domain';
 
-export const ConnectionTable = ({ entries, onSelectDevice }) => {
+export const ConnectionTable = ({
+  entries,
+  devices = [],
+  selectedDevice = 'ALL',
+  onSelectDevice,
+  onFilterDevice,
+}) => {
   const [filterSeverity, setFilterSeverity] = useState('ALL');
+  const [localDeviceFilter, setLocalDeviceFilter] = useState('ALL');
+
+  const activeDeviceFilter = onFilterDevice ? selectedDevice : localDeviceFilter;
+  const setDeviceFilter = onFilterDevice || setLocalDeviceFilter;
 
   const filteredEntries = entries.filter((item) => {
+    const srcIp = item.src_ip || item.flow_data?.src_ip || '';
+    const dstIp = item.dst_ip || item.flow_data?.dst_ip || '';
+
+    // Filter by System / Device
+    if (activeDeviceFilter !== 'ALL') {
+      const match = srcIp.includes(activeDeviceFilter) || dstIp.includes(activeDeviceFilter);
+      if (!match) return false;
+    }
+
     if (filterSeverity === 'ALL') return true;
     const itemSeverity = (item.risk_category || item.verdict?.risk_category || 'LOW').toUpperCase();
     return itemSeverity === filterSeverity;
@@ -25,37 +44,88 @@ export const ConnectionTable = ({ entries, onSelectDevice }) => {
 
   return (
     <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
-      <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#2A3944]">
-        <div className="flex items-center gap-2">
-          <Network className="w-4 h-4 text-[#7895B2]" />
-          <CardTitle className="text-sm font-semibold text-[#E7ECEF] font-sans">
-            Active Connection Feed
-          </CardTitle>
-          <span className="text-xs text-[#9AA8B2] font-mono">({filteredEntries.length} entries)</span>
+      <CardHeader className="flex flex-col gap-2.5 pb-3 border-b border-[#2A3944]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Network className="w-4 h-4 text-[#7895B2]" />
+            <CardTitle className="text-sm font-semibold text-[#E7ECEF] font-sans">
+              Active Connection Feed
+            </CardTitle>
+            <span className="text-xs text-[#9AA8B2] font-mono">({filteredEntries.length} entries)</span>
+          </div>
+
+          {/* Severity Filter Pills */}
+          <div className="flex items-center gap-1 text-xs bg-[#101820] p-1 rounded-lg border border-[#2A3944]">
+            {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
+              <button
+                key={sev}
+                onClick={() => setFilterSeverity(sev)}
+                className={`px-2 py-0.5 rounded font-sans font-medium transition-colors cursor-pointer ${
+                  filterSeverity === sev
+                    ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
+                    : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
+                }`}
+              >
+                {sev}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Severity Filter Pills */}
-        <div className="flex items-center gap-1 text-xs bg-[#101820] p-1 rounded-lg border border-[#2A3944]">
-          {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
+        {/* Group by Connected System Filter Bar */}
+        {devices && devices.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#2A3944]/40">
+            <span className="text-[11px] font-semibold text-[#9AA8B2] mr-1">System Group:</span>
             <button
-              key={sev}
-              onClick={() => setFilterSeverity(sev)}
-              className={`px-2 py-0.5 rounded font-sans font-medium transition-colors cursor-pointer ${
-                filterSeverity === sev
-                  ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
-                  : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
+              type="button"
+              onClick={() => setDeviceFilter('ALL')}
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                activeDeviceFilter === 'ALL'
+                  ? 'bg-[#202D36] text-[#E7ECEF] border border-[#3b4c5a]'
+                  : 'bg-[#101820] text-[#9AA8B2] hover:text-[#E7ECEF] border border-[#2A3944]'
               }`}
             >
-              {sev}
+              All Systems ({entries.length})
             </button>
-          ))}
-        </div>
+            {devices.map((dev) => {
+              const count = entries.filter((e) => {
+                const s = e.src_ip || e.flow_data?.src_ip || '';
+                const d = e.dst_ip || e.flow_data?.dst_ip || '';
+                return s.includes(dev.ip) || d.includes(dev.ip);
+              }).length;
+
+              const isSelected = activeDeviceFilter === dev.ip;
+
+              return (
+                <button
+                  key={dev.ip}
+                  type="button"
+                  onClick={() => setDeviceFilter(isSelected ? 'ALL' : dev.ip)}
+                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+                    isSelected
+                      ? 'bg-blue-900/40 text-blue-300 border border-blue-500'
+                      : 'bg-[#101820] text-[#9AA8B2] hover:text-[#E7ECEF] border border-[#2A3944]'
+                  }`}
+                  title={`${dev.label || dev.hostname} (${dev.ip})`}
+                >
+                  {dev.is_host ? (
+                    <Laptop className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  ) : (
+                    <Router className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  )}
+                  <span>{dev.hostname || dev.label}</span>
+                  <span className="text-[10px] font-mono opacity-80">({count})</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="p-0">
         {filteredEntries.length === 0 ? (
           <div className="p-8 text-center text-[#9AA8B2] text-xs font-sans">
-            No active connections matching severity filter <span className="font-mono text-[#E7ECEF]">{filterSeverity}</span>
+            No active connections matching current system or severity filters.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -86,11 +156,25 @@ export const ConnectionTable = ({ entries, onSelectDevice }) => {
                   const action = item.action || item.decision?.action || 'NOTIFY';
 
                   const isHeuristic = modelUsed.toLowerCase().includes('heuristic');
+                  const srcDevice = devices.find((d) => srcIp.includes(d.ip));
+                  const dstDevice = devices.find((d) => dstIp.includes(d.ip));
 
                   return (
                     <tr key={item.id || idx} className="hover:bg-[#202D36] transition-colors">
                       <td className="py-2.5 px-4 text-[#9AA8B2] font-mono text-[11px]">{timestamp}</td>
                       <td className="py-2.5 px-4 font-semibold text-[#E7ECEF] font-mono">
+                        {srcDevice && (
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                              srcDevice.is_host 
+                                ? 'bg-blue-950/60 text-blue-300 border-blue-500/40' 
+                                : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                            }`}>
+                              {srcDevice.is_host ? <Laptop className="w-2.5 h-2.5 text-blue-400" /> : <Router className="w-2.5 h-2.5 text-emerald-400" />}
+                              <span>{srcDevice.hostname || srcDevice.label}</span>
+                            </span>
+                          </div>
+                        )}
                         {onSelectDevice ? (
                           <button
                             type="button"
@@ -108,7 +192,23 @@ export const ConnectionTable = ({ entries, onSelectDevice }) => {
                         )}
                       </td>
                       <td className="py-2.5 px-4 font-mono text-[11px]">
-                        {sni ? (() => {
+                        {dstDevice ? (
+                          <div>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                                dstDevice.is_host 
+                                  ? 'bg-blue-950/60 text-blue-300 border-blue-500/40' 
+                                  : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                              }`}>
+                                {dstDevice.is_host ? <Laptop className="w-2.5 h-2.5 text-blue-400" /> : <Router className="w-2.5 h-2.5 text-emerald-400" />}
+                                <span>{dstDevice.hostname || dstDevice.label}</span>
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-[#687883] block font-mono">
+                              {dstIp}:{dstPort}
+                            </span>
+                          </div>
+                        ) : sni ? (() => {
                           const info = getFriendlyDomainInfo(sni);
                           return (
                             <div>

@@ -61,3 +61,36 @@ export const getFriendlyDomainInfo = (rawDomain) => {
     raw: rawDomain,
   };
 };
+
+export const isLocalPrivateIp = (ip) => {
+  if (!ip || typeof ip !== 'string') return false;
+  const clean = ip.split(':')[0].trim();
+  if (clean.startsWith('10.') || clean.startsWith('192.168.') || clean.startsWith('127.')) return true;
+  if (clean.startsWith('172.')) {
+    const parts = clean.split('.');
+    if (parts.length >= 2) {
+      const second = parseInt(parts[1], 10);
+      return second >= 16 && second <= 31;
+    }
+  }
+  return false;
+};
+
+export const getDeviceFriendlyName = (ip, devices = []) => {
+  if (!ip) return null;
+  const cleanIp = ip.split(':')[0].trim();
+  if (!Array.isArray(devices)) return null;
+  const found = devices.find((d) => d.ip === cleanIp);
+  if (found) {
+    return found.hostname || found.label || cleanIp;
+  }
+  return null;
+};
+
+export const getDeviceInfo = (ip, devices = []) => {
+  if (!ip) return null;
+  const cleanIp = ip.split(':')[0].trim();
+  if (!Array.isArray(devices)) return null;
+  return devices.find((d) => d.ip === cleanIp) || null;
+};
+

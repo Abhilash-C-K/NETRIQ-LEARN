@@ -10,13 +10,16 @@ export const setAccessToken = (token) => {
   if (typeof window !== 'undefined') {
     if (token) {
       localStorage.setItem('netriq_access_token', token);
+      api.defaults.headers.common.Authorization = `Bearer ${token}`;
     } else {
       localStorage.removeItem('netriq_access_token');
+      delete api.defaults.headers.common.Authorization;
     }
   }
 };
 
-export const getAccessToken = () => inMemoryAccessToken;
+export const getAccessToken = () =>
+  inMemoryAccessToken || (typeof window !== 'undefined' ? localStorage.getItem('netriq_access_token') : null);
 
 export const setUnauthenticatedHandler = (handler) => {
   onUnauthenticatedHandler = handler;
@@ -40,15 +43,19 @@ const api = axios.create({
   },
 });
 
-// Request Interceptor: Attach bearer token if available in memory (except for public auth routes)
+// Request Interceptor: Attach bearer token if available (except for public auth routes)
 api.interceptors.request.use(
   (config) => {
     const isPublicAuthRoute =
       config.url?.includes('/auth/login') ||
       config.url?.includes('/auth/refresh');
 
-    if (inMemoryAccessToken && !config.headers.Authorization && !isPublicAuthRoute) {
-      config.headers.Authorization = `Bearer ${inMemoryAccessToken}`;
+    const token =
+      inMemoryAccessToken ||
+      (typeof window !== 'undefined' ? localStorage.getItem('netriq_access_token') : null);
+
+    if (token && !config.headers.Authorization && !isPublicAuthRoute) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },

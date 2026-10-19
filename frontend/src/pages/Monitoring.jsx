@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { SnifferControlPanel } from '../components/SnifferControlPanel';
 import { OperationalMetrics } from '../components/OperationalMetrics';
 import { FlowRateChart } from '../components/FlowRateChart';
@@ -12,18 +13,43 @@ import { predictionService } from '../services/prediction';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { CyberTerminal } from '../components/ui/CyberTerminal';
-import { Activity, Radio, AlertTriangle, Zap, Terminal as TerminalIcon } from 'lucide-react';
+import {
+  Activity,
+  Radio,
+  AlertTriangle,
+  Zap,
+  Terminal as TerminalIcon,
+  Laptop,
+  Router,
+  Network,
+  ArrowRight,
+  ExternalLink,
+} from 'lucide-react';
 
 export const Monitoring = () => {
+  const navigate = useNavigate();
   const { role, hasCapability } = useAuth();
   const isAdmin = role === 'admin' || hasCapability('MANAGE_SETTINGS');
 
   const [status, setStatus] = useState(null);
   const [feed, setFeed] = useState([]);
+  const [devices, setDevices] = useState([]);
+  const [selectedDevice, setSelectedDevice] = useState('ALL');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('table'); // 'table' | 'cards' | 'terminal'
   const [selectedDeviceIp, setSelectedDeviceIp] = useState(null);
+
+  // Fetch local network topology devices
+  useEffect(() => {
+    monitoringService.getLocalTopology()
+      .then((topo) => {
+        if (topo && Array.isArray(topo.devices)) {
+          setDevices(topo.devices);
+        }
+      })
+      .catch((err) => console.warn('Could not load local network topology devices:', err));
+  }, []);
 
   // Fetch initial sniffer status & recent captured flows
   const fetchStatus = useCallback(async () => {
@@ -129,7 +155,16 @@ export const Monitoring = () => {
   const isRunning = status?.is_running ?? false;
   const metrics = status?.operational_metrics || status?.metrics || {};
 
-  const terminalLogs = feed.map(
+  const displayFeed = useMemo(() => {
+    if (selectedDevice === 'ALL') return feed;
+    return feed.filter((item) => {
+      const src = item.src_ip || item.flow_data?.src_ip || '';
+      const dst = item.dst_ip || item.flow_data?.dst_ip || '';
+      return src.includes(selectedDevice) || dst.includes(selectedDevice);
+    });
+  }, [feed, selectedDevice]);
+
+  const terminalLogs = displayFeed.map(
     (item) =>
       `[${new Date(item.timestamp || Date.now()).toLocaleTimeString()}] FLOW: ${item.src_ip}:${item.src_port || 0} -> ${item.dst_ip}:${item.dst_port || 0} | ACTION: ${item.action || 'PASS'} | VERDICT: ${item.verdict ? 'MALICIOUS' : 'BENIGN'}`
   );
@@ -150,7 +185,147 @@ export const Monitoring = () => {
       {/* 3. Real-Time Flow Throughput Chart */}
       <FlowRateChart entries={feed} isRunning={isRunning} />
 
-      {/* 4. Live Stream Header Bar */}
+      {/* 4. Connected Network Systems (Wi-Fi / LAN) Overview */}
+      {devices && devices.length > 0 && (
+        <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2.5">
+              <div className="flex items-center gap-2">
+                <Network className="w-4 h-4 text-[#7895B2]" />
+                <h3 className="text-sm font-semibold text-[#E7ECEF] font-sans">
+                  Connected Systems on Local Network
+                </h3>
+                <span className="text-xs text-blue-400 bg-blue-950/60 px-2 py-0.5 rounded border border-blue-500/30 font-medium">
+                  {devices.length} {devices.length === 1 ? 'System' : 'Systems'} Online
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/network-layer2"
+                  className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium hover:underline"
+                >
+                  <span>Layer 2 Topology Canvas</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#9AA8B2] mb-3">
+              Select any system below to isolate its ingress/egress packets in the live telemetry stream.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {devices.map((dev) => {
+                const isSelected = selectedDevice === dev.ip;
+                const count = feed.filter((item) => {
+                  const s = item.src_ip || item.flow_data?.src_ip || '';
+                  const d = item.dst_ip || item.flow_data?.dst_ip || '';
+                  return s.includes(dev.ip) || d.includes(dev.ip);
+                }).length;
+
+                return (
+                  <div
+                    key={dev.ip}
+                    onClick={() => setSelectedDevice(isSelected ? 'ALL' : dev.ip)}
+                    className={`p-3 rounded-lg border transition-all cursor-pointer flex flex-col justify-between ${
+                      isSelected
+                        ? 'bg-blue-950/50 border-blue-500 shadow-sm shadow-blue-900/30 ring-1 ring-blue-500'
+                        : 'bg-[#131D25] hover:bg-[#1a2632] border-[#2A3944]'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${
+                              dev.is_host
+                                ? 'bg-blue-600 text-white'
+                                : dev.is_gateway
+                                ? 'bg-emerald-600 text-white'
+                                : 'bg-purple-600 text-white'
+                            }`}
+                          >
+                            {dev.is_host ? <Laptop className="w-4 h-4" /> : <Router className="w-4 h-4" />}
+                          </div>
+                          <div className="min-w-0">
+                            <h4 className="text-xs font-bold text-[#E7ECEF] truncate">
+                              {dev.hostname || dev.label}
+                            </h4>
+                            <span className="text-[10px] text-[#9AA8B2] font-mono">
+                              {dev.is_host ? 'Host PC Sensor' : dev.is_gateway ? 'Wi-Fi Default Gateway' : 'Network Endpoint'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span
+                          className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border uppercase ${
+                            isSelected
+                              ? 'bg-blue-600 text-white border-blue-400'
+                              : 'bg-[#202D36] text-emerald-400 border-emerald-500/30'
+                          }`}
+                        >
+                          {isSelected ? 'FILTERED' : 'ONLINE'}
+                        </span>
+                      </div>
+
+                      <div className="space-y-1 text-[11px] font-mono text-[#9AA8B2] bg-[#101820] p-2 rounded border border-[#2A3944]/60">
+                        <div className="flex justify-between">
+                          <span className="text-[#64748b]">IP:</span>
+                          <span className="text-[#E7ECEF] font-semibold">{dev.ip}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#64748b]">MAC:</span>
+                          <span className="text-[#94a3b8] truncate max-w-[130px]">{dev.mac || 'Active Interface'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-[#64748b]">Packets in Buffer:</span>
+                          <span className="text-blue-400 font-bold">{count}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 pt-2 border-t border-[#2A3944]/40 flex items-center justify-between text-xs">
+                      <span className="text-[11px] text-blue-400 font-medium">
+                        {isSelected ? '✓ Filtering stream' : 'Click to group/filter'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/traffic-layer1?device=${encodeURIComponent(dev.ip)}`);
+                        }}
+                        className="text-[10px] text-[#9AA8B2] hover:text-white flex items-center gap-1 hover:underline cursor-pointer"
+                        title="View Live Wire Traffic for this system"
+                      >
+                        <span>Wire Traffic</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {selectedDevice !== 'ALL' && (
+              <div className="mt-3 pt-2.5 border-t border-[#2A3944]/50 flex items-center justify-between text-xs">
+                <span className="text-[#E7ECEF] text-xs">
+                  Showing stream filtered to system: <strong className="text-blue-400 font-mono">{selectedDevice}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDevice('ALL')}
+                  className="text-xs text-[#cc5500] hover:underline font-semibold cursor-pointer"
+                >
+                  Reset / Show All Systems
+                </button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 5. Live Stream Header Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#2A3944] pb-3 pt-2">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-[#cc5500]" />
@@ -236,7 +411,7 @@ export const Monitoring = () => {
         </Card>
       )}
 
-      {/* 5. Packet Data Content View */}
+      {/* 6. Packet Data Content View */}
       {!isRunning && feed.length === 0 ? (
         <Card className="bg-[#19242E] border border-[#2A3944] p-8 text-center rounded-lg">
           <CardContent className="space-y-2">
@@ -254,7 +429,13 @@ export const Monitoring = () => {
           </CardContent>
         </Card>
       ) : viewMode === 'table' ? (
-        <ConnectionTable entries={feed} onSelectDevice={setSelectedDeviceIp} />
+        <ConnectionTable
+          entries={feed}
+          devices={devices}
+          selectedDevice={selectedDevice}
+          onSelectDevice={setSelectedDeviceIp}
+          onFilterDevice={setSelectedDevice}
+        />
       ) : viewMode === 'terminal' ? (
         <CyberTerminal
           title="NETRIQ Live Packet Sniffer Kernel Feed"
@@ -263,10 +444,10 @@ export const Monitoring = () => {
       ) : (
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs text-[#9AA8B2] px-1 font-sans">
-            <span>Evaluating stream ({feed.length} flows in buffer)</span>
+            <span>Evaluating stream ({displayFeed.length} flows in buffer)</span>
             <span>Max buffer: 50 entries</span>
           </div>
-          {feed.map((threat, idx) => (
+          {displayFeed.map((threat, idx) => (
             <VerdictCard
               key={threat.id || threat.prediction_id || idx}
               threat={threat}

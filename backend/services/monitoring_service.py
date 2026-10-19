@@ -109,10 +109,17 @@ class MonitoringService:
             logger.debug(f"Could not determine gateway via route print: {e}")
 
         devices = []
-        # Add Host Device
+        hostname = "Host-PC"
+        try:
+            hostname = socket.gethostname()
+        except Exception:
+            pass
+
+        # Add Host Device with resolved system name
         devices.append({
             "ip": host_ip,
-            "label": f"This PC ({host_ip})",
+            "hostname": hostname,
+            "label": f"{hostname} (Host PC)",
             "type": "workstation",
             "is_host": True,
             "is_gateway": False,
@@ -124,6 +131,7 @@ class MonitoringService:
         if gateway_ip and gateway_ip != host_ip:
             devices.append({
                 "ip": gateway_ip,
+                "hostname": "Wi-Fi Router Gateway",
                 "label": f"Wi-Fi Router Gateway ({gateway_ip})",
                 "type": "router",
                 "is_host": False,
@@ -149,9 +157,16 @@ class MonitoringService:
                         continue
                     host_subnet = ".".join(host_ip.split(".")[:3])
                     if ip.startswith(host_subnet):
+                        resolved_name = None
+                        try:
+                            resolved_name = socket.gethostbyaddr(ip)[0]
+                        except Exception:
+                            pass
+                        device_hostname = resolved_name or f"Device-{ip.split('.')[-1]}"
                         devices.append({
                             "ip": ip,
-                            "label": f"Connected Device ({ip})",
+                            "hostname": device_hostname,
+                            "label": f"{resolved_name} ({ip})" if resolved_name else f"Connected Device ({ip})",
                             "type": "workstation",
                             "is_host": False,
                             "is_gateway": False,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Activity,
   Shield,
@@ -16,10 +17,13 @@ import {
   Zap,
   RotateCcw,
   Globe,
+  Laptop,
+  Router,
 } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { historyService } from '../services/history';
 import { predictionService } from '../services/prediction';
+import { monitoringService } from '../services/monitoring';
 import { getFriendlyDomainInfo } from '../utils/domain';
 
 // Normalization utilities
@@ -50,11 +54,22 @@ const normalizeVerdict = (action, severity, isAnomaly) => {
 
 
 export const LiveTrafficLayer1 = () => {
+  const [searchParams] = useSearchParams();
+  const initialDeviceParam = searchParams.get('device');
   const { connectionStatus, subscribe } = useWebSocket();
   const [isLive, setIsLive] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [verdictFilter, setVerdictFilter] = useState('ALL');
   const [protocolFilter, setProtocolFilter] = useState('ALL');
+  const [selectedDevice, setSelectedDevice] = useState(initialDeviceParam || 'ALL');
+  const [devices, setDevices] = useState([]);
+
+  useEffect(() => {
+    const devParam = searchParams.get('device');
+    if (devParam) {
+      setSelectedDevice(devParam);
+    }
+  }, [searchParams]);
   const [flows, setFlows] = useState([]);
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -180,6 +195,14 @@ export const LiveTrafficLayer1 = () => {
 
   useEffect(() => {
     loadRealFlows();
+    monitoringService
+      .getLocalTopology()
+      .then((topo) => {
+        if (topo && Array.isArray(topo.devices)) {
+          setDevices(topo.devices);
+        }
+      })
+      .catch((err) => console.warn('Could not load local network topology devices:', err));
   }, []);
 
   // Listen to real live incoming WebSocket packets
@@ -335,14 +358,21 @@ export const LiveTrafficLayer1 = () => {
   const resetAllFilters = () => {
     setVerdictFilter('ALL');
     setProtocolFilter('ALL');
+    setSelectedDevice('ALL');
     setSearchQuery('');
   };
 
-  // Filtered flows calculation: searches across IP, ID, Protocol, and Verdict
+  // Filtered flows calculation: searches across Device, IP, ID, Protocol, and Verdict
   const filteredFlows = useMemo(() => {
     return flows.filter((f) => {
       const p = String(f.protocol || '').trim().toUpperCase();
       const v = String(f.verdict || '').trim().toUpperCase();
+
+      // Filter by Connected System / Device
+      if (selectedDevice !== 'ALL') {
+        const matchesDevice = f.src_ip.includes(selectedDevice) || f.dst_ip.includes(selectedDevice);
+        if (!matchesDevice) return false;
+      }
 
       if (searchQuery) {
         const q = searchQuery.toLowerCase().trim();
@@ -363,7 +393,7 @@ export const LiveTrafficLayer1 = () => {
 
       return true;
     });
-  }, [flows, verdictFilter, protocolFilter, searchQuery]);
+  }, [flows, verdictFilter, protocolFilter, selectedDevice, searchQuery]);
 
   // Compute live counts per filter option
   const protoCounts = useMemo(() => {
@@ -571,6 +601,69 @@ export const LiveTrafficLayer1 = () => {
         </div>
       )}
 
+      {/* Group Packets By Connected System */}
+      <div className="bg-white p-4 rounded-xl border border-[#e2e8f0] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-center gap-2 shrink-0">
+          <Laptop className="w-4 h-4 text-purple-600" />
+          <span className="text-xs font-bold text-[#0f172a]">Group by Connected System:</span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setSelectedDevice('ALL')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedDevice === 'ALL'
+                ? 'bg-purple-600 text-white shadow-xs'
+                : 'bg-[#f1f5f9] text-[#64748b] hover:bg-[#e2e8f0] hover:text-[#0f172a]'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>All Systems</span>
+            <span
+              className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                selectedDevice === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
+              }`}
+            >
+              {flows.length} pkts
+            </span>
+          </button>
+
+          {devices.map((dev) => {
+            const isSel = selectedDevice === dev.ip;
+            const pktCount = flows.filter(
+              (f) => f.src_ip.includes(dev.ip) || f.dst_ip.includes(dev.ip)
+            ).length;
+            return (
+              <button
+                key={dev.ip}
+                onClick={() => setSelectedDevice(isSel ? 'ALL' : dev.ip)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  isSel
+                    ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-300'
+                    : 'bg-[#f1f5f9] text-[#475569] hover:bg-[#e2e8f0] hover:text-[#0f172a]'
+                }`}
+                title={`IP: ${dev.ip} | MAC: ${dev.mac || 'N/A'}`}
+              >
+                {dev.is_gateway ? (
+                  <Router className="w-3.5 h-3.5 text-blue-500" />
+                ) : (
+                  <Laptop className="w-3.5 h-3.5 text-purple-500" />
+                )}
+                <span>{dev.hostname || dev.label}</span>
+                <span className="text-[10px] font-mono opacity-60">({dev.ip})</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    isSel ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'
+                  }`}
+                >
+                  {pktCount}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Main External Ingress Table */}
       <div className="bg-white rounded-xl border border-[#e2e8f0] shadow-sm overflow-hidden">
         <div className="p-4 border-b border-[#e2e8f0] flex items-center justify-between">
@@ -578,6 +671,7 @@ export const LiveTrafficLayer1 = () => {
             <h2 className="text-sm font-bold text-[#0f172a]">Pre-Firewall Ingress Packet Flows</h2>
             <span className="text-xs text-blue-600 font-mono font-bold bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
               {filteredFlows.length} flows matching
+              {selectedDevice !== 'ALL' ? ` [System: ${devices.find(d => d.ip === selectedDevice)?.hostname || selectedDevice}]` : ''}
               {protocolFilter !== 'ALL' ? ` [Proto: ${protocolFilter}]` : ''}
               {verdictFilter !== 'ALL' ? ` [Verdict: ${verdictFilter}]` : ''}
             </span>
@@ -648,13 +742,32 @@ export const LiveTrafficLayer1 = () => {
                         {flow.protocol !== 'ICMP' && (
                           <span className="text-[#64748b]">:{flow.src_port}</span>
                         )}
-                        {flow.src_ip === '192.168.1.74' && (
-                          <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
-                        )}
+                        {(() => {
+                          const clean = flow.src_ip.split(' ')[0].split(':')[0];
+                          const dev = devices.find((d) => d.ip === clean);
+                          if (dev) {
+                            return (
+                              <span
+                                className="ml-1.5 px-1.5 py-0.5 rounded bg-purple-100 text-purple-800 text-[10px] font-sans font-bold border border-purple-200 inline-flex items-center gap-1 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDevice(selectedDevice === dev.ip ? 'ALL' : dev.ip);
+                                }}
+                                title={`Physical System: ${dev.hostname || dev.label}. Click to isolate traffic.`}
+                              >
+                                <Laptop className="w-2.5 h-2.5 text-purple-600" />
+                                {dev.hostname || (dev.is_host ? 'Host PC' : 'Gateway')}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                       </td>
                       <td className="py-3 px-4">
                         {flow.sni ? (() => {
                           const info = getFriendlyDomainInfo(flow.sni);
+                          const cleanDst = flow.dst_ip.split(' ')[0].split(':')[0];
+                          const dstDev = devices.find((d) => d.ip === cleanDst);
                           return (
                             <div>
                               <div className="flex items-center gap-1.5 font-sans font-bold text-blue-700 text-xs">
@@ -686,31 +799,55 @@ export const LiveTrafficLayer1 = () => {
                                   {flow.dst_ip}
                                 </span>
                                 {flow.protocol !== 'ICMP' && <span>:{flow.dst_port}</span>}
-                                {flow.dst_ip === '192.168.1.74' && (
-                                  <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
+                                {dstDev && (
+                                  <span
+                                    className="ml-1 px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 text-[9px] font-sans font-bold border border-blue-200 inline-flex items-center gap-1 cursor-pointer"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDevice(selectedDevice === dstDev.ip ? 'ALL' : dstDev.ip);
+                                    }}
+                                    title={`Physical System: ${dstDev.hostname || dstDev.label}. Click to isolate traffic.`}
+                                  >
+                                    <Router className="w-2.5 h-2.5 text-blue-600" />
+                                    {dstDev.hostname || (dstDev.is_gateway ? 'Gateway' : 'Host PC')}
+                                  </span>
                                 )}
                               </div>
                             </div>
                           );
-                        })() : (
-                          <div className="font-mono">
-                            <span
-                              className={`font-semibold ${
-                                searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                                  ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
-                                  : 'text-[#0f172a]'
-                              }`}
-                            >
-                              {flow.dst_ip}
-                            </span>
-                            {flow.protocol !== 'ICMP' && (
-                              <span className="text-[#64748b]">:{flow.dst_port}</span>
-                            )}
-                            {flow.dst_ip === '192.168.1.74' && (
-                              <span className="ml-1 text-[9px] px-1 py-0.5 bg-blue-100 text-blue-800 rounded font-sans font-medium">You</span>
-                            )}
-                          </div>
-                        )}
+                        })() : (() => {
+                          const cleanDst = flow.dst_ip.split(' ')[0].split(':')[0];
+                          const dstDev = devices.find((d) => d.ip === cleanDst);
+                          return (
+                            <div className="font-mono text-xs flex items-center gap-1.5">
+                              <span
+                                className={
+                                  searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                                    ? 'bg-amber-100 text-amber-900 px-1 rounded font-bold'
+                                    : 'text-[#0f172a]'
+                                }
+                              >
+                                {flow.dst_ip}
+                              </span>
+                              {flow.protocol !== 'ICMP' && (
+                                <span className="text-[#64748b]">:{flow.dst_port}</span>
+                              )}
+                              {dstDev && (
+                                <span
+                                  className="ml-1 px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 text-[9px] font-sans font-bold border border-blue-200 inline-flex items-center gap-1 cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedDevice(selectedDevice === dstDev.ip ? 'ALL' : dstDev.ip);
+                                  }}
+                                  title={`Physical System: ${dstDev.hostname || dstDev.label}. Click to isolate traffic.`}
+                                >
+                                  <Router className="w-2.5 h-2.5 text-blue-600" />
+                                  {dstDev.hostname || (dstDev.is_gateway ? 'Gateway' : 'Host PC')}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-0.5 rounded font-mono text-[11px] font-extrabold border ${protoBadgeColor}`}>

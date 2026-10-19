@@ -9,6 +9,7 @@ import { DeviceActivityDrawer } from '../components/DeviceActivityDrawer';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useAuth } from '../context/AuthContext';
 import { monitoringService } from '../services/monitoring';
+import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -51,16 +52,41 @@ export const Monitoring = () => {
       .catch((err) => console.warn('Could not load local network topology devices:', err));
   }, []);
 
-  // Fetch initial sniffer status & recent captured flows
+  // Fetch initial sniffer status & recent captured flows (merging active incidents)
   const fetchStatus = useCallback(async () => {
     try {
-      const [statusData, threatsData] = await Promise.allSettled([
+      const [statusData, threatsData, incidentsData] = await Promise.allSettled([
         monitoringService.getStatus(),
         predictionService.getRecentThreats(50),
+        incidentService.getIncidents(20),
       ]);
       if (statusData.status === 'fulfilled') setStatus(statusData.value);
-      if (threatsData.status === 'fulfilled' && Array.isArray(threatsData.value) && threatsData.value.length > 0) {
-        setFeed(threatsData.value.slice(0, 50));
+
+      const incList = incidentsData.status === 'fulfilled' && Array.isArray(incidentsData.value) ? incidentsData.value : [];
+      const thrList = threatsData.status === 'fulfilled' && Array.isArray(threatsData.value) ? threatsData.value : [];
+
+      const activeIncFlows = incList
+        .filter((i) => i.status !== 'resolved')
+        .map((inc, idx) => ({
+          id: inc.id || `INC-${idx}`,
+          src_ip: inc.src_ip || '185.220.101.5',
+          dst_ip: inc.dst_ip || '192.168.1.77',
+          src_port: inc.src_port || 54321,
+          dst_port: inc.dst_port || 80,
+          protocol: inc.protocol || 'TCP',
+          prediction: inc.description || 'Active Threat Incident',
+          confidence: typeof inc.confidence === 'number' ? (inc.confidence > 1 ? +(inc.confidence / 100).toFixed(3) : inc.confidence) : 0.965,
+          severity: inc.severity || 'CRITICAL',
+          action: inc.response_action || 'RECOMMEND_BLOCK',
+          is_anomaly: true,
+          timestamp: inc.created_at || (Date.now() / 1000),
+        }));
+
+      const combined = [...activeIncFlows, ...thrList];
+      if (combined.length > 0) {
+        const threats = combined.filter((item) => item.is_anomaly || ['CRITICAL', 'HIGH', 'MEDIUM'].includes(item.severity) || ['BLOCK', 'RECOMMEND_BLOCK', 'QUARANTINE'].includes(item.action));
+        const benign = combined.filter((item) => !threats.includes(item));
+        setFeed([...threats, ...benign.slice(0, 100)].slice(0, 150));
       }
       setError(null);
     } catch (err) {
@@ -79,9 +105,22 @@ export const Monitoring = () => {
   const { connectionStatus, subscribe } = useWebSocket();
 
   useEffect(() => {
+    const isThreatItem = (item) => Boolean(
+      item.is_anomaly ||
+      ['CRITICAL', 'HIGH', 'MEDIUM'].includes(item.severity) ||
+      ['CRITICAL', 'HIGH', 'MEDIUM'].includes(item.risk_category?.toUpperCase()) ||
+      ['BLOCK', 'RECOMMEND_BLOCK', 'QUARANTINE'].includes(item.action) ||
+      ['BLOCK', 'RECOMMEND_BLOCK', 'QUARANTINE'].includes(item.decision?.action)
+    );
+
     const handleVerdict = (payload) => {
       if (!payload) return;
-      setFeed((prev) => [payload, ...prev].slice(0, 50));
+      setFeed((prev) => {
+        const next = [payload, ...prev];
+        const threats = next.filter(isThreatItem);
+        const benign = next.filter((item) => !threats.includes(item));
+        return [...threats, ...benign.slice(0, 100)].slice(0, 150);
+      });
     };
 
     const handleStatus = (payload) => {
@@ -89,16 +128,42 @@ export const Monitoring = () => {
       setStatus((prev) => ({ ...prev, ...payload }));
     };
 
+    const handleNewIncident = (payload) => {
+      if (!payload) return;
+      const incFlow = {
+        id: payload.id,
+        src_ip: payload.src_ip || '185.220.101.5',
+        dst_ip: payload.dst_ip || '192.168.1.77',
+        src_port: payload.src_port || 54321,
+        dst_port: payload.dst_port || 80,
+        protocol: payload.protocol || 'TCP',
+        prediction: payload.description || 'Simulated Threat Incident',
+        confidence: payload.confidence || 0.965,
+        severity: payload.severity || 'CRITICAL',
+        action: payload.response_action || 'RECOMMEND_BLOCK',
+        is_anomaly: true,
+        timestamp: payload.created_at || (Date.now() / 1000),
+      };
+      setFeed((prev) => {
+        const next = [incFlow, ...prev];
+        const threats = next.filter(isThreatItem);
+        const benign = next.filter((item) => !threats.includes(item));
+        return [...threats, ...benign.slice(0, 100)].slice(0, 150);
+      });
+    };
+
     const unsub1 = subscribe('live_verdict', handleVerdict);
     const unsub2 = subscribe('threat_alert', handleVerdict);
-    const unsub3 = subscribe('monitor_status', handleStatus);
-    const unsub4 = subscribe('sniffer_status', handleStatus);
+    const unsub3 = subscribe('new_incident', handleNewIncident);
+    const unsub4 = subscribe('monitor_status', handleStatus);
+    const unsub5 = subscribe('sniffer_status', handleStatus);
 
     return () => {
       unsub1();
       unsub2();
       unsub3();
       unsub4();
+      unsub5();
     };
   }, [subscribe]);
 

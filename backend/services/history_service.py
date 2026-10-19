@@ -21,8 +21,8 @@ class HistoryService:
             return []
 
         try:
-            # Sort newest first by default
-            sort_order = [("timestamp", -1)]
+            # Prioritize actionable threat anomalies first, then newest flows
+            sort_order = [("is_anomaly", -1), ("timestamp", -1)]
             docs = await threats_repo.list(
                 filter_query=filters,
                 limit=limit,

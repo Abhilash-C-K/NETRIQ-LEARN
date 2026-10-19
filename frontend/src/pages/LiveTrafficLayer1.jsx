@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { historyService } from '../services/history';
+import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
 import { monitoringService } from '../services/monitoring';
 import {
@@ -181,13 +182,51 @@ export const LiveTrafficLayer1 = () => {
     }
   };
 
-  // Load real logs from MongoDB and merge with baseline flows for complete coverage
+  // Load real logs from MongoDB and merge with active threat incidents for complete coverage
   const loadRealFlows = async () => {
     try {
       setLoading(true);
-      const raw = await historyService.getRawLogs({ limit: 100 });
-      if (Array.isArray(raw) && raw.length > 0) {
-        const formatted = raw.map((item, idx) => {
+      const [raw, incRes] = await Promise.allSettled([
+        historyService.getRawLogs({ limit: 100 }),
+        incidentService.getIncidents(30),
+      ]);
+      const incList = incRes.status === 'fulfilled' && Array.isArray(incRes.value) ? incRes.value : [];
+      const rawList = raw.status === 'fulfilled' && Array.isArray(raw.value) ? raw.value : [];
+
+      const activeIncFlows = incList
+        .filter((i) => i.status !== 'resolved')
+        .map((inc, idx) => {
+          const proto = normalizeProto(inc.protocol, inc.src_port, inc.dst_port);
+          const verdict = inc.response_action === 'quarantine' ? 'DROP' : 'BLOCK';
+          const ts = inc.created_at
+            ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleTimeString()
+            : new Date().toLocaleTimeString();
+          const rawId = inc.id || inc._id;
+          return {
+            id: rawId ? `L1-INC-${String(rawId).slice(-6)}` : `L1-INC-${idx}`,
+            src_ip: inc.src_ip || '185.220.101.5',
+            dst_ip: inc.dst_ip || '192.168.1.77',
+            sni: null,
+            src_domain: null,
+            protocol: proto,
+            src_port: inc.src_port || 54321,
+            dst_port: inc.dst_port || 80,
+            features: {
+              duration_ms: 12.5,
+              packets: 850,
+              bytes_per_sec: 450000,
+              syn_ratio: 0.98,
+            },
+            predicted_class: inc.description || 'Active Threat Incident',
+            confidence: typeof inc.confidence === 'number' ? (inc.confidence > 1 ? +(inc.confidence / 100).toFixed(3) : inc.confidence) : 0.965,
+            verdict,
+            timestamp: ts,
+            isIncident: true,
+          };
+        });
+
+      if (rawList.length > 0 || activeIncFlows.length > 0) {
+        const formatted = rawList.map((item, idx) => {
           const rawData = item.raw_data || {};
           const proto = normalizeProto(item.protocol, item.src_port, item.dst_port);
           const verdict = normalizeVerdict(
@@ -225,7 +264,9 @@ export const LiveTrafficLayer1 = () => {
           };
         });
 
-        setFlows(formatted);
+        // Prepend active threat incidents so they stay visible at the top
+        const combined = [...activeIncFlows, ...formatted];
+        setFlows(combined.slice(0, MAX_BUFFER));
       } else {
         setFlows([]);
       }
@@ -249,7 +290,7 @@ export const LiveTrafficLayer1 = () => {
       .catch((err) => console.warn('Could not load local network topology devices:', err));
   }, []);
 
-  // Listen to real live incoming WebSocket packets
+  // Listen to real live incoming WebSocket packets and incidents
   useEffect(() => {
     if (!isLive) return;
 
@@ -285,14 +326,54 @@ export const LiveTrafficLayer1 = () => {
         timestamp: new Date().toLocaleTimeString(),
       };
 
-      setFlows((prev) => [newFlow, ...prev.slice(0, MAX_BUFFER - 1)]);
+      setFlows((prev) => {
+        const next = [newFlow, ...prev];
+        const threats = next.filter((f) => f.verdict === 'BLOCK' || f.verdict === 'DROP' || f.isIncident);
+        const benign = next.filter((f) => !threats.includes(f));
+        return [...threats, ...benign.slice(0, Math.max(100, MAX_BUFFER - threats.length))].slice(0, MAX_BUFFER);
+      });
+    };
+
+    const handleNewIncident = (payload) => {
+      if (!payload) return;
+      const proto = normalizeProto(payload.protocol, payload.src_port, payload.dst_port);
+      const verdict = payload.response_action === 'quarantine' ? 'DROP' : 'BLOCK';
+      const incFlow = {
+        id: payload.id ? `L1-INC-${String(payload.id).slice(-6)}` : `L1-INC-${Math.floor(1000 + Math.random() * 9000)}`,
+        src_ip: payload.src_ip || '185.220.101.5',
+        dst_ip: payload.dst_ip || '192.168.1.77',
+        sni: null,
+        src_domain: null,
+        protocol: proto,
+        src_port: payload.src_port || 54321,
+        dst_port: payload.dst_port || 80,
+        features: {
+          duration_ms: 12.5,
+          packets: 850,
+          bytes_per_sec: 450000,
+          syn_ratio: 0.98,
+        },
+        predicted_class: payload.description || 'Simulated Threat Incident',
+        confidence: typeof payload.confidence === 'number' ? payload.confidence : 0.965,
+        verdict,
+        timestamp: new Date().toLocaleTimeString(),
+        isIncident: true,
+      };
+      setFlows((prev) => {
+        const next = [incFlow, ...prev];
+        const threats = next.filter((f) => f.verdict === 'BLOCK' || f.verdict === 'DROP' || f.isIncident);
+        const benign = next.filter((f) => !threats.includes(f));
+        return [...threats, ...benign.slice(0, Math.max(100, MAX_BUFFER - threats.length))].slice(0, MAX_BUFFER);
+      });
     };
 
     const unsub1 = subscribe('live_verdict', handleNewVerdict);
     const unsub2 = subscribe('threat_alert', handleNewVerdict);
+    const unsub3 = subscribe('new_incident', handleNewIncident);
     return () => {
       unsub1();
       unsub2();
+      unsub3();
     };
   }, [isLive, subscribe]);
 

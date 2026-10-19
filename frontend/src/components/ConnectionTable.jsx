@@ -74,7 +74,7 @@ export const ConnectionTable = ({
     }
 
     if (filterSeverity === 'ALL') return true;
-    const itemSeverity = (item.risk_category || item.verdict?.risk_category || 'LOW').toUpperCase();
+    const itemSeverity = (item.severity || item.risk_category || item.verdict?.risk_category || 'LOW').toUpperCase();
     return itemSeverity === filterSeverity;
   });
 
@@ -198,7 +198,7 @@ export const ConnectionTable = ({
                   const sni = item.sni || item.flow_data?.sni;
                   const protocol = (item.protocol || item.flow_data?.protocol || 'TCP').toUpperCase();
                   const modelUsed = item.model_used || item.verdict?.model_used || 'DualLayerFusion';
-                  const riskCategory = item.risk_category || item.verdict?.risk_category || 'low';
+                  const riskCategory = (item.severity || item.risk_category || item.verdict?.risk_category || 'low').toLowerCase();
                   const action = item.action || item.decision?.action || 'NOTIFY';
 
                   const isHeuristic = modelUsed.toLowerCase().includes('heuristic');

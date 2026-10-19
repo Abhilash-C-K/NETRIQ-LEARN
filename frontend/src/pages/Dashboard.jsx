@@ -344,51 +344,56 @@ export const Dashboard = () => {
         }
 
         // 6. Dynamic Threat Distribution Donut Data
-        if (threatsList.length > 0) {
-          const catCounts = {
-            'DDoS': 0,
-            'Port Scan': 0,
-            'Malware': 0,
-            'Lateral Movement': 0,
-            'Others': 0,
-          };
-          const anomalies = threatsList.filter((t) => t.is_anomaly || (t.prediction && t.prediction !== 'BENIGN'));
-          anomalies.forEach((t) => {
-            const pred = String(t.prediction || t.reason || '').toLowerCase();
-            if (pred.includes('ddos') || pred.includes('syn') || pred.includes('flood')) {
-              catCounts['DDoS'] += 1;
-            } else if (pred.includes('scan') || pred.includes('probe') || pred.includes('recon')) {
-              catCounts['Port Scan'] += 1;
-            } else if (pred.includes('malware') || pred.includes('c2') || pred.includes('trojan')) {
-              catCounts['Malware'] += 1;
-            } else if (pred.includes('lateral') || pred.includes('smb') || pred.includes('auth')) {
-              catCounts['Lateral Movement'] += 1;
-            } else {
-              catCounts['Others'] += 1;
-            }
-          });
+        const catCounts = {
+          'DDoS': 0,
+          'Port Scan': 0,
+          'Malware': 0,
+          'Lateral Movement': 0,
+          'Others': 0,
+        };
 
-          if (anomalies.length === 0) {
-            setThreatDistributionData([{ name: 'Clean Subnet (Benign)', value: 100, count: threatsList.length, color: '#10b981' }]);
-          } else {
-            const totalAnom = anomalies.length;
-            const colors = {
-              'DDoS': '#0047b3',
-              'Port Scan': '#0073e6',
-              'Malware': '#29b6f6',
-              'Lateral Movement': '#81d4fa',
-              'Others': '#b3e5fc',
-            };
-            const distData = Object.entries(catCounts)
-              .filter(([_, count]) => count > 0)
-              .map(([name, count]) => ({
-                name,
-                count,
-                value: Math.round((count / totalAnom) * 100),
-                color: colors[name],
-              }));
-            setThreatDistributionData(distData.length > 0 ? distData : [{ name: 'Clean Subnet (Benign)', value: 100, count: 0, color: '#10b981' }]);
-          }
+        const categorizeThreat = (str) => {
+          const s = String(str || '').toLowerCase();
+          if (s.includes('ddos') || s.includes('syn') || s.includes('flood')) return 'DDoS';
+          if (s.includes('scan') || s.includes('probe') || s.includes('recon')) return 'Port Scan';
+          if (s.includes('malware') || s.includes('c2') || s.includes('trojan') || s.includes('beacon')) return 'Malware';
+          if (s.includes('lateral') || s.includes('smb') || s.includes('auth') || s.includes('rpc')) return 'Lateral Movement';
+          return 'Others';
+        };
+
+        // Combine anomalies on the wire AND active incidents so the donut is always in sync with detected threats
+        const anomalies = threatsList.filter((t) => t.is_anomaly || (t.prediction && t.prediction !== 'BENIGN'));
+        anomalies.forEach((t) => {
+          const cat = categorizeThreat(t.prediction || t.reason);
+          catCounts[cat] += 1;
+        });
+
+        activeIncidents.forEach((inc) => {
+          const cat = categorizeThreat(inc.description || inc.severity);
+          catCounts[cat] += 1;
+        });
+
+        const totalThreatsInDonut = Object.values(catCounts).reduce((a, b) => a + b, 0);
+
+        if (totalThreatsInDonut === 0) {
+          setThreatDistributionData([{ name: 'Clean Subnet (Benign)', value: 100, count: 0, color: '#10b981' }]);
+        } else {
+          const colors = {
+            'DDoS': '#ef4444',            // Red
+            'Port Scan': '#f59e0b',       // Amber
+            'Malware': '#8b5cf6',         // Purple
+            'Lateral Movement': '#ec4899',// Pink
+            'Others': '#3b82f6',          // Blue
+          };
+          const distData = Object.entries(catCounts)
+            .filter(([_, count]) => count > 0)
+            .map(([name, count]) => ({
+              name,
+              count,
+              value: Math.round((count / totalThreatsInDonut) * 100),
+              color: colors[name],
+            }));
+          setThreatDistributionData(distData.length > 0 ? distData : [{ name: 'Clean Subnet (Benign)', value: 100, count: 0, color: '#10b981' }]);
         }
       } catch (err) {
         console.warn('Dashboard telemetry error:', err);

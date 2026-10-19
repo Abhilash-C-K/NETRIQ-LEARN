@@ -20,7 +20,7 @@ if JWT_SECRET_KEY == _DEFAULT_JWT_KEY:
         logger.warning("SECURITY WARNING: JWT_SECRET_KEY is using default fallback value. Set JWT_SECRET_KEY in environment variables for production security.")
 
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_ACCESS_EXPIRY_MINUTES = int(os.getenv("JWT_ACCESS_EXPIRY_MINUTES", "15"))
+JWT_ACCESS_EXPIRY_MINUTES = int(os.getenv("JWT_ACCESS_EXPIRY_MINUTES", "1440"))  # 24 hours
 JWT_REFRESH_EXPIRY_DAYS = int(os.getenv("JWT_REFRESH_EXPIRY_DAYS", "7"))
 
 # RFC 7519 issuer and audience claims for strict token scoping

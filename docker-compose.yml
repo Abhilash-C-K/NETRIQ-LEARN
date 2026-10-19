@@ -22,7 +22,7 @@ services:
       - MONGO_URI=mongodb://mongodb:27017/netriq_db
       - JWT_SECRET_KEY=netriq_production_demo_secret_key_32_chars_min!
       - JWT_ALGORITHM=HS256
-      - JWT_ACCESS_EXPIRY_MINUTES=15
+      - JWT_ACCESS_EXPIRY_MINUTES=1440
       - JWT_REFRESH_EXPIRY_DAYS=7
       - RATE_LIMIT_DEFAULT=120
       - ANOMALY_DETECTOR_ENABLED=True

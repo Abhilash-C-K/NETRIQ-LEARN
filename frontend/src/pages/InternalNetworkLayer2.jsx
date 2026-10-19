@@ -176,15 +176,18 @@ export const InternalNetworkLayer2 = () => {
 
             const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
 
-            // Layout: Gateway on the left, Host PC on the right, any extra ARP devices below
+            // Layout: Gateway top-left, Host PC top-right, all discovered subnet devices in a clean responsive grid below
             let xPos = 480;
-            let yPos = 180;
+            let yPos = 80;
             if (d.is_gateway) {
               xPos = 120;
-              yPos = 180;
+              yPos = 80;
             } else if (!d.is_host) {
-              xPos = 300;
-              yPos = 320 + (idx - 2) * 120;
+              const peerIdx = idx - (localTopology.devices.some((x) => x.is_gateway && x.is_host) ? 1 : 2);
+              const col = Math.max(0, peerIdx) % 3;
+              const row = Math.floor(Math.max(0, peerIdx) / 3);
+              xPos = 60 + col * 260;
+              yPos = 240 + row * 130;
             }
 
             const ports = Array.from(
@@ -397,6 +400,10 @@ export const InternalNetworkLayer2 = () => {
 
   useEffect(() => {
     loadTopologyData(viewMode);
+    const interval = setInterval(() => {
+      loadTopologyData(viewMode);
+    }, 6000);
+    return () => clearInterval(interval);
   }, [viewMode]);
 
   const onNodeClick = useCallback((event, node) => {

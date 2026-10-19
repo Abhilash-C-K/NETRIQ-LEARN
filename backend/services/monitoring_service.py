@@ -1,6 +1,7 @@
 import asyncio
 import time
-from typing import Dict, Any
+import threading
+from typing import Dict, Any, Optional
 from backend.utils.logger import get_logger
 from backend.auth.roles import Role
 from backend.websocket.broadcaster import broadcaster
@@ -15,6 +16,10 @@ class MonitoringService:
         self._is_running = False
         self._start_time: float = 0.0
         self._lock: asyncio.Lock | None = None
+        self._active_neighbors: Dict[str, Dict[str, Any]] = {}
+        self._last_subnet_sweep: float = 0.0
+        self._sweep_in_progress: bool = False
+        self._sweep_lock = threading.Lock()
 
     @property
     def lock(self) -> asyncio.Lock:
@@ -79,8 +84,82 @@ class MonitoringService:
                 logger.error(f"Failed to start live monitor: {e}", exc_info=True)
                 raise
 
+    def _run_subnet_sweep(self, host_ip: str, gateway_ip: Optional[str]) -> None:
+        """
+        Actively probes the entire local Wi-Fi subnet in parallel using Win32 SendARP.
+        Discovers all connected physical systems, smartphones, and routers on the LAN.
+        """
+        import ctypes
+        import struct
+        import socket
+        from concurrent.futures import ThreadPoolExecutor
+
+        def win_send_arp(ip_str: str):
+            try:
+                dest_ip = socket.inet_aton(ip_str)
+                dest_ip_le = struct.unpack('<I', dest_ip)[0]
+                mac_buf = (ctypes.c_byte * 6)()
+                mac_len = ctypes.c_ulong(6)
+                res = ctypes.windll.iphlpapi.SendARP(
+                    ctypes.c_ulong(dest_ip_le),
+                    ctypes.c_ulong(0),
+                    ctypes.byref(mac_buf),
+                    ctypes.byref(mac_len)
+                )
+                if res == 0:
+                    mac = ':'.join(f'{b & 0xff:02X}' for b in mac_buf)
+                    return ip_str, mac
+            except Exception:
+                pass
+            return ip_str, None
+
+        try:
+            base_parts = host_ip.split('.')[:3]
+            base = '.'.join(base_parts) + '.'
+            all_ips = [f"{base}{i}" for i in range(1, 255)]
+
+            with ThreadPoolExecutor(max_workers=128) as pool:
+                results = list(pool.map(win_send_arp, all_ips))
+
+            from backend.services.dns_resolver import dns_resolver
+
+            new_neighbors = {}
+            for ip, mac in results:
+                if not mac:
+                    continue
+                if ip in (host_ip, gateway_ip):
+                    continue
+
+                resolved_name = dns_resolver.resolve_ip_sync(ip, timeout=0.1)
+                last_octet = ip.split('.')[-1]
+                hostname = resolved_name or f"Device-{last_octet}"
+
+                new_neighbors[ip] = {
+                    "ip": ip,
+                    "hostname": hostname,
+                    "label": f"{resolved_name} ({ip})" if resolved_name else f"Connected Device ({ip})",
+                    "type": "workstation",
+                    "is_host": False,
+                    "is_gateway": False,
+                    "mac": mac,
+                    "status": "NORMAL",
+                }
+
+            with self._sweep_lock:
+                self._active_neighbors.update(new_neighbors)
+                self._last_subnet_sweep = time.time()
+                self._sweep_in_progress = False
+
+        except Exception as e:
+            logger.debug(f"Active subnet sweep encountered error: {e}")
+            with self._sweep_lock:
+                self._sweep_in_progress = False
+
     def get_local_topology(self) -> Dict[str, Any]:
-        """Discovers real host IP, default gateway, and connected ARP neighbors on the active local network."""
+        """
+        Discovers real host IP, default gateway, and all active devices on the local Wi-Fi network.
+        Combines immediate OS ARP table with non-blocking active subnet sweeps.
+        """
         import socket
         import subprocess
         import re
@@ -107,6 +186,13 @@ class MonitoringService:
                     host_ip = route_iface
         except Exception as e:
             logger.debug(f"Could not determine gateway via route print: {e}")
+
+        # Trigger background active subnet sweep if not recently run
+        now = time.time()
+        with self._sweep_lock:
+            if (now - self._last_subnet_sweep > 25) and not self._sweep_in_progress:
+                self._sweep_in_progress = True
+                threading.Thread(target=self._run_subnet_sweep, args=(host_ip, gateway_ip), daemon=True).start()
 
         devices = []
         hostname = "Host-PC"
@@ -140,14 +226,18 @@ class MonitoringService:
                 "status": "NORMAL",
             })
 
-        # 3. Discover real ARP neighbors on the active local subnet
+        seen_ips = {host_ip}
+        if gateway_ip:
+            seen_ips.add(gateway_ip)
+
+        # 3. Read immediate OS ARP neighbors
         try:
             arp_out = subprocess.check_output(["arp", "-a"], text=True)
             for line in arp_out.splitlines():
                 m = re.search(r"([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\s+([0-9a-fA-F-]+)\s+(\w+)", line)
                 if m:
                     ip, mac, typ = m.groups()
-                    if ip in (host_ip, gateway_ip):
+                    if ip in seen_ips:
                         if ip == gateway_ip:
                             for d in devices:
                                 if d["ip"] == gateway_ip:
@@ -155,26 +245,38 @@ class MonitoringService:
                         continue
                     if ip.startswith("224.") or ip.startswith("239.") or ip.endswith(".255") or ip.endswith(".0"):
                         continue
-                    host_subnet = ".".join(host_ip.split(".")[:3])
-                    if ip.startswith(host_subnet):
-                        resolved_name = None
-                        try:
-                            resolved_name = socket.gethostbyaddr(ip)[0]
-                        except Exception:
-                            pass
-                        device_hostname = resolved_name or f"Device-{ip.split('.')[-1]}"
-                        devices.append({
-                            "ip": ip,
-                            "hostname": device_hostname,
-                            "label": f"{resolved_name} ({ip})" if resolved_name else f"Connected Device ({ip})",
-                            "type": "workstation",
-                            "is_host": False,
-                            "is_gateway": False,
-                            "mac": mac.replace("-", ":").upper(),
-                            "status": "NORMAL",
-                        })
+
+                    seen_ips.add(ip)
+                    last_octet = ip.split('.')[-1]
+                    device_hostname = f"Device-{last_octet}"
+                    devices.append({
+                        "ip": ip,
+                        "hostname": device_hostname,
+                        "label": f"Connected Device ({ip})",
+                        "type": "workstation",
+                        "is_host": False,
+                        "is_gateway": False,
+                        "mac": mac.replace("-", ":").upper(),
+                        "status": "NORMAL",
+                    })
         except Exception as e:
             logger.debug(f"Could not query ARP table: {e}")
+
+        # 4. Merge all active devices discovered by subnet sweep
+        with self._sweep_lock:
+            for ip, dev_info in self._active_neighbors.items():
+                if ip not in seen_ips:
+                    seen_ips.add(ip)
+                    devices.append(dev_info)
+                else:
+                    # Update MAC or hostname if richer info found
+                    for d in devices:
+                        if d["ip"] == ip:
+                            if dev_info.get("mac") and d["mac"] in ("00:00:00:00:00:00", "Default Gateway", "Local Host Interface"):
+                                d["mac"] = dev_info["mac"]
+                            if dev_info.get("hostname") and not d["hostname"].startswith("Device-"):
+                                d["hostname"] = dev_info["hostname"]
+                                d["label"] = dev_info["label"]
 
         return {
             "host_ip": host_ip,

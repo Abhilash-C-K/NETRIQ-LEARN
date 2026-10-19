@@ -38,8 +38,27 @@ export const useWebSocket = (customPath = '/ws') => {
     const connect = () => {
       if (!isMounted) return;
 
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}${customPath}`;
+      let wsUrl;
+      const envWs = import.meta.env.VITE_WS_URL;
+      const envApi = import.meta.env.VITE_API_URL;
+
+      if (envWs) {
+        const cleanBase = envWs.replace(/\/$/, '');
+        const cleanPath = customPath.replace(/^\//, '');
+        wsUrl = `${cleanBase}/${cleanPath}`;
+      } else if (envApi && (envApi.startsWith('http://') || envApi.startsWith('https://'))) {
+        const wsProto = envApi.startsWith('https') ? 'wss:' : 'ws:';
+        try {
+          const parsed = new URL(envApi);
+          wsUrl = `${wsProto}//${parsed.host}${customPath}`;
+        } catch {
+          const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+          wsUrl = `${protocol}//${window.location.host}${customPath}`;
+        }
+      } else {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        wsUrl = `${protocol}//${window.location.host}${customPath}`;
+      }
 
       setConnectionStatus('connecting');
       const ws = new WebSocket(wsUrl);

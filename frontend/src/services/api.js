@@ -36,8 +36,10 @@ const processQueue = (error, token = null) => {
   failedQueue = [];
 };
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/$/, '');
+
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -99,7 +101,11 @@ api.interceptors.response.use(
       }
 
       try {
-        const refreshResponse = await axios.post('/api/v1/auth/refresh', {
+        const refreshEndpoint = API_BASE_URL.startsWith('http')
+          ? `${API_BASE_URL}/auth/refresh`
+          : '/api/v1/auth/refresh';
+
+        const refreshResponse = await axios.post(refreshEndpoint, {
           refresh_token: refreshToken,
         });
 

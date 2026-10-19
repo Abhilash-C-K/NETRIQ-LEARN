@@ -225,8 +225,8 @@ def build_soc_pdf_report(
 
     table_headers = [
         Paragraph('TIME', cell_header),
-        Paragraph('SOURCE IP', cell_header),
-        Paragraph('DESTINATION / PORT', cell_header),
+        Paragraph('SOURCE (DNS / IP)', cell_header),
+        Paragraph('TARGET (DOMAIN / IP)', cell_header),
         Paragraph('SEV', cell_header),
         Paragraph('ACTION', cell_header),
         Paragraph('CONF', cell_header),
@@ -238,17 +238,51 @@ def build_soc_pdf_report(
     for t in threats[:25]:  # Include up to top 25 recent items for clean pagination
         ts = t.get('timestamp') or t.get('created_at') or time.time()
         t_time = time.strftime('%H:%M:%S', time.gmtime(ts / 1000 if ts > 10000000000 else ts))
-        src = str(t.get('src_ip') or '192.168.1.100')
-        dst = str(t.get('dst_ip') or '4.1.82.185')
+        src_ip = str(t.get('src_ip') or '192.168.1.100')
+        dst_ip = str(t.get('dst_ip') or '4.1.82.185')
         port = str(t.get('dst_port') or '443')
         proto = str(t.get('protocol') or 'TCP').upper()
         sev = str(t.get('severity') or 'HIGH').upper()
         act = str(t.get('action') or 'QUARANTINE').upper()
 
+        src_domain = t.get('src_domain')
+        dst_domain = t.get('sni') or t.get('domain') or t.get('dst_domain')
+
+        # Fallback to resolver if domain not yet attached
+        if not src_domain and not src_ip.startswith("192.168.") and not src_ip.startswith("10.") and not src_ip.startswith("127."):
+            try:
+                from backend.services.dns_resolver import dns_resolver
+                src_domain = dns_resolver.get_domain(src_ip)
+            except Exception:
+                pass
+
+        if not dst_domain and not dst_ip.startswith("192.168.") and not dst_ip.startswith("10.") and not dst_ip.startswith("127."):
+            try:
+                from backend.services.dns_resolver import dns_resolver
+                dst_domain = dns_resolver.get_domain(dst_ip)
+            except Exception:
+                pass
+
+        # Friendly naming for internal network endpoints
+        if src_ip == "192.168.1.77":
+            src_domain = "Shiva (Host PC)"
+        elif src_ip == "192.168.1.1":
+            src_domain = "Wi-Fi Gateway"
+        elif src_ip == "192.168.1.78":
+            src_domain = "LAPTOP GNN31RLH"
+
+        if dst_ip == "192.168.1.77":
+            dst_domain = "Shiva (Host PC)"
+        elif dst_ip == "192.168.1.1":
+            dst_domain = "Wi-Fi Gateway"
+
+        src_cell = f"<b>{src_domain}</b><br/><font size='6' color='#5A5D5B'>{src_ip}</font>" if src_domain else f"<b>{src_ip}</b>"
+        dst_cell = f"<b>{dst_domain}</b><br/><font size='6' color='#5A5D5B'>{dst_ip}:{port} ({proto})</font>" if dst_domain else f"<b>{dst_ip}:{port} ({proto})</b>"
+
         conf = t.get('confidence') or 90.0
         conf_str = f"{conf:.0f}%" if isinstance(conf, (int, float)) else "90%"
 
-        reason = str(t.get('reason') or f"Internal host {src} isolated due to anomalous behavior.")
+        reason = str(t.get('reason') or f"Internal host {src_ip} isolated due to anomalous behavior.")
         if len(reason) > 65:
             reason = reason[:62] + '...'
 
@@ -256,8 +290,8 @@ def build_soc_pdf_report(
 
         log_rows.append([
             Paragraph(t_time, cell_style),
-            Paragraph(src, cell_bold),
-            Paragraph(f"{dst}:{port} ({proto})", cell_style),
+            Paragraph(src_cell, cell_style),
+            Paragraph(dst_cell, cell_style),
             Paragraph(f"<font color='{sev_color}'><b>{sev}</b></font>", cell_style),
             Paragraph(f"<b>{act}</b>", cell_style),
             Paragraph(conf_str, cell_bold),
@@ -266,7 +300,7 @@ def build_soc_pdf_report(
 
     threats_table = Table(
         log_rows,
-        colWidths=[45, 80, 95, 45, 75, 40, 160],
+        colWidths=[40, 95, 105, 45, 75, 40, 140],
         repeatRows=1,
     )
     threats_table.setStyle(TableStyle([

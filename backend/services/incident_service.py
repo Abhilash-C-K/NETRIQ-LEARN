@@ -97,9 +97,24 @@ class IncidentService:
         enriched["confidence"] = confidence
         enriched["bytes_transferred"] = bytes_transferred
         enriched["packets_transferred"] = packets_transferred
-        enriched["source_label"] = self._classify_ip_label(src_ip)
-        enriched["target_label"] = self._classify_ip_label(dst_ip)
-        
+        # Attach resolved DNS / Domain name and friendly label
+        try:
+            from backend.services.dns_resolver import dns_resolver
+            src_dom = item.get("src_domain") or (threat.get("src_domain") if threat else None)
+            dst_dom = item.get("sni") or item.get("domain") or (threat.get("sni") or threat.get("domain") if threat else None)
+
+            if not src_dom and src_ip and not dns_resolver.is_private_ip(src_ip):
+                src_dom = dns_resolver.get_domain(src_ip)
+            if not dst_dom and dst_ip and not dns_resolver.is_private_ip(dst_ip):
+                dst_dom = dns_resolver.get_domain(dst_ip)
+
+            enriched["src_domain"] = src_dom
+            enriched["sni"] = dst_dom
+            enriched["domain"] = dst_dom
+            enriched["dst_domain"] = dst_dom
+        except Exception:
+            pass
+
         return enriched
 
     async def list(self, role: Role, limit: int = 100) -> List[Dict[str, Any]]:

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { SeverityBadge } from './SeverityBadge';
 import { Network, Globe, Laptop, Router } from 'lucide-react';
@@ -6,6 +6,7 @@ import {
   getFriendlyDomainInfo,
   getDeviceInfo,
   getCachedDomain,
+  setCachedDomain,
   requestIpReverseDns,
   isLocalPrivateIp,
 } from '../utils/domain';
@@ -20,9 +21,47 @@ export const ConnectionTable = ({
 }) => {
   const [filterSeverity, setFilterSeverity] = useState('ALL');
   const [localDeviceFilter, setLocalDeviceFilter] = useState('ALL');
+  const [resolvedDns, setResolvedDns] = useState({});
 
   const activeDeviceFilter = onFilterDevice ? selectedDevice : localDeviceFilter;
   const setDeviceFilter = onFilterDevice || setLocalDeviceFilter;
+
+  // Dynamically resolve real names for any Source or Destination IPs without DNS
+  useEffect(() => {
+    if (!entries || entries.length === 0) return;
+    const unresolvedIps = new Set();
+
+    entries.forEach((item) => {
+      const srcRaw = item.src_ip || item.flow_data?.src_ip || '';
+      const dstRaw = item.dst_ip || item.flow_data?.dst_ip || '';
+      const src = srcRaw.split(':')[0].trim();
+      const dst = dstRaw.split(':')[0].trim();
+
+      const srcDev = devices.find((d) => d.ip === src);
+      if (src && !srcDev && !item.src_domain && !resolvedDns[src]) {
+        unresolvedIps.add(src);
+      }
+
+      const dstDev = devices.find((d) => d.ip === dst);
+      if (dst && !dstDev && !item.sni && !resolvedDns[dst]) {
+        unresolvedIps.add(dst);
+      }
+    });
+
+    if (unresolvedIps.size > 0) {
+      const ipList = Array.from(unresolvedIps).slice(0, 40);
+      monitoringService.resolveIpDnsBatch(ipList)
+        .then((res) => {
+          if (res && Object.keys(res).length > 0) {
+            Object.entries(res).forEach(([ip, dom]) => {
+              if (dom) setCachedDomain(ip, dom);
+            });
+            setResolvedDns((prev) => ({ ...prev, ...res }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [entries, devices, resolvedDns]);
 
   const filteredEntries = entries.filter((item) => {
     const srcIp = item.src_ip || item.flow_data?.src_ip || '';
@@ -164,13 +203,11 @@ export const ConnectionTable = ({
 
                   const isHeuristic = modelUsed.toLowerCase().includes('heuristic');
                   const cleanSrcIp = srcIp.split(':')[0].trim();
-                  const srcDevice = devices.find((d) => srcIp.includes(d.ip));
-                  const dstDevice = devices.find((d) => dstIp.includes(d.ip));
-                  const srcDomain = item.src_domain || getCachedDomain(cleanSrcIp);
-
-                  if (!srcDevice && !srcDomain && !isLocalPrivateIp(cleanSrcIp)) {
-                    requestIpReverseDns(cleanSrcIp, monitoringService.resolveIpDns);
-                  }
+                  const cleanDstIp = dstIp.split(':')[0].trim();
+                  const srcDevice = devices.find((d) => srcIp.includes(d.ip) || cleanSrcIp === d.ip);
+                  const dstDevice = devices.find((d) => dstIp.includes(d.ip) || cleanDstIp === d.ip);
+                  const srcDomain = item.src_domain || resolvedDns[cleanSrcIp] || getCachedDomain(cleanSrcIp);
+                  const dstDomain = sni || resolvedDns[cleanDstIp] || getCachedDomain(cleanDstIp);
 
                   return (
                     <tr key={item.id || idx} className="hover:bg-[#202D36] transition-colors">
@@ -202,7 +239,17 @@ export const ConnectionTable = ({
                               </span>
                             </div>
                           );
-                        })() : null}
+                        })() : (() => {
+                          const isLocal = isLocalPrivateIp(cleanSrcIp);
+                          return (
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-slate-800/80 text-slate-300 border-slate-600/40">
+                                {isLocal ? <Laptop className="w-2.5 h-2.5 text-blue-400" /> : <Globe className="w-2.5 h-2.5 text-[#7895B2]" />}
+                                <span>{isLocal ? 'Local LAN Node' : 'External Host'}</span>
+                              </span>
+                            </div>
+                          );
+                        })()}
                         {onSelectDevice ? (
                           <button
                             type="button"
@@ -225,8 +272,8 @@ export const ConnectionTable = ({
                             <div className="flex items-center gap-1 mb-0.5">
                               <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
                                 dstDevice.is_host 
-                                  ? 'bg-blue-950/60 text-blue-300 border-blue-500/40' 
-                                  : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                                ? 'bg-blue-950/60 text-blue-300 border-blue-500/40' 
+                                : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
                               }`}>
                                 {dstDevice.is_host ? <Laptop className="w-2.5 h-2.5 text-blue-400" /> : <Router className="w-2.5 h-2.5 text-emerald-400" />}
                                 <span>{dstDevice.hostname || dstDevice.label}</span>
@@ -236,8 +283,8 @@ export const ConnectionTable = ({
                               {dstIp}:{dstPort}
                             </span>
                           </div>
-                        ) : sni ? (() => {
-                          const info = getFriendlyDomainInfo(sni);
+                        ) : dstDomain ? (() => {
+                          const info = getFriendlyDomainInfo(dstDomain);
                           return (
                             <div>
                               <span className="flex items-center gap-1 text-[#7895B2] font-semibold">
@@ -254,11 +301,20 @@ export const ConnectionTable = ({
                               </span>
                             </div>
                           );
-                        })() : (
-                          <span className="text-[#7895B2]">
-                            {dstIp}:{dstPort}
-                          </span>
-                        )}
+                        })() : (() => {
+                          const isLocalDst = isLocalPrivateIp(cleanDstIp);
+                          return (
+                            <div>
+                              <span className="flex items-center gap-1 text-[#9AA8B2] font-semibold">
+                                {isLocalDst ? <Router className="w-3 h-3 text-emerald-400 shrink-0" /> : <Globe className="w-3 h-3 text-[#7895B2] shrink-0" />}
+                                <span>{isLocalDst ? 'Local Gateway / Node' : 'External Host'}</span>
+                              </span>
+                              <span className="text-[10px] text-[#687883] block">
+                                {dstIp}:{dstPort}
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="py-2.5 px-4 text-[#9AA8B2] font-mono text-[11px]">{protocol}</td>
                       <td className="py-2.5 px-4 font-sans text-xs">

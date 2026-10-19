@@ -63,7 +63,7 @@ async def resolve_ip_dns(ip: str):
     """Dynamically resolves any IP (Source or Destination) to its domain name via real reverse DNS."""
     try:
         from backend.services.dns_resolver import dns_resolver
-        domain = dns_resolver.resolve_ip_sync(ip, timeout=1.2)
+        domain = dns_resolver.resolve_ip_sync(ip, timeout=2.5)
         return {"ip": ip, "domain": domain}
     except Exception as e:
         logger.debug(f"Failed to reverse resolve IP {ip}: {e}")
@@ -72,13 +72,11 @@ async def resolve_ip_dns(ip: str):
 
 @router.post("/resolve-dns-batch", dependencies=[Depends(require_permission(Capabilities.VIEW_SMART_SUMMARY))])
 async def resolve_ip_dns_batch(payload: dict):
-    """Dynamically resolves a batch of IPs to domain names via real reverse DNS."""
+    """Dynamically resolves a batch of IPs to domain names via real parallel reverse DNS."""
     try:
         from backend.services.dns_resolver import dns_resolver
         ips = payload.get("ips", [])
-        results = {}
-        for ip in ips[:50]:
-            results[ip] = dns_resolver.get_domain(ip) or dns_resolver.resolve_ip_sync(ip, timeout=0.3)
+        results = dns_resolver.resolve_batch_sync(ips)
         return {"results": results}
     except Exception as e:
         logger.debug(f"Batch DNS resolution failed: {e}")

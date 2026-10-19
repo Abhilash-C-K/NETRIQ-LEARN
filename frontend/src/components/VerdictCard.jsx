@@ -5,6 +5,7 @@ import { ChevronDown, ChevronUp, Globe, Terminal, ArrowRight } from 'lucide-reac
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
+import { getCachedDomain } from '../utils/domain';
 
 export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, onSelectDevice }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -21,6 +22,11 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
   const dst_ip = threat.dst_ip || (threat.affected_assets && threat.affected_assets[1]) || 'Gateway';
   const src_port = threat.src_port || '—';
   const dst_port = threat.dst_port || '—';
+
+  const cleanSrc = String(src_ip).split(':')[0].trim();
+  const cleanDst = String(dst_ip).split(':')[0].trim();
+  const effectiveSrcDomain = src_domain || getCachedDomain(cleanSrc);
+  const effectiveDstDomain = sni || getCachedDomain(cleanDst);
   const protocol = (threat.protocol || 'TCP').toUpperCase();
   const severity = (threat.severity || 'LOW').toUpperCase();
   const action = threat.action || threat.response_action || 'NOTIFY';
@@ -68,7 +74,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
         {/* Connection & Target Identifier */}
         <div className="flex items-center gap-3 min-w-[280px]">
           <div className="w-9 h-9 rounded-lg bg-[#3b2a27] border border-[#6b4c45] flex items-center justify-center text-[#c4956a] shrink-0">
-            {sni || src_domain ? <Globe className="w-4 h-4 text-[#c4956a]" /> : <Terminal className="w-4 h-4 text-[#d4bfb0]" />}
+            {effectiveDstDomain || effectiveSrcDomain ? <Globe className="w-4 h-4 text-[#c4956a]" /> : <Terminal className="w-4 h-4 text-[#d4bfb0]" />}
           </div>
           <div>
             <div className="flex items-center gap-2 font-mono text-sm font-semibold text-[#f8f4e7]">
@@ -79,13 +85,13 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
                   className="hover:text-[#cc5500] hover:underline cursor-pointer focus:outline-none"
                   title={`View device activity trail for ${src_ip}`}
                 >
-                  {src_domain ? `${src_domain} (${src_ip})` : src_ip}
+                  {effectiveSrcDomain ? `${effectiveSrcDomain} (${src_ip})` : src_ip}
                 </button>
               ) : (
-                <span>{src_domain ? `${src_domain} (${src_ip})` : src_ip}</span>
+                <span>{effectiveSrcDomain ? `${effectiveSrcDomain} (${src_ip})` : src_ip}</span>
               )}
               <ArrowRight className="w-3.5 h-3.5 text-[#a08070]" />
-              <span className="text-[#d4bfb0]">{sni || `${dst_ip}:${dst_port}`}</span>
+              <span className="text-[#d4bfb0]">{effectiveDstDomain ? `${effectiveDstDomain} (${dst_ip}:${dst_port})` : `${dst_ip}:${dst_port}`}</span>
             </div>
             <div className="text-xs text-[#a08070] font-mono flex items-center gap-2 mt-0.5">
               <span className="text-[#cc5500] font-semibold bg-[#3b2a27] px-1.5 py-0.2 rounded border border-[#6b4c45]">

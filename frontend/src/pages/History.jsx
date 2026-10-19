@@ -18,7 +18,7 @@ import {
   Search,
   Globe,
 } from 'lucide-react';
-import { getFriendlyDomainInfo } from '../utils/domain';
+import { getFriendlyDomainInfo, getCachedDomain, isLocalPrivateIp } from '../utils/domain';
 
 export const History = () => {
   const { hasCapability, role } = useAuth();
@@ -268,50 +268,88 @@ export const History = () => {
 
                   {/* Source: white */}
                   <td className="py-3 px-4 font-mono font-medium text-[#E7ECEF] whitespace-nowrap">
-                    {log.src_ip ? (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedDeviceIp(log.src_ip)}
-                        className="text-left font-mono hover:text-[#cc5500] hover:underline transition-colors focus:outline-none cursor-pointer"
-                        title={`View device activity trail for ${log.src_ip}`}
-                      >
-                        <span>{log.src_ip}</span>
-                        <span className="text-[#687883] text-[11px] font-normal">:{log.src_port || 0}</span>
-                      </button>
-                    ) : (
+                    {log.src_ip ? (() => {
+                      const cleanSrc = String(log.src_ip).split(':')[0].trim();
+                      const srcDom = log.src_domain || getCachedDomain(cleanSrc);
+                      const isLocal = isLocalPrivateIp(cleanSrc);
+                      return (
+                        <div>
+                          {srcDom ? (() => {
+                            const info = getFriendlyDomainInfo(srcDom);
+                            return (
+                              <div className="flex items-center gap-1 font-sans font-bold text-indigo-400 text-xs mb-0.5">
+                                <Globe className="w-3 h-3 text-indigo-400 shrink-0" />
+                                <span className="truncate max-w-[180px]" title={info.raw}>{info.display}</span>
+                                {info.alias && (
+                                  <span className="text-[9px] font-normal px-1 rounded bg-[#202D36] text-[#cc5500] border border-[#3b4c5a]">
+                                    {info.alias}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })() : (
+                            <div className="text-[10px] text-[#9AA8B2] font-sans mb-0.5">
+                              {isLocal ? 'Local LAN Node' : 'External Host'}
+                            </div>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDeviceIp(log.src_ip)}
+                            className="text-left font-mono hover:text-[#cc5500] hover:underline transition-colors focus:outline-none cursor-pointer"
+                            title={`View device activity trail for ${log.src_ip}`}
+                          >
+                            <span>{log.src_ip}</span>
+                            <span className="text-[#687883] text-[11px] font-normal">:{log.src_port || 0}</span>
+                          </button>
+                        </div>
+                      );
+                    })() : (
                       <span>N/A</span>
                     )}
                   </td>
 
                   {/* Destination: sage/steel (#7895B2 / #cc5500) */}
                   <td className="py-3 px-4 text-[11px] whitespace-nowrap">
-                    {log.sni ? (() => {
-                      const info = getFriendlyDomainInfo(log.sni);
+                    {(() => {
+                      const cleanDst = log.dst_ip ? String(log.dst_ip).split(':')[0].trim() : '';
+                      const dstDom = log.sni || log.domain || getCachedDomain(cleanDst);
+                      const isLocal = isLocalPrivateIp(cleanDst);
+
+                      if (dstDom) {
+                        const info = getFriendlyDomainInfo(dstDom);
+                        return (
+                          <div>
+                            <div className="flex items-center gap-1 font-sans font-bold text-blue-400">
+                              <Globe className="w-3 h-3 text-blue-400 shrink-0" />
+                              <span className="truncate max-w-[200px]" title={`${info.raw} (${log.dst_ip})`}>
+                                {info.display}
+                              </span>
+                              {info.alias && (
+                                <span className="text-[9px] font-semibold px-1 py-0.2 rounded bg-blue-950/60 text-blue-300 border border-blue-500/40 shrink-0">
+                                  {info.alias}
+                                </span>
+                              )}
+                            </div>
+                            <div className="font-mono text-[10px] text-[#687883] mt-0.5">
+                              <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
+                              <span>{log.dst_port ? `:${log.dst_port}` : ''}</span>
+                            </div>
+                          </div>
+                        );
+                      }
+
                       return (
                         <div>
-                          <div className="flex items-center gap-1 font-sans font-bold text-blue-700">
-                            <Globe className="w-3 h-3 text-blue-500 shrink-0" />
-                            <span className="truncate max-w-[200px]" title={`${info.raw} (${log.dst_ip})`}>
-                              {info.display}
-                            </span>
-                            {info.alias && (
-                              <span className="text-[9px] font-semibold px-1 py-0.2 rounded bg-blue-50 text-blue-600 border border-blue-200 shrink-0">
-                                {info.alias}
-                              </span>
-                            )}
+                          <div className="text-[10px] text-[#9AA8B2] font-sans mb-0.5">
+                            {isLocal ? 'Local Gateway / Node' : 'External Host'}
                           </div>
-                          <div className="font-mono text-[10px] text-[#687883] mt-0.5">
+                          <div className="font-mono">
                             <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
-                            <span>{log.dst_port ? `:${log.dst_port}` : ''}</span>
+                            <span className="text-[#687883]">{log.dst_port ? `:${log.dst_port}` : ''}</span>
                           </div>
                         </div>
                       );
-                    })() : (
-                      <div className="font-mono">
-                        <span className="text-[#7895B2] font-medium">{log.dst_ip || 'N/A'}</span>
-                        <span className="text-[#687883]">{log.dst_port ? `:${log.dst_port}` : ''}</span>
-                      </div>
-                    )}
+                    })()}
                   </td>
 
                   {/* Protocol: muted gray */}

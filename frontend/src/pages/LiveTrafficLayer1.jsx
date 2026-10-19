@@ -75,6 +75,8 @@ export const LiveTrafficLayer1 = () => {
       setSelectedDevice(devParam);
     }
   }, [searchParams]);
+
+  const [resolvedDns, setResolvedDns] = useState({});
   const [flows, setFlows] = useState([]);
   const [selectedFlowId, setSelectedFlowId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -83,6 +85,41 @@ export const LiveTrafficLayer1 = () => {
   const [dbSearchNotice, setDbSearchNotice] = useState(null);
 
   const MAX_BUFFER = 250;
+
+  // Dynamically resolve real names for any Source or Destination IPs without DNS
+  useEffect(() => {
+    if (!flows || flows.length === 0) return;
+    const unresolvedIps = new Set();
+
+    flows.forEach((f) => {
+      const src = f.src_ip?.split(' ')[0]?.split(':')[0];
+      const dst = f.dst_ip?.split(' ')[0]?.split(':')[0];
+
+      const srcDev = devices.find((d) => d.ip === src);
+      if (src && !srcDev && !f.src_domain && !resolvedDns[src]) {
+        unresolvedIps.add(src);
+      }
+
+      const dstDev = devices.find((d) => d.ip === dst);
+      if (dst && !dstDev && !f.sni && !resolvedDns[dst]) {
+        unresolvedIps.add(dst);
+      }
+    });
+
+    if (unresolvedIps.size > 0) {
+      const ipList = Array.from(unresolvedIps).slice(0, 40);
+      monitoringService.resolveIpDnsBatch(ipList)
+        .then((res) => {
+          if (res && Object.keys(res).length > 0) {
+            Object.entries(res).forEach(([ip, dom]) => {
+              if (dom) setCachedDomain(ip, dom);
+            });
+            setResolvedDns((prev) => ({ ...prev, ...res }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [flows, devices, resolvedDns]);
 
   // Search historical MongoDB logs on demand (e.g., when searching a friend's IP)
   const searchDatabaseHistory = async (queryTerm = searchQuery) => {
@@ -741,11 +778,7 @@ export const LiveTrafficLayer1 = () => {
                         {(() => {
                           const clean = flow.src_ip.split(' ')[0].split(':')[0];
                           const dev = devices.find((d) => d.ip === clean);
-                          const srcDomain = flow.src_domain || getCachedDomain(clean);
-
-                          if (!dev && !srcDomain && !isLocalPrivateIp(clean)) {
-                            requestIpReverseDns(clean, monitoringService.resolveIpDns);
-                          }
+                          const srcDomain = flow.src_domain || resolvedDns[clean] || getCachedDomain(clean);
 
                           if (dev) {
                             return (
@@ -810,50 +843,111 @@ export const LiveTrafficLayer1 = () => {
                             );
                           }
 
+                          const isLocal = isLocalPrivateIp(clean);
                           return (
-                            <div className="font-mono text-xs">
-                              <span
-                                className={`font-semibold ${
-                                  searchQuery && flow.src_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                                    ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
-                                    : 'text-[#0f172a]'
-                                }`}
-                              >
-                                {flow.src_ip}
-                              </span>
-                              {flow.protocol !== 'ICMP' && (
-                                <span className="text-[#64748b]">:{flow.src_port}</span>
-                              )}
+                            <div>
+                              <div className="flex items-center gap-1.5 font-sans font-bold text-slate-700 text-xs mb-0.5">
+                                {isLocal ? <Laptop className="w-3.5 h-3.5 text-blue-500 shrink-0" /> : <Globe className="w-3 h-3 text-[#7895B2] shrink-0" />}
+                                <span>{isLocal ? 'Local Network Node' : 'External Host'}</span>
+                              </div>
+                              <div className="text-[11px] font-mono text-[#64748b]">
+                                <span className={searchQuery && flow.src_ip.toLowerCase().includes(searchQuery.toLowerCase().trim()) ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold' : ''}>
+                                  {flow.src_ip}
+                                </span>
+                                {flow.protocol !== 'ICMP' && `:${flow.src_port}`}
+                              </div>
                             </div>
                           );
                         })()}
                       </td>
                       <td className="py-3 px-4">
-                        {flow.sni ? (() => {
-                          const info = getFriendlyDomainInfo(flow.sni);
+                        {(() => {
                           const cleanDst = flow.dst_ip.split(' ')[0].split(':')[0];
                           const dstDev = devices.find((d) => d.ip === cleanDst);
+                          const dstDomain = flow.sni || resolvedDns[cleanDst] || getCachedDomain(cleanDst);
+
+                          if (dstDomain) {
+                            const info = getFriendlyDomainInfo(dstDomain);
+                            return (
+                              <div>
+                                <div className="flex items-center gap-1.5 font-sans font-bold text-blue-700 text-xs">
+                                  <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                  <span
+                                    className={`truncate max-w-[210px] ${
+                                      searchQuery && (dstDomain.toLowerCase().includes(searchQuery.toLowerCase().trim()) || (info.alias && info.alias.toLowerCase().includes(searchQuery.toLowerCase().trim())))
+                                        ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
+                                        : ''
+                                    }`}
+                                    title={`${info.raw} (${flow.dst_ip})`}
+                                  >
+                                    {info.display}
+                                  </span>
+                                  {info.alias && (
+                                    <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+                                      {info.alias}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-[#64748b] font-mono mt-0.5 flex items-center gap-1">
+                                  <span
+                                    className={
+                                      searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                                        ? 'bg-amber-100 text-amber-900 px-1 rounded font-bold'
+                                        : ''
+                                    }
+                                  >
+                                    {flow.dst_ip}
+                                  </span>
+                                  {flow.protocol !== 'ICMP' && <span>:{flow.dst_port}</span>}
+                                  {dstDev && (
+                                    <span
+                                      className="ml-1 px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 text-[9px] font-sans font-bold border border-blue-200 inline-flex items-center gap-1 cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedDevice(selectedDevice === dstDev.ip ? 'ALL' : dstDev.ip);
+                                      }}
+                                      title={`Physical System: ${dstDev.hostname || dstDev.label}. Click to isolate traffic.`}
+                                    >
+                                      <Router className="w-2.5 h-2.5 text-blue-600" />
+                                      {dstDev.hostname || (dstDev.is_gateway ? 'Gateway' : 'Host PC')}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          if (dstDev) {
+                            return (
+                              <div>
+                                <div className="flex items-center gap-1.5 font-sans font-bold text-blue-700 text-xs mb-0.5">
+                                  {dstDev.is_host ? <Laptop className="w-3.5 h-3.5 text-blue-600 shrink-0" /> : <Router className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                                  <span
+                                    className="cursor-pointer hover:underline"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedDevice(selectedDevice === dstDev.ip ? 'ALL' : dstDev.ip);
+                                    }}
+                                    title={`Physical System: ${dstDev.hostname || dstDev.label}. Click to isolate traffic.`}
+                                  >
+                                    {dstDev.hostname || dstDev.label}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] font-mono text-[#64748b]">
+                                  {flow.dst_ip}{flow.protocol !== 'ICMP' && `:${flow.dst_port}`}
+                                </div>
+                              </div>
+                            );
+                          }
+
+                          const isLocalDst = isLocalPrivateIp(cleanDst);
                           return (
                             <div>
-                              <div className="flex items-center gap-1.5 font-sans font-bold text-blue-700 text-xs">
-                                <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                <span
-                                  className={`truncate max-w-[210px] ${
-                                    searchQuery && (flow.sni.toLowerCase().includes(searchQuery.toLowerCase().trim()) || (info.alias && info.alias.toLowerCase().includes(searchQuery.toLowerCase().trim())))
-                                      ? 'bg-amber-100 text-amber-900 px-1 py-0.5 rounded ring-1 ring-amber-400 font-bold'
-                                      : ''
-                                  }`}
-                                  title={`${info.raw} (${flow.dst_ip})`}
-                                >
-                                  {info.display}
-                                </span>
-                                {info.alias && (
-                                  <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-                                    {info.alias}
-                                  </span>
-                                )}
+                              <div className="flex items-center gap-1.5 font-sans font-bold text-slate-700 text-xs mb-0.5">
+                                {isLocalDst ? <Router className="w-3.5 h-3.5 text-emerald-600 shrink-0" /> : <Globe className="w-3 h-3 text-[#7895B2] shrink-0" />}
+                                <span>{isLocalDst ? 'Local Gateway / Node' : 'External Host'}</span>
                               </div>
-                              <div className="text-[10px] text-[#64748b] font-mono mt-0.5 flex items-center gap-1">
+                              <div className="text-[11px] font-mono text-[#64748b]">
                                 <span
                                   className={
                                     searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
@@ -864,52 +958,7 @@ export const LiveTrafficLayer1 = () => {
                                   {flow.dst_ip}
                                 </span>
                                 {flow.protocol !== 'ICMP' && <span>:{flow.dst_port}</span>}
-                                {dstDev && (
-                                  <span
-                                    className="ml-1 px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 text-[9px] font-sans font-bold border border-blue-200 inline-flex items-center gap-1 cursor-pointer"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setSelectedDevice(selectedDevice === dstDev.ip ? 'ALL' : dstDev.ip);
-                                    }}
-                                    title={`Physical System: ${dstDev.hostname || dstDev.label}. Click to isolate traffic.`}
-                                  >
-                                    <Router className="w-2.5 h-2.5 text-blue-600" />
-                                    {dstDev.hostname || (dstDev.is_gateway ? 'Gateway' : 'Host PC')}
-                                  </span>
-                                )}
                               </div>
-                            </div>
-                          );
-                        })() : (() => {
-                          const cleanDst = flow.dst_ip.split(' ')[0].split(':')[0];
-                          const dstDev = devices.find((d) => d.ip === cleanDst);
-                          return (
-                            <div className="font-mono text-xs flex items-center gap-1.5">
-                              <span
-                                className={
-                                  searchQuery && flow.dst_ip.toLowerCase().includes(searchQuery.toLowerCase().trim())
-                                    ? 'bg-amber-100 text-amber-900 px-1 rounded font-bold'
-                                    : 'text-[#0f172a]'
-                                }
-                              >
-                                {flow.dst_ip}
-                              </span>
-                              {flow.protocol !== 'ICMP' && (
-                                <span className="text-[#64748b]">:{flow.dst_port}</span>
-                              )}
-                              {dstDev && (
-                                <span
-                                  className="ml-1 px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 text-[9px] font-sans font-bold border border-blue-200 inline-flex items-center gap-1 cursor-pointer"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedDevice(selectedDevice === dstDev.ip ? 'ALL' : dstDev.ip);
-                                  }}
-                                  title={`Physical System: ${dstDev.hostname || dstDev.label}. Click to isolate traffic.`}
-                                >
-                                  <Router className="w-2.5 h-2.5 text-blue-600" />
-                                  {dstDev.hostname || (dstDev.is_gateway ? 'Gateway' : 'Host PC')}
-                                </span>
-                              )}
                             </div>
                           );
                         })()}

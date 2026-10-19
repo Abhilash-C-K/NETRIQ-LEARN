@@ -35,12 +35,25 @@ export const extractRootDomain = (rawDomain) => {
 export const getFriendlyDomainInfo = (rawDomain) => {
   if (!rawDomain) return null;
   const root = extractRootDomain(rawDomain);
+  
+  // Organization names from network registries (e.g. "MongoDB, Inc.", "Microsoft Azure Cloud")
   if (!root) {
+    let alias = null;
+    const lower = rawDomain.toLowerCase();
+    if (lower.includes('mongodb')) alias = 'MongoDB Cloud';
+    else if (lower.includes('azure') || lower.includes('microsoft')) alias = 'Azure Cloud';
+    else if (lower.includes('amazon') || lower.includes('aws')) alias = 'AWS Cloud';
+    else if (lower.includes('google')) alias = 'Google Cloud';
+    else if (lower.includes('cloudflare')) alias = 'Cloudflare';
+    else if (lower.includes('host pc')) alias = 'Host System';
+    else if (lower.includes('gateway') || lower.includes('router')) alias = 'Network Gateway';
+    else if (lower.includes('local network') || lower.includes('device')) alias = 'LAN Device';
+
     return {
       display: rawDomain,
       root: rawDomain,
       raw: rawDomain,
-      alias: null,
+      alias,
     };
   }
 
@@ -53,6 +66,8 @@ export const getFriendlyDomainInfo = (rawDomain) => {
   else if (root === 'twimg.com') alias = 'Twitter Media';
   else if (root === 'githubusercontent.com') alias = 'GitHub Assets';
   else if (root === 'amazonaws.com') alias = 'AWS Cloud';
+  else if (root === 'one.one.one.one') alias = 'Cloudflare DNS';
+  else if (root === 'dns.google') alias = 'Google DNS';
 
   return {
     display: root,
@@ -111,8 +126,9 @@ export const setCachedDomain = (ip, domain) => {
 };
 
 export const requestIpReverseDns = (ip, resolveFn) => {
-  if (!ip || isLocalPrivateIp(ip)) return;
+  if (!ip) return;
   const cleanIp = ip.split(':')[0].trim();
+  if (cleanIp === '0.0.0.0' || cleanIp === '127.0.0.1') return;
   if (reverseDnsCache.has(cleanIp) || inflightLookups.has(cleanIp)) return;
 
   inflightLookups.add(cleanIp);

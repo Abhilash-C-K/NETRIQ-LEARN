@@ -157,40 +157,76 @@ class MonitoringService:
             base = '.'.join(base_parts) + '.'
             all_ips = [f"{base}{i}" for i in range(1, 255)]
 
+            # 1. Probe local subnet with Win32 SendARP in parallel
             with ThreadPoolExecutor(max_workers=96) as pool:
-                arp_results = [r for r in pool.map(win_send_arp, all_ips) if r[1]]
+                arp_tuples = list(pool.map(win_send_arp, all_ips))
+            arp_map = {ip: mac for ip, mac in arp_tuples if mac}
 
-            import dns.resolver, dns.reversename
-            router_res = dns.resolver.Resolver()
+            # 2. Check local OS ARP cache (catches sleeping devices that Windows communicated with)
+            try:
+                import subprocess, re
+                arp_out = subprocess.check_output("arp -a", shell=True, text=True, stderr=subprocess.DEVNULL)
+                for line in arp_out.splitlines():
+                    m = re.search(rf"({re.escape(base)}\d+)\s+([0-9a-fA-F\-]{{17}})", line)
+                    if m:
+                        a_ip = m.group(1)
+                        a_mac = m.group(2).replace('-', ':').upper()
+                        if a_ip not in arp_map and not a_mac.startswith("FF:FF:FF"):
+                            arp_map[a_ip] = a_mac
+            except Exception:
+                pass
+
+            # 3. Concurrently query router DNS PTR for all IPs (discovers all registered DHCP leases)
+            dns_names = {}
             if gateway_ip:
+                import dns.resolver, dns.reversename
+                router_res = dns.resolver.Resolver()
                 router_res.nameservers = [gateway_ip]
-            router_res.timeout = 0.4
-            router_res.lifetime = 0.4
+                router_res.timeout = 0.35
+                router_res.lifetime = 0.35
+
+                def resolve_ptr(ip_str: str):
+                    try:
+                        rev = dns.reversename.from_address(ip_str)
+                        ans = router_res.resolve(rev, "PTR")
+                        if ans:
+                            raw = str(ans[0]).rstrip(".")
+                            for suff in [".domain.name", ".lan", ".home", ".local", ".corp"]:
+                                if raw.lower().endswith(suff):
+                                    raw = raw[:-len(suff)]
+                            clean = raw.replace("-", " ").strip()
+                            if clean and not clean.endswith(".in-addr.arpa"):
+                                return ip_str, clean
+                    except Exception:
+                        pass
+                    return ip_str, None
+
+                with ThreadPoolExecutor(max_workers=64) as pool:
+                    ptr_results = pool.map(resolve_ptr, all_ips)
+                    for ip_str, name in ptr_results:
+                        if name:
+                            dns_names[ip_str] = name
+
+            # 4. Combine discovered IPs: responding to ARP OR registered in router DHCP table
+            candidate_ips = set(arp_map.keys()) | set(dns_names.keys())
 
             new_neighbors = {}
-            for ip, mac in arp_results:
-                if not mac:
-                    continue
+            for ip in candidate_ips:
                 if ip in (host_ip, gateway_ip):
                     continue
 
-                hostname = None
-                # Query local gateway DNS for real device hostname (Samsung, Tapo, Laptop, etc.)
-                try:
-                    rev = dns.reversename.from_address(ip)
-                    ans = router_res.resolve(rev, "PTR")
-                    if ans:
-                        raw = str(ans[0]).rstrip(".")
-                        for suff in [".domain.name", ".lan", ".home", ".local", ".corp"]:
-                            if raw.lower().endswith(suff):
-                                raw = raw[:-len(suff)]
-                        clean_name = raw.replace("-", " ").strip()
-                        if clean_name and not clean_name.endswith(".in-addr.arpa"):
-                            hostname = clean_name
-                except Exception:
-                    pass
+                mac = arp_map.get(ip)
+                # If MAC not in instant ARP, check if we had it in previous cache
+                if not mac:
+                    prev = self._active_neighbors.get(ip)
+                    if prev and prev.get("mac"):
+                        mac = prev["mac"]
+                    else:
+                        mac = "00:00:00:00:00:00"
 
-                # If no DNS hostname, check if randomized MAC (smartphones) or workstation
+                hostname = dns_names.get(ip)
+
+                # Check if randomized MAC (smartphones) or workstation
                 last_octet = ip.split('.')[-1]
                 is_random_mac = False
                 try:
@@ -203,6 +239,8 @@ class MonitoringService:
                         hostname = f"Smartphone ({last_octet})"
                     else:
                         hostname = f"Workstation ({last_octet})"
+                elif hostname.lower() == "p110":
+                    hostname = "Tapo Smart Plug (P110)"
 
                 # Determine device type
                 dev_type = "workstation"
@@ -211,6 +249,8 @@ class MonitoringService:
                     dev_type = "router"
                 elif "plug" in h_lower or "p110" in h_lower or "iot" in h_lower or "cam" in h_lower or "smart" in h_lower:
                     dev_type = "server"
+                elif is_random_mac or any(k in h_lower for k in ["phone", "m21", "galaxy", "realme", "xiaomi", "redmi", "iphone", "pixel", "infinix"]):
+                    dev_type = "workstation"
 
                 new_neighbors[ip] = {
                     "ip": ip,
@@ -224,11 +264,10 @@ class MonitoringService:
                 }
 
             with self._sweep_lock:
-                # Replace dict completely to prune disconnected systems
                 self._active_neighbors = new_neighbors
                 self._last_subnet_sweep = time.time()
                 self._sweep_in_progress = False
-                logger.info(f"Subnet sweep completed: {len(new_neighbors)} verified active devices discovered on {base}0/24.")
+                logger.info(f"Subnet sweep completed: {len(new_neighbors)} verified devices discovered on {base}0/24.")
 
         except Exception as e:
             logger.warning(f"Active subnet sweep encountered error: {e}")

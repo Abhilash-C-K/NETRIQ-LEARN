@@ -37,4 +37,9 @@ export const monitoringService = {
     const response = await api.post('/monitoring/resolve-dns-batch', { ips });
     return response.data?.results || {};
   },
+
+  async simulateThreat(payload = { threat_type: 'SYN_FLOOD' }) {
+    const response = await api.post('/monitoring/simulate-threat', payload);
+    return response.data;
+  },
 };

@@ -22,34 +22,50 @@ import {
   Zap,
   RotateCcw,
   Globe,
+  Radio,
+  Play,
+  Send,
+  X,
 } from 'lucide-react';
 import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
 import { responseService } from '../services/response';
+import { monitoringService } from '../services/monitoring';
 import { SOCCountermeasurePlaybook } from '../components/SOCCountermeasurePlaybook';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { getFriendlyDomainInfo } from '../utils/domain';
 
 export const ThreatDetection = () => {
-  const { subscribe } = useWebSocket();
+  const { subscribe, connectionStatus } = useWebSocket();
   const [threats, setThreats] = useState([]);
   const [selectedThreatId, setSelectedThreatId] = useState(null);
   const [layerFilter, setLayerFilter] = useState('ALL');
   const [severityFilter, setSeverityFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [quarantining, setQuarantining] = useState(false);
+  const [showSimModal, setShowSimModal] = useState(false);
+  const [simType, setSimType] = useState('SYN_FLOOD');
+  const [simSrcIp, setSimSrcIp] = useState('');
+  const [simulating, setSimulating] = useState(false);
+  const [realEndpoints, setRealEndpoints] = useState([]);
 
-  // Load real incidents & threats from MongoDB
-  const loadThreats = async () => {
+  // Load real incidents & threats from MongoDB and active Wi-Fi endpoints
+  const loadThreats = async (silent = false) => {
     try {
-      setLoading(true);
-      const [incidentsRes, threatsRes] = await Promise.allSettled([
+      if (!silent) setLoading(true);
+      const [incidentsRes, threatsRes, topoRes] = await Promise.allSettled([
         incidentService.getIncidents(100),
         predictionService.getRecentThreats(50),
+        monitoringService.getLocalTopology(),
       ]);
 
       const incList = incidentsRes.status === 'fulfilled' && Array.isArray(incidentsRes.value) ? incidentsRes.value : [];
       const thrList = threatsRes.status === 'fulfilled' && Array.isArray(threatsRes.value) ? threatsRes.value : [];
+      const topoDevices = topoRes.status === 'fulfilled' && Array.isArray(topoRes.value?.devices) ? topoRes.value.devices : [];
+
+      if (topoDevices.length > 0) {
+        setRealEndpoints(topoDevices);
+      }
 
       const merged = [];
 
@@ -159,25 +175,43 @@ export const ThreatDetection = () => {
       });
 
       setThreats(merged);
-      if (merged.length > 0) {
+      if (merged.length > 0 && !selectedThreatId) {
         setSelectedThreatId(merged[0].uniqueId || merged[0].id);
       }
     } catch (err) {
       console.error('Failed to load threats from database:', err);
-      setThreats([]);
-      setSelectedThreatId(null);
+      if (!silent) {
+        setThreats([]);
+        setSelectedThreatId(null);
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadThreats();
+    loadThreats(false);
+
+    // Auto-poll quietly in the background every 7 seconds
+    const interval = setInterval(() => {
+      loadThreats(true);
+    }, 7000);
 
     const handleLiveAlert = (payload) => {
-      if (!payload || (!payload.is_anomaly && payload.verdict !== 'BLOCK' && payload.verdict !== 'DROP' && payload.severity !== 'HIGH' && payload.severity !== 'CRITICAL')) {
-        return;
-      }
+      if (!payload) return;
+      const isThreat =
+        payload.is_anomaly ||
+        payload.action === 'RECOMMEND_BLOCK' ||
+        payload.action === 'QUARANTINE' ||
+        payload.verdict === 'BLOCK' ||
+        payload.verdict === 'DROP' ||
+        payload.prediction === 'MALICIOUS' ||
+        payload.prediction === 'ANOMALY' ||
+        String(payload.severity).toUpperCase() === 'HIGH' ||
+        String(payload.severity).toUpperCase() === 'CRITICAL';
+
+      if (!isThreat) return;
+
       const rawConf = typeof payload.confidence === 'number' ? payload.confidence : 96.5;
       const conf = rawConf > 1 ? +(rawConf / 100).toFixed(4) : rawConf;
       const isInternal = payload.src_ip && (payload.src_ip.startsWith('192.168.') || payload.src_ip.startsWith('10.'));
@@ -186,6 +220,27 @@ export const ThreatDetection = () => {
       const rawId = payload.id || Math.floor(1000 + Math.random() * 9000);
       const displayId = `THR-${String(rawId).slice(-4).toUpperCase()}`;
       const uniqueId = `THR-LIVE-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+      const dynamicShap = payload.raw_data?.explanation || [
+        {
+          feature: 'flow_prediction',
+          plainTitle: 'Classification Verdict',
+          value: payload.prediction || 'ANOMALY',
+          baseline: 'BENIGN',
+          impact: 0.45,
+          direction: 'increases_risk',
+          explanation: `Ingress classifier categorized this connection as ${payload.prediction || 'ANOMALY'}.`,
+        },
+        {
+          feature: 'threat_confidence',
+          plainTitle: 'Model Confidence',
+          value: `${(conf * 100).toFixed(1)}%`,
+          baseline: '50.0%',
+          impact: Number((conf - 0.5).toFixed(2)),
+          direction: conf >= 0.5 ? 'increases_risk' : 'decreases_risk',
+          explanation: `Live autonomous evaluation via ${layer === 'External' ? 'XGBoost external classifier' : 'LightGBM host model'}.`,
+        },
+      ];
 
       const newAlert = {
         id: displayId,
@@ -205,37 +260,79 @@ export const ThreatDetection = () => {
         mitre: layer === 'External' ? 'T1498 - Network Denial of Service' : 'T1021 - Lateral Movement: SMB/Admin Shares',
         summary: payload.reason || 'Live packet flow flagged by NetrIQ detection pipeline.',
         raw_data: payload,
+        shap_features: dynamicShap,
+      };
+
+      setThreats((prev) => [newAlert, ...prev.slice(0, 99)]);
+      setSelectedThreatId(uniqueId);
+    };
+
+    const handleNewIncidentAlert = (payload) => {
+      if (!payload) return;
+      const rawConf = typeof payload.confidence === 'number' ? payload.confidence : 95.0;
+      const conf = rawConf > 1 ? +(rawConf / 100).toFixed(4) : rawConf;
+      const isInternal = payload.src_ip && (payload.src_ip.startsWith('192.168.') || payload.src_ip.startsWith('10.'));
+      const layer = isInternal ? 'Internal' : 'External';
+      const rawId = payload.id || Math.floor(1000 + Math.random() * 9000);
+      const displayId = `INC-${String(rawId).slice(-4).toUpperCase()}`;
+      const uniqueId = `INC-LIVE-${Date.now()}`;
+
+      const newIncidentItem = {
+        id: displayId,
+        uniqueId,
+        rawId,
+        layer,
+        type: payload.description || 'AI Incident Flagged',
+        severity: String(payload.severity || 'HIGH').toUpperCase(),
+        src_ip: payload.src_ip || (payload.affected_assets && payload.affected_assets[0]) || 'Unknown Host',
+        dst_ip: payload.dst_ip || 'Gateway',
+        timestamp: new Date().toLocaleTimeString(),
+        prediction: payload.response_action ? `Action: ${payload.response_action}` : 'Malicious Incident',
+        confidence: conf,
+        model: layer === 'External' ? 'XGBoost_v2.0 (External)' : 'LightGBM_v2.0 (Internal)',
+        status: payload.status === 'resolved' ? 'Resolved / Mitigated' : 'Active Investigation',
+        mitre: layer === 'External' ? 'T1498 - Network Denial of Service' : 'T1021 - Lateral Movement: SMB/Admin Shares',
+        summary: payload.description || 'Host communication flagged by NetrIQ response engine.',
+        raw_data: payload,
         shap_features: [
           {
-            feature: 'flow_prediction',
-            plainTitle: 'Classification Verdict',
-            value: payload.prediction || 'ANOMALY',
-            baseline: 'BENIGN',
-            impact: 0.45,
-            direction: 'increases_risk',
-            explanation: `Ingress classifier categorized this connection as ${payload.prediction || 'ANOMALY'}.`,
-          },
-          {
-            feature: 'threat_confidence',
-            plainTitle: 'Model Confidence',
+            feature: 'incident_confidence',
+            plainTitle: 'Response Confidence',
             value: `${(conf * 100).toFixed(1)}%`,
             baseline: '50.0%',
-            impact: Number((conf - 0.5).toFixed(2)),
-            direction: conf >= 0.5 ? 'increases_risk' : 'decreases_risk',
-            explanation: `Live autonomous evaluation via ${layer === 'External' ? 'XGBoost external classifier' : 'LightGBM host model'}.`,
+            impact: 0.44,
+            direction: 'increases_risk',
+            explanation: `Flagged under incident ${displayId} with action ${payload.response_action || 'inspect'}.`,
           },
         ],
       };
 
-      setThreats((prev) => [newAlert, ...prev.slice(0, 99)]);
+      setThreats((prev) => [newIncidentItem, ...prev.slice(0, 99)]);
+      setSelectedThreatId(uniqueId);
+    };
+
+    const handleQuarantineAction = (payload) => {
+      if (!payload || !payload.ip) return;
+      setThreats((prev) =>
+        prev.map((t) =>
+          t.src_ip === payload.ip || t.src_ip?.startsWith(payload.ip)
+            ? { ...t, status: 'Device Quarantined' }
+            : t
+        )
+      );
     };
 
     const unsub1 = subscribe('threat_alert', handleLiveAlert);
     const unsub2 = subscribe('live_verdict', handleLiveAlert);
+    const unsub3 = subscribe('new_incident', handleNewIncidentAlert);
+    const unsub4 = subscribe('quarantine_action', handleQuarantineAction);
 
     return () => {
+      clearInterval(interval);
       unsub1();
       unsub2();
+      unsub3();
+      unsub4();
     };
   }, [subscribe]);
 
@@ -395,8 +492,103 @@ export const ThreatDetection = () => {
     downloadAnchor.remove();
   };
 
+  const handleRunSimulation = async () => {
+    try {
+      setSimulating(true);
+      await monitoringService.simulateThreat({
+        threat_type: simType,
+        src_ip: simSrcIp || undefined,
+      });
+      setShowSimModal(false);
+      await loadThreats(true);
+    } catch (err) {
+      alert(`Simulation failed: ${err.message || 'Unknown error'}`);
+    } finally {
+      setSimulating(false);
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      {/* Simulation Modal */}
+      {showSimModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full border border-[#e2eaf4] shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between border-b border-[#f0f5fc] pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#0a1c3d]">Live Attack Simulation</h3>
+                  <p className="text-xs text-[#687d9a]">Inject realistic threat to verify AI detection pipeline</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSimModal(false)}
+                className="text-[#8ca0b8] hover:text-[#0a1c3d] p-1 rounded-lg hover:bg-[#f0f5fc]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="font-bold text-[#0a1c3d] block mb-1.5">Attack Scenario</label>
+                <select
+                  value={simType}
+                  onChange={(e) => setSimType(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-[#dbe6f5] bg-white text-xs font-semibold text-[#0a1c3d] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="SYN_FLOOD">SYN Flood Volumetric DDoS (External)</option>
+                  <option value="PORT_SCAN">Rapid Sequential Port Scan (Internal / External)</option>
+                  <option value="LATERAL_SMB">Unauthorized Lateral Movement via SMB (Internal)</option>
+                  <option value="MALWARE_C2">C2 Beaconing & Exfiltration (External)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#0a1c3d] block mb-1.5">Attacking Source Device</label>
+                <select
+                  value={simSrcIp}
+                  onChange={(e) => setSimSrcIp(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-[#dbe6f5] bg-white text-xs font-semibold text-[#0a1c3d] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Default Simulated IP</option>
+                  {realEndpoints.map((ep, i) => (
+                    <option key={i} value={ep.ip}>
+                      {ep.hostname || ep.label || ep.ip} ({ep.ip})
+                    </option>
+                  ))}
+                  <option value="185.220.101.5">185.220.101.5 (External Tor Exit Node)</option>
+                  <option value="45.154.255.88">45.154.255.88 (External Botnet C2)</option>
+                </select>
+                <p className="text-[11px] text-[#8ca0b8] mt-1">
+                  Choose any discovered local Wi-Fi device or external adversary IP.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-[#f0f5fc]">
+              <button
+                onClick={() => setShowSimModal(false)}
+                className="px-4 py-2 rounded-xl border border-[#dbe6f5] text-xs font-semibold text-[#687d9a] hover:bg-[#f0f5fc] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRunSimulation}
+                disabled={simulating}
+                className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                <Zap className="w-3.5 h-3.5 fill-white" />
+                {simulating ? 'Injecting Attack...' : 'Launch Simulation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="bg-white p-6 rounded-2xl border border-[#e2eaf4] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -405,7 +597,13 @@ export const ThreatDetection = () => {
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-[#0a1c3d]">Threat Detection</h1>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl font-bold text-[#0a1c3d]">Threat Detection</h1>
+                <span className="flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                  <span>Wire Active</span>
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -413,7 +611,14 @@ export const ThreatDetection = () => {
         {/* Filter Controls & Refresh */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
-            onClick={() => loadThreats()}
+            onClick={() => setShowSimModal(true)}
+            className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+          >
+            <Zap className="w-3.5 h-3.5 fill-white" /> Simulate Attack
+          </button>
+
+          <button
+            onClick={() => loadThreats(false)}
             className="px-3 py-1.5 rounded-xl border border-[#dbe6f5] hover:bg-[#f0f5fc] text-xs font-semibold text-[#0a1c3d] flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} /> Refresh

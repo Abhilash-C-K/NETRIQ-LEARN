@@ -30,15 +30,17 @@ import { dashboardService } from '../services/dashboard';
 import { predictionService } from '../services/prediction';
 import { incidentService } from '../services/incidents';
 import { responseService } from '../services/response';
+import { monitoringService } from '../services/monitoring';
 import { useWebSocket } from '../hooks/useWebSocket';
 
 export const Dashboard = () => {
   const navigate = useNavigate();
-  const { subscribe } = useWebSocket();
+  const { subscribe, connectionStatus } = useWebSocket();
 
   const [loading, setLoading] = useState(false);
   const [threats, setThreats] = useState([]);
   const [incidents, setIncidents] = useState([]);
+  const [liveMonitorStatus, setLiveMonitorStatus] = useState({ is_running: true, active_flows: 0 });
   const [summary, setSummary] = useState({
     total_traffic_gb: '0.0 GB',
     detected_threats: 0,
@@ -69,24 +71,33 @@ export const Dashboard = () => {
   // Recent Alerts list dynamically derived from real incidents & threat outliers
   const [recentAlerts, setRecentAlerts] = useState([]);
 
-  // Connect to live MongoDB backend
+  // Connect to live MongoDB backend & Network Telemetry
   useEffect(() => {
+    let isMounted = true;
+
     const fetchData = async () => {
       try {
-        const [summaryRes, threatsRes, incidentsRes] = await Promise.allSettled([
+        const [summaryRes, threatsRes, incidentsRes, topologyRes, monitorStatusRes] = await Promise.allSettled([
           dashboardService.getSummary(),
           predictionService.getRecentThreats(100),
           incidentService.getIncidents(50),
+          monitoringService.getLocalTopology(),
+          monitoringService.getStatus(),
         ]);
+
+        if (!isMounted) return;
 
         const s = summaryRes.status === 'fulfilled' && summaryRes.value ? summaryRes.value : {};
         const threatsList = threatsRes.status === 'fulfilled' && Array.isArray(threatsRes.value) ? threatsRes.value : [];
         const incidentsList = incidentsRes.status === 'fulfilled' && Array.isArray(incidentsRes.value) ? incidentsRes.value : [];
+        const topoData = topologyRes.status === 'fulfilled' && topologyRes.value ? topologyRes.value : {};
+        const mStatus = monitorStatusRes.status === 'fulfilled' && monitorStatusRes.value ? monitorStatusRes.value : {};
 
+        if (mStatus) setLiveMonitorStatus(mStatus);
         if (threatsList.length > 0) setThreats(threatsList);
         if (incidentsList.length > 0) setIncidents(incidentsList);
 
-        // 1. Dynamic Summary KPIs
+        // 1. Dynamic Summary KPIs from real telemetry
         const blockedCount = threatsList.filter((t) => t.action === 'RECOMMEND_BLOCK' || t.action === 'QUARANTINE' || t.verdict === 'BLOCK').length;
         const quarantinedCount = incidentsList.filter((i) => i.response_action === 'quarantine' || String(i.description).includes('QUARANTINE')).length;
         const benignCount = threatsList.filter((t) => !t.is_anomaly && t.prediction !== 'MALICIOUS').length;
@@ -121,8 +132,23 @@ export const Dashboard = () => {
           setTopThreatSources([]);
         }
 
-        // 3. Dynamic Device Statuses from Observed Network Traffic
-        if (threatsList.length > 0) {
+        // 3. Dynamic Device Statuses from Observed Real Local Wi-Fi Topology & Incidents
+        const topoDevices = Array.isArray(topoData.devices) ? topoData.devices : [];
+        if (topoDevices.length > 0) {
+          const devList = topoDevices.slice(0, 6).map((dev) => {
+            const ip = dev.ip;
+            const isQuar = incidentsList.some((inc) => (inc.src_ip === ip || (inc.affected_assets && inc.affected_assets.includes(ip))) && inc.response_action === 'quarantine');
+            const isSusp = threatsList.some((t) => (t.src_ip === ip || t.dst_ip === ip) && (t.is_anomaly || t.severity === 'CRITICAL' || t.severity === 'HIGH'));
+            return {
+              ip,
+              hostname: dev.hostname || dev.label || ip,
+              status: isQuar ? 'Quarantined' : isSusp ? 'Suspicious' : 'Normal',
+              type: dev.type || 'workstation',
+              lastActivity: 'Active on Wi-Fi',
+            };
+          });
+          setDeviceStatuses(devList);
+        } else if (threatsList.length > 0) {
           const devMap = {};
           threatsList.forEach((t) => {
             const ip = t.src_ip;
@@ -131,23 +157,22 @@ export const Dashboard = () => {
             const isSusp = t.is_anomaly || t.severity === 'CRITICAL' || t.severity === 'HIGH';
             devMap[ip] = {
               ip,
+              hostname: ip,
               status: isQuar ? 'Quarantined' : isSusp ? 'Suspicious' : 'Normal',
               lastActivity: t.timestamp ? new Date(t.timestamp * (t.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
             };
           });
           setDeviceStatuses(Object.values(devMap).slice(0, 5));
-        } else {
-          setDeviceStatuses([]);
         }
 
-        // 4. Dynamic Recent Alerts from Incidents and Threat Detections
+        // 4. Dynamic Recent Alerts from Real Incidents and Threat Outliers
         const realAlerts = [];
         incidentsList.slice(0, 3).forEach((inc, idx) => {
           realAlerts.push({
             id: `INC-ALERT-${idx}`,
             type: inc.response_action === 'quarantine' ? 'quarantine' : 'warning',
             color: inc.response_action === 'quarantine' ? 'text-blue-500 bg-blue-50' : 'text-red-500 bg-red-50',
-            title: inc.description ? inc.description.slice(0, 32) : 'Threat Anomaly Flagged',
+            title: inc.description ? inc.description.slice(0, 36) : 'Threat Anomaly Flagged',
             desc: inc.src_ip ? `Host ${inc.src_ip} flagged by AI engine` : 'Investigated by Response Engine',
             time: inc.created_at ? new Date(inc.created_at * (inc.created_at < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent',
           });
@@ -164,7 +189,9 @@ export const Dashboard = () => {
           });
         });
 
-        setRecentAlerts(realAlerts.slice(0, 5));
+        if (realAlerts.length > 0) {
+          setRecentAlerts(realAlerts.slice(0, 5));
+        }
 
         // 5. Dynamic Traffic Analysis Timeline Buckets
         if (threatsList.length > 0) {
@@ -252,12 +279,28 @@ export const Dashboard = () => {
     };
 
     fetchData();
+    // Auto-refresh periodically to keep telemetry completely live
+    const interval = setInterval(fetchData, 6000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
-  // Live WebSocket stream to append live events
+  // Multi-event Live WebSocket subscriptions for instant wire reaction
   useEffect(() => {
     const handleNewVerdict = (payload) => {
-      const isMalicious = payload.verdict === 'BLOCK' || payload.is_anomaly;
+      if (!payload) return;
+      const isMalicious = 
+        payload.action === 'RECOMMEND_BLOCK' ||
+        payload.action === 'QUARANTINE' ||
+        payload.verdict === 'BLOCK' ||
+        payload.verdict === 'DROP' ||
+        payload.is_anomaly ||
+        payload.prediction === 'MALICIOUS' ||
+        String(payload.severity).toUpperCase() === 'HIGH' ||
+        String(payload.severity).toUpperCase() === 'CRITICAL';
+
       const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       if (isMalicious) {
@@ -266,28 +309,84 @@ export const Dashboard = () => {
           type: 'warning',
           color: 'text-red-500 bg-red-50',
           title: payload.prediction || 'Threat Anomaly Detected',
-          desc: `${payload.src_ip || 'Unknown IP'} -> ${payload.dst_ip || '10.0.0.1'}`,
+          desc: `${payload.src_ip || 'Internal Host'} -> ${payload.dst_ip || 'Gateway'}`,
           time: nowTime,
         };
         setRecentAlerts((prev) => [newAlert, ...prev.slice(0, 4)]);
         setSummary((prev) => ({
           ...prev,
-          detected_threats: prev.detected_threats + 1,
+          detected_threats: (prev.detected_threats || 0) + 1,
         }));
       }
 
-      setTrafficAnalysisData((prev) => [
-        ...prev.slice(1),
-        {
-          time: nowTime,
-          normal: Math.floor(130 + Math.random() * 25),
-          suspicious: isMalicious ? Math.floor(80 + Math.random() * 40) : Math.floor(15 + Math.random() * 10),
-        },
-      ]);
+      // Live Traffic Timeline updates with real incoming flow counts
+      setTrafficAnalysisData((prev) => {
+        if (!prev || prev.length === 0) {
+          return [{ time: nowTime, normal: isMalicious ? 0 : 1, suspicious: isMalicious ? 1 : 0 }];
+        }
+        const last = prev[prev.length - 1];
+        if (last.time === nowTime) {
+          return [
+            ...prev.slice(0, prev.length - 1),
+            {
+              ...last,
+              normal: last.normal + (isMalicious ? 0 : 1),
+              suspicious: last.suspicious + (isMalicious ? 1 : 0),
+            },
+          ];
+        } else {
+          return [
+            ...prev.slice(Math.max(0, prev.length - 9)),
+            {
+              time: nowTime,
+              normal: isMalicious ? 0 : 1,
+              suspicious: isMalicious ? 1 : 0,
+            },
+          ];
+        }
+      });
     };
 
-    const unsubscribe = subscribe('live_verdict', handleNewVerdict);
-    return () => unsubscribe();
+    const handleNewIncident = (payload) => {
+      if (!payload) return;
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const newAlert = {
+        id: `INC-LIVE-${Date.now()}`,
+        type: payload.response_action === 'quarantine' ? 'quarantine' : 'warning',
+        color: payload.response_action === 'quarantine' ? 'text-blue-500 bg-blue-50' : 'text-red-500 bg-red-50',
+        title: payload.description || 'Autonomous Incident Created',
+        desc: payload.src_ip ? `Host ${payload.src_ip} flagged` : 'Enforcement triggered',
+        time: nowTime,
+      };
+      setRecentAlerts((prev) => [newAlert, ...prev.slice(0, 4)]);
+      setSummary((prev) => ({
+        ...prev,
+        detected_threats: (prev.detected_threats || 0) + 1,
+      }));
+    };
+
+    const handleQuarantine = (payload) => {
+      if (!payload) return;
+      setSummary((prev) => ({
+        ...prev,
+        quarantined_devices: (prev.quarantined_devices || 0) + 1,
+      }));
+      if (payload.ip) {
+        setDeviceStatuses((prev) =>
+          prev.map((d) => (d.ip === payload.ip ? { ...d, status: 'Quarantined' } : d))
+        );
+      }
+    };
+
+    const unsub1 = subscribe('live_verdict', handleNewVerdict);
+    const unsub2 = subscribe('new_incident', handleNewIncident);
+    const unsub3 = subscribe('quarantine_action', handleQuarantine);
+
+    return () => {
+      unsub1();
+      unsub2();
+      unsub3();
+    };
   }, [subscribe]);
 
   // Quick Action Handler
@@ -308,6 +407,42 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6 max-w-[1440px] mx-auto select-none">
+      {/* LIVE SOC TELEMETRY BEACON HEADER */}
+      <div className="bg-white rounded-2xl p-4 border border-[#e2eaf4] shadow-xs flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="relative flex items-center justify-center">
+            <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-ping absolute opacity-75" />
+            <span className="w-3 h-3 rounded-full bg-emerald-500 relative" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-bold text-[#0a1c3d] tracking-tight">LIVE NETWORK TELEMETRY ACTIVE</h2>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                {connectionStatus === 'connected' ? 'WebSocket Live' : 'Connecting'}
+              </span>
+            </div>
+            <p className="text-xs text-[#687d9a] mt-0.5">
+              Continuous Layer 1 & 2 wire capture active on Wi-Fi subnet • {deviceStatuses.length} verified endpoints monitored
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => navigate('/monitoring')}
+            className="px-3.5 py-1.5 rounded-xl border border-[#dbe6f5] hover:bg-[#f0f5fc] text-xs font-semibold text-[#0a1c3d] flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <ArrowRight className="w-3.5 h-3.5 text-blue-600" /> View Live Wire
+          </button>
+          <button
+            onClick={() => navigate('/threat-detection')}
+            className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+          >
+            <ShieldAlert className="w-3.5 h-3.5" /> Threat Detection
+          </button>
+        </div>
+      </div>
+
       {/* 1. TOP 4 STAT CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card 1: Total Traffic */}
@@ -696,7 +831,12 @@ export const Dashboard = () => {
                 ) : (
                   deviceStatuses.map((row, i) => (
                     <tr key={i} className="hover:bg-[#f8fbff] transition-colors">
-                      <td className="py-2.5 font-mono text-[11px] font-semibold text-[#0a1c3d]">{row.ip}</td>
+                      <td className="py-2.5 text-[11px]">
+                        <div className="font-semibold text-[#0a1c3d] truncate max-w-[140px]">{row.hostname || row.ip}</div>
+                        {row.hostname && row.hostname !== row.ip && (
+                          <div className="text-[10px] text-[#687d9a] font-mono">{row.ip}</div>
+                        )}
+                      </td>
                       <td className="py-2.5 text-[11px]">
                         <span className="flex items-center gap-1.5 font-medium">
                           <span

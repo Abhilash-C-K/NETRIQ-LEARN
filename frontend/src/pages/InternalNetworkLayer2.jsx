@@ -145,123 +145,141 @@ export const InternalNetworkLayer2 = () => {
   const [viewMode, setViewMode] = useState('live'); // 'live' (Real Wi-Fi Devices) | 'simulation' (Enterprise SOC Testbed)
   const [topologyMeta, setTopologyMeta] = useState(null);
 
+  // Helper to construct React Flow nodes and edges with position preservation
+  const buildRealTopology = (devices, incidents = [], threats = [], prevNodes = []) => {
+    const prevMap = new Map((prevNodes || []).map((n) => [n.id, n]));
+    const realNodes = devices.map((d, idx) => {
+      const matchingThreats = (threats || []).filter((t) => t.src_ip === d.ip || t.dst_ip === d.ip);
+      const isQuar =
+        (incidents || []).some(
+          (i) =>
+            (i.src_ip === d.ip || (Array.isArray(i.affected_assets) && i.affected_assets.includes(d.ip))) &&
+            (i.response_action === 'quarantine' || String(i.description || '').includes('QUARANTINE'))
+        ) || matchingThreats.some((t) => t.action === 'QUARANTINE');
+
+      const hasCritical = matchingThreats.some((t) => t.severity === 'CRITICAL' || t.is_anomaly);
+      const hasWarning = matchingThreats.some((t) => t.severity === 'HIGH' || t.severity === 'MEDIUM');
+
+      const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
+
+      let xPos = 480;
+      let yPos = 80;
+      if (d.is_gateway) {
+        xPos = 120;
+        yPos = 80;
+      } else if (!d.is_host) {
+        const peerIdx = idx - (devices.some((x) => x.is_gateway && x.is_host) ? 1 : 2);
+        const col = Math.max(0, peerIdx) % 3;
+        const row = Math.floor(Math.max(0, peerIdx) / 3);
+        xPos = 60 + col * 260;
+        yPos = 240 + row * 130;
+      }
+
+      const nodeId = `dev-${d.ip.replace(/\./g, '-')}`;
+      const existingNode = prevMap.get(nodeId);
+      const position = existingNode ? existingNode.position : { x: xPos, y: yPos };
+
+      const ports = Array.from(
+        new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))
+      ).slice(0, 4);
+
+      const hostname = d.hostname || (d.is_host ? 'Host PC' : d.is_gateway ? 'Wi-Fi Gateway' : `Workstation (${d.ip.split('.').pop()})`);
+      const friendlyLabel = d.is_host
+        ? `${hostname} (This PC)`
+        : d.is_gateway
+        ? `Wi-Fi Router Gateway`
+        : `${hostname} (${d.ip})`;
+
+      return {
+        id: nodeId,
+        type: 'socDevice',
+        position,
+        data: {
+          id: nodeId,
+          label: friendlyLabel,
+          hostname: hostname,
+          ip: d.ip,
+          mac: d.mac || '00:00:00:00:00:00',
+          type: d.type || (d.is_gateway ? 'router' : 'workstation'),
+          vlan: d.is_gateway ? 'Default Gateway / Access Point' : 'Active Local Wi-Fi Subnet',
+          status,
+          riskScore: isQuar ? 98 : hasCritical ? 92 : hasWarning ? 65 : 8,
+          openPorts: ports.length > 0 ? ports : (d.is_host ? [8000, 5173, 27017] : [80, 443, 53]),
+          details: d.is_host
+            ? `Local machine (${hostname} - ${d.ip}) running NetrIQ IDS/IPS on active Wi-Fi interface.`
+            : d.is_gateway
+            ? `Physical Wi-Fi router gateway (${d.ip}). MAC: ${d.mac}.`
+            : `Physical device detected on the local Wi-Fi subnet via ARP discovery.`,
+          isRealDevice: true,
+        },
+      };
+    });
+
+    const realEdges = [];
+    const gwNode = realNodes.find((n) => n.data.type === 'router') || realNodes[0];
+    realNodes.forEach((n) => {
+      if (gwNode && n.id !== gwNode.id) {
+        realEdges.push({
+          id: `edge-${gwNode.id}-${n.id}`,
+          source: gwNode.id,
+          target: n.id,
+          animated: true,
+          label: 'Wi-Fi Link (Active)',
+          labelStyle: { fill: '#2563eb', fontSize: 10, fontWeight: 700 },
+          style: { stroke: '#2563eb', strokeWidth: 2 },
+        });
+      }
+    });
+
+    return { nodes: realNodes, edges: realEdges };
+  };
+
   // Load real telemetry devices from Host OS & MongoDB
   const loadTopologyData = async (mode = viewMode, isSilent = false) => {
     try {
       if (!isSilent) setLoading(true);
-      const [localTopology, incidents, threats] = await Promise.all([
-        monitoringService.getLocalTopology().catch(() => null),
-        incidentService.getIncidents(50).catch(() => []),
-        predictionService.getRecentThreats(50).catch(() => []),
-      ]);
-
-      const internalThreats = Array.isArray(threats) ? threats : [];
-      const realIncidents = Array.isArray(incidents) ? incidents : [];
 
       if (mode === 'live') {
+        // 1. Fetch hardware topology immediately (< 200ms)
+        const localTopology = await monitoringService.getLocalTopology().catch(() => null);
+
         if (localTopology && Array.isArray(localTopology.devices) && localTopology.devices.length > 0) {
           setTopologyMeta(localTopology);
 
           setNodes((prevNodes) => {
-            const prevMap = new Map((prevNodes || []).map((n) => [n.id, n]));
-
-            const realNodes = localTopology.devices.map((d, idx) => {
-              const matchingThreats = internalThreats.filter((t) => t.src_ip === d.ip || t.dst_ip === d.ip);
-              const isQuar =
-                realIncidents.some(
-                  (i) =>
-                    (i.src_ip === d.ip || (Array.isArray(i.affected_assets) && i.affected_assets.includes(d.ip))) &&
-                    (i.response_action === 'quarantine' || String(i.description || '').includes('QUARANTINE'))
-                ) || matchingThreats.some((t) => t.action === 'QUARANTINE');
-
-              const hasCritical = matchingThreats.some((t) => t.severity === 'CRITICAL' || t.is_anomaly);
-              const hasWarning = matchingThreats.some((t) => t.severity === 'HIGH' || t.severity === 'MEDIUM');
-
-              const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
-
-              // Layout: Gateway top-left, Host PC top-right, all discovered subnet devices in a clean responsive grid below
-              let xPos = 480;
-              let yPos = 80;
-              if (d.is_gateway) {
-                xPos = 120;
-                yPos = 80;
-              } else if (!d.is_host) {
-                const peerIdx = idx - (localTopology.devices.some((x) => x.is_gateway && x.is_host) ? 1 : 2);
-                const col = Math.max(0, peerIdx) % 3;
-                const row = Math.floor(Math.max(0, peerIdx) / 3);
-                xPos = 60 + col * 260;
-                yPos = 240 + row * 130;
-              }
-
-              const nodeId = `dev-${d.ip.replace(/\./g, '-')}`;
-              const existingNode = prevMap.get(nodeId);
-              const position = existingNode ? existingNode.position : { x: xPos, y: yPos };
-
-              const ports = Array.from(
-                new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))
-              ).slice(0, 4);
-
-              const hostname = d.hostname || (d.is_host ? 'Host PC' : d.is_gateway ? 'Wi-Fi Gateway' : `Workstation (${d.ip.split('.').pop()})`);
-              const friendlyLabel = d.is_host
-                ? `${hostname} (This PC)`
-                : d.is_gateway
-                ? `Wi-Fi Router Gateway`
-                : `${hostname} (${d.ip})`;
-
-              return {
-                id: nodeId,
-                type: 'socDevice',
-                position,
-                data: {
-                  id: nodeId,
-                  label: friendlyLabel,
-                  hostname: hostname,
-                  ip: d.ip,
-                  mac: d.mac || '00:00:00:00:00:00',
-                  type: d.type || (d.is_gateway ? 'router' : 'workstation'),
-                  vlan: d.is_gateway ? 'Default Gateway / Access Point' : 'Active Local Wi-Fi Subnet',
-                  status,
-                  riskScore: isQuar ? 98 : hasCritical ? 92 : hasWarning ? 65 : 8,
-                  openPorts: ports.length > 0 ? ports : (d.is_host ? [8000, 5173, 27017] : [80, 443, 53]),
-                  details: d.is_host
-                    ? `Local machine (${hostname} - ${d.ip}) running NetrIQ IDS/IPS on active Wi-Fi interface.`
-                    : d.is_gateway
-                    ? `Physical Wi-Fi router gateway (${d.ip}). MAC: ${d.mac}.`
-                    : `Physical device detected on the local Wi-Fi subnet via ARP discovery.`,
-                  isRealDevice: true,
-                },
-              };
-            });
-
-            // Update edges: Connect Gateway to all local devices on the subnet
-            const realEdges = [];
-            const gwNode = realNodes.find((n) => n.data.type === 'router') || realNodes[0];
-            realNodes.forEach((n) => {
-              if (n.id !== gwNode.id) {
-                realEdges.push({
-                  id: `edge-${gwNode.id}-${n.id}`,
-                  source: gwNode.id,
-                  target: n.id,
-                  animated: true,
-                  label: 'Wi-Fi Link (Active)',
-                  labelStyle: { fill: '#2563eb', fontSize: 10, fontWeight: 700 },
-                  style: { stroke: '#2563eb', strokeWidth: 2 },
-                });
-              }
-            });
-
-            setEdges(realEdges);
-
+            const { nodes: newNodes, edges: newEdges } = buildRealTopology(localTopology.devices, [], [], prevNodes);
+            setEdges(newEdges);
             setSelectedNode((prevSelected) => {
               if (prevSelected) {
-                const found = realNodes.find((n) => n.id === prevSelected.id);
+                const found = newNodes.find((n) => n.id === prevSelected.id);
                 if (found) return found;
               }
-              return realNodes.find((n) => n.data.ip === localTopology.host_ip) || realNodes[0];
+              return newNodes.find((n) => n.data.ip === localTopology.host_ip) || newNodes[0];
             });
-
-            return realNodes;
+            return newNodes;
           });
+
+          if (!isSilent) setLoading(false);
+
+          // 2. Background enrich with incidents & threats without blocking canvas
+          try {
+            const [incidents, threats] = await Promise.all([
+              incidentService.getIncidents(25).catch(() => []),
+              predictionService.getRecentThreats(25).catch(() => []),
+            ]);
+
+            setNodes((prevNodes) => {
+              const { nodes: enrichedNodes } = buildRealTopology(
+                localTopology.devices,
+                Array.isArray(incidents) ? incidents : [],
+                Array.isArray(threats) ? threats : [],
+                prevNodes
+              );
+              return enrichedNodes;
+            });
+          } catch (e) {
+            // Non-critical background enrichment
+          }
         } else {
           // Fallback gracefully for live Wi-Fi mode when backend topology list is empty
           const fallbackHostIp = localTopology?.host_ip || (window?.location?.hostname || '127.0.0.1');

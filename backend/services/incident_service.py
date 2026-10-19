@@ -64,10 +64,12 @@ class IncidentService:
         item_id = str(item.get("id", ""))
         enriched["incident_code"] = item.get("incident_code") or self._generate_incident_code(item_id, idx)
 
+        src_ip = item.get("src_ip")
+        dst_ip = item.get("dst_ip")
         asset = item.get("affected_assets", [None])[0] if item.get("affected_assets") else None
         threat = None
-        if asset:
-            # Query real threat record from database
+        if (not src_ip or not dst_ip) and asset:
+            # Query real threat record from database only if IPs are missing
             t_list = await threats_repo.list(filter_query={"src_ip": asset}, limit=1)
             if t_list:
                 threat = t_list[0]
@@ -76,8 +78,8 @@ class IncidentService:
                 if t_list:
                     threat = t_list[0]
 
-        src_ip = item.get("src_ip") or (threat.get("src_ip") if threat else None) or asset or "192.168.1.105"
-        dst_ip = item.get("dst_ip") or (threat.get("dst_ip") if threat else None) or "185.220.101.5"
+        src_ip = src_ip or (threat.get("src_ip") if threat else None) or asset or "192.168.1.105"
+        dst_ip = dst_ip or (threat.get("dst_ip") if threat else None) or "185.220.101.5"
         src_port = item.get("src_port") or (threat.get("src_port") if threat else None) or (51000 + idx)
         dst_port = item.get("dst_port") or (threat.get("dst_port") if threat else None) or 443
         protocol = item.get("protocol") or (threat.get("protocol") if threat else None) or "TCP"

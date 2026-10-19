@@ -67,6 +67,7 @@ export const Dashboard = () => {
 
   // Device Status table dynamically derived from real observed devices
   const [deviceStatuses, setDeviceStatuses] = useState([]);
+  const [totalEndpoints, setTotalEndpoints] = useState(0);
 
   // Recent Alerts list dynamically derived from real incidents & threat outliers
   const [recentAlerts, setRecentAlerts] = useState([]);
@@ -178,34 +179,97 @@ export const Dashboard = () => {
         // 3. Dynamic Device Statuses from Observed Real Local Wi-Fi Topology & Incidents
         const topoDevices = Array.isArray(topoData.devices) ? topoData.devices : [];
         if (topoDevices.length > 0) {
-          const devList = topoDevices.slice(0, 6).map((dev) => {
+          setTotalEndpoints(topoDevices.length);
+          const allDevList = topoDevices.map((dev) => {
             const ip = dev.ip;
-            const isQuar = incidentsList.some((inc) => (inc.src_ip === ip || (inc.affected_assets && inc.affected_assets.includes(ip))) && inc.response_action === 'quarantine');
-            const isSusp = threatsList.some((t) => (t.src_ip === ip || t.dst_ip === ip) && (t.is_anomaly || t.severity === 'CRITICAL' || t.severity === 'HIGH'));
+            const isQuar = incidentsList.some(
+              (inc) =>
+                (inc.src_ip === ip ||
+                  (inc.affected_assets && inc.affected_assets.includes(ip)) ||
+                  (inc.description && inc.description.includes(ip))) &&
+                (inc.response_action === 'quarantine' || String(inc.description).toUpperCase().includes('QUARANTINE')) &&
+                inc.status !== 'resolved' &&
+                inc.status !== 'closed'
+            );
+            const isSusp =
+              !isQuar &&
+              threatsList.some(
+                (t) =>
+                  (t.src_ip === ip || t.dst_ip === ip) &&
+                  (t.is_anomaly || t.severity === 'CRITICAL' || t.severity === 'HIGH' || t.prediction === 'MALICIOUS')
+              );
             return {
               ip,
               hostname: dev.hostname || dev.label || ip,
               status: isQuar ? 'Quarantined' : isSusp ? 'Suspicious' : 'Normal',
               type: dev.type || 'workstation',
-              lastActivity: 'Active on Wi-Fi',
+              lastActivity: isQuar ? 'Quarantined by AI' : isSusp ? 'Threat Anomaly' : 'Active on Wi-Fi',
+              is_host: !!dev.is_host,
+              is_gateway: !!dev.is_gateway,
             };
           });
-          setDeviceStatuses(devList);
+
+          // Merge any internal subnet IPs present in active incidents if not already discovered
+          const knownIps = new Set(allDevList.map((d) => d.ip));
+          incidentsList.forEach((inc) => {
+            const ip = inc.src_ip;
+            if (ip && ip.startsWith('192.168.') && !knownIps.has(ip)) {
+              knownIps.add(ip);
+              allDevList.push({
+                ip,
+                hostname: inc.source_label || ip,
+                status: inc.response_action === 'quarantine' ? 'Quarantined' : 'Suspicious',
+                type: 'workstation',
+                lastActivity: 'Quarantined by AI',
+                is_host: false,
+                is_gateway: false,
+              });
+            }
+          });
+
+          // Sort so high risk / quarantined / suspicious devices are ALWAYS visible at the top!
+          allDevList.sort((a, b) => {
+            const priority = (d) => (d.status === 'Quarantined' ? 3 : d.status === 'Suspicious' ? 2 : d.is_host ? 1 : 0);
+            return priority(b) - priority(a);
+          });
+
+          setTotalEndpoints(allDevList.length);
+          setDeviceStatuses(allDevList);
         } else if (threatsList.length > 0) {
           const devMap = {};
           threatsList.forEach((t) => {
             const ip = t.src_ip;
             if (!ip || devMap[ip]) return;
-            const isQuar = t.action === 'QUARANTINE' || incidentsList.some((inc) => (inc.src_ip === ip || (inc.affected_assets && inc.affected_assets.includes(ip))) && inc.response_action === 'quarantine');
+            const isQuar =
+              t.action === 'QUARANTINE' ||
+              incidentsList.some(
+                (inc) =>
+                  (inc.src_ip === ip || (inc.affected_assets && inc.affected_assets.includes(ip))) &&
+                  inc.response_action === 'quarantine'
+              );
             const isSusp = t.is_anomaly || t.severity === 'CRITICAL' || t.severity === 'HIGH';
             devMap[ip] = {
               ip,
               hostname: ip,
               status: isQuar ? 'Quarantined' : isSusp ? 'Suspicious' : 'Normal',
-              lastActivity: t.timestamp ? new Date(t.timestamp * (t.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now',
+              type: 'workstation',
+              lastActivity: t.timestamp
+                ? new Date(t.timestamp * (t.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Just now',
+              is_host: false,
+              is_gateway: false,
             };
           });
-          setDeviceStatuses(Object.values(devMap).slice(0, 5));
+          const list = Object.values(devMap);
+          list.sort((a, b) => {
+            const priority = (d) => (d.status === 'Quarantined' ? 3 : d.status === 'Suspicious' ? 2 : 0);
+            return priority(b) - priority(a);
+          });
+          setTotalEndpoints(list.length);
+          setDeviceStatuses(list);
         }
 
         // 4. Dynamic Recent Alerts from Real Incidents and Threat Outliers
@@ -415,9 +479,29 @@ export const Dashboard = () => {
         quarantined_devices: (prev.quarantined_devices || 0) + 1,
       }));
       if (payload.ip) {
-        setDeviceStatuses((prev) =>
-          prev.map((d) => (d.ip === payload.ip ? { ...d, status: 'Quarantined' } : d))
-        );
+        setDeviceStatuses((prev) => {
+          const exists = prev.some((d) => d.ip === payload.ip);
+          let updated;
+          if (exists) {
+            updated = prev.map((d) =>
+              d.ip === payload.ip ? { ...d, status: 'Quarantined', lastActivity: 'Quarantined by AI' } : d
+            );
+          } else {
+            updated = [
+              {
+                ip: payload.ip,
+                hostname: payload.hostname || payload.ip,
+                status: 'Quarantined',
+                type: 'workstation',
+                lastActivity: 'Quarantined by AI',
+                is_host: false,
+                is_gateway: false,
+              },
+              ...prev,
+            ];
+          }
+          return [...updated].sort((a, b) => (a.status === 'Quarantined' ? -1 : 1));
+        });
       }
     };
 
@@ -431,6 +515,61 @@ export const Dashboard = () => {
       unsub3();
     };
   }, [subscribe]);
+
+  // Quick Action: Toggle Quarantine / Isolation for any device
+  const handleToggleDeviceQuarantine = async (device) => {
+    if (!device || !device.ip) return;
+    if (device.is_gateway) {
+      alert('Action Denied: Cannot quarantine the Wi-Fi Router Gateway.');
+      return;
+    }
+    const isQuarantined = device.status === 'Quarantined';
+    const confirmMsg = isQuarantined
+      ? `Release quarantine isolation for ${device.hostname || device.ip}?`
+      : `Quarantine and drop all network traffic for ${device.hostname || device.ip} (${device.ip})?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      if (isQuarantined) {
+        const activeInc = incidents.find(
+          (i) =>
+            (i.src_ip === device.ip || (i.affected_assets && i.affected_assets.includes(device.ip))) &&
+            i.response_action === 'quarantine' &&
+            i.status === 'active'
+        );
+        if (activeInc) {
+          await incidentService.updateIncident(activeInc.id, {
+            status: 'resolved',
+            notes: 'Quarantine released from SOC Dashboard.',
+          });
+        }
+        setDeviceStatuses((prev) =>
+          prev.map((d) => (d.ip === device.ip ? { ...d, status: 'Normal', lastActivity: 'Active on Wi-Fi' } : d))
+        );
+        setSummary((prev) => ({
+          ...prev,
+          quarantined_devices: Math.max(0, (prev.quarantined_devices || 1) - 1),
+        }));
+      } else {
+        await responseService.triggerQuarantine({
+          target_ip: device.ip,
+          reason: `Manual Quarantine from SOC Dashboard: ${device.hostname || device.ip}`,
+        });
+        setDeviceStatuses((prev) => {
+          const updated = prev.map((d) =>
+            d.ip === device.ip ? { ...d, status: 'Quarantined', lastActivity: 'Quarantined by SOC' } : d
+          );
+          return [...updated].sort((a, b) => (a.status === 'Quarantined' ? -1 : 1));
+        });
+        setSummary((prev) => ({
+          ...prev,
+          quarantined_devices: (prev.quarantined_devices || 0) + 1,
+        }));
+      }
+    } catch (err) {
+      alert(`Quarantine action error: ${err.message || 'Action executed'}`);
+    }
+  };
 
   // Quick Action Handler
   const handleBlockIP = async () => {
@@ -465,7 +604,7 @@ export const Dashboard = () => {
               </span>
             </div>
             <p className="text-xs text-[#687d9a] mt-0.5">
-              Continuous Layer 1 & 2 wire capture active on Wi-Fi subnet • {deviceStatuses.length} verified endpoints monitored
+              Continuous Layer 1 & 2 wire capture active on Wi-Fi subnet • {totalEndpoints || deviceStatuses.length} verified endpoints monitored
             </p>
           </div>
         </div>
@@ -852,24 +991,29 @@ export const Dashboard = () => {
         </div>
 
         {/* Box 2: Device Status */}
-        <div className="bg-white rounded-2xl p-5 border border-[#e2eaf4] shadow-xs">
+        <div className="bg-white rounded-2xl p-5 border border-[#e2eaf4] shadow-xs flex flex-col justify-between">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-[#0a1c3d]">Device Status</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-[#0a1c3d]">Device Status</h3>
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#f0f5fc] text-[#0073e6]">
+                {totalEndpoints || deviceStatuses.length} Discovered
+              </span>
+            </div>
             <button
               onClick={() => navigate('/network-layer2')}
               className="text-xs font-semibold text-[#0073e6] hover:underline cursor-pointer"
             >
-              View All
+              View Topology
             </button>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto max-h-[290px] overflow-y-auto pr-1">
             <table className="w-full text-left text-xs">
-              <thead>
+              <thead className="sticky top-0 bg-white shadow-2xs z-10">
                 <tr className="text-[#8ca0b8] border-b border-[#f1f5f9] font-medium">
-                  <th className="pb-2">Device IP</th>
+                  <th className="pb-2">Device / IP</th>
                   <th className="pb-2">Status</th>
-                  <th className="pb-2 text-right">Last Activity</th>
+                  <th className="pb-2 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#f8fbff]">
@@ -881,9 +1025,17 @@ export const Dashboard = () => {
                   </tr>
                 ) : (
                   deviceStatuses.map((row, i) => (
-                    <tr key={i} className="hover:bg-[#f8fbff] transition-colors">
+                    <tr key={i} className="hover:bg-[#f8fbff] transition-colors group">
                       <td className="py-2.5 text-[11px]">
-                        <div className="font-semibold text-[#0a1c3d] truncate max-w-[140px]">{row.hostname || row.ip}</div>
+                        <div className="font-semibold text-[#0a1c3d] truncate max-w-[130px] flex items-center gap-1.5">
+                          <span>{row.hostname || row.ip}</span>
+                          {row.is_gateway && (
+                            <span className="text-[9px] font-mono bg-[#e2eaf4] text-[#0047b3] px-1 py-0.2 rounded font-bold">GW</span>
+                          )}
+                          {row.is_host && (
+                            <span className="text-[9px] font-mono bg-[#dcfce7] text-[#166534] px-1 py-0.2 rounded font-bold">HOST</span>
+                          )}
+                        </div>
                         {row.hostname && row.hostname !== row.ip && (
                           <div className="text-[10px] text-[#687d9a] font-mono">{row.ip}</div>
                         )}
@@ -895,7 +1047,7 @@ export const Dashboard = () => {
                               row.status === 'Normal'
                                 ? 'bg-[#10b981]'
                                 : row.status === 'Quarantined'
-                                ? 'bg-[#ef4444]'
+                                ? 'bg-[#ef4444] animate-pulse'
                                 : 'bg-[#f59e0b]'
                             }`}
                           />
@@ -904,15 +1056,31 @@ export const Dashboard = () => {
                               row.status === 'Normal'
                                 ? 'text-[#10b981]'
                                 : row.status === 'Quarantined'
-                                ? 'text-[#ef4444]'
-                                : 'text-[#f59e0b]'
+                                ? 'text-[#ef4444] font-semibold'
+                                : 'text-[#f59e0b] font-semibold'
                             }
                           >
                             {row.status}
                           </span>
                         </span>
                       </td>
-                      <td className="py-2.5 text-[11px] text-[#8ca0b8] text-right font-medium">{row.lastActivity}</td>
+                      <td className="py-2.5 text-[11px] text-right font-medium">
+                        {!row.is_gateway ? (
+                          <button
+                            onClick={() => handleToggleDeviceQuarantine(row)}
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+                              row.status === 'Quarantined'
+                                ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                                : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 opacity-80 group-hover:opacity-100'
+                            }`}
+                            title={row.status === 'Quarantined' ? 'Click to unquarantine device' : 'Click to quarantine device'}
+                          >
+                            {row.status === 'Quarantined' ? 'Unquarantine' : 'Isolate'}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] text-[#8ca0b8]">Protected</span>
+                        )}
+                      </td>
                     </tr>
                   ))
                 )}

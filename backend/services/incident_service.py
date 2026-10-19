@@ -104,7 +104,7 @@ class IncidentService:
 
     async def list(self, role: Role, limit: int = 100) -> List[Dict[str, Any]]:
         """Returns incidents. Viewers receive a simplified summary with redacted IPs; Analysts/Admins get full records."""
-        results = await incidents_repo.list(limit=limit)
+        results = await incidents_repo.list(limit=limit, sort_by=[("created_at", -1)])
         if role == Role.VIEWER:
             # Strip internal technical fields and redact IP addresses from description
             return [

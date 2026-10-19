@@ -47,6 +47,17 @@ class ResponseEngine:
             logger.warning(f"Aborting response action {action.name}: Invalid or missing target IP '{target_ip}'")
             await self.logger.log_action(action, target_ip, "Aborted (Invalid IP)", False, context)
             return False
+
+        # Protect core network infrastructure (Gateway, Loopback, Broadcast)
+        if (
+            str(target_ip).endswith(".1") or
+            str(target_ip).endswith(".255") or
+            str(target_ip).startswith("127.") or
+            target_ip in ("0.0.0.0", "255.255.255.255")
+        ):
+            logger.info(f"Target {target_ip} is protected core network infrastructure. Bypassing enforcement action: {action.name}")
+            await self.logger.log_action(action, target_ip, "Bypassed (Core Infrastructure)", True, context)
+            return True
         
         # 1. Whitelist Check (Before Enforcement)
         if await self.whitelist.is_whitelisted(target_ip, target_mac):

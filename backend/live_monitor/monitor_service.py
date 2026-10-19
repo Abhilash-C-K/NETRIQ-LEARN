@@ -65,10 +65,11 @@ class MonitorService:
                 # 2. Determine Internal vs External Asset Scope
                 src_ip = partial_pkt.get("src_ip", "")
                 dst_ip = partial_pkt.get("dst_ip", "")
-                is_internal = is_internal_ip(src_ip) or is_internal_ip(dst_ip)
+                is_internal = is_internal_ip(src_ip)
+                is_internal_lateral = is_internal and is_internal_ip(dst_ip)
 
                 # 3. Formulate Decision (respecting single-rule vs 2-rule Layer 2 ceilings)
-                decision = decide(risk=risk_cat, confidence=verdict.confidence_floor, is_internal=is_internal)
+                decision = decide(risk=risk_cat, confidence=verdict.confidence_floor, is_internal=is_internal_lateral)
 
                 # 3b. Enforce Escalation Ceiling Guard for Heuristic-only matches:
                 # Heuristic matches CANNOT trigger Layer 2 QUARANTINE unless is_internal=True
@@ -195,14 +196,30 @@ class MonitorService:
                     dst_ip = getattr(flow, 'dst_ip', '')
                     src_port = getattr(flow, 'src_port', 0)
                     dst_port = getattr(flow, 'dst_port', 0)
-                    is_internal = is_internal_ip(src_ip) or is_internal_ip(dst_ip)
+                    is_internal = is_internal_ip(src_ip)
                     
                     threat_level_name = result_dict.get("threat_level", "LOW")
                     risk_cat = getattr(RiskCategory, threat_level_name, RiskCategory.LOW)
                     confidence = result_dict.get("confidence", 0.0)
                     is_anomaly = result_dict.get("is_anomaly", False)
                     
-                    decision = decide(risk=risk_cat, confidence=confidence, is_internal=is_internal)
+                    # Filter out standard benign local multicast, DNS, DHCP, NTP, and normal outbound web browsing from false positive triggers
+                    is_benign_infra = (
+                        dst_port in (53, 67, 68, 80, 443, 8080, 8443, 123, 137, 138, 1900, 5353, 5355) or
+                        src_port in (53, 67, 68, 80, 443, 8080, 8443, 123, 137, 138, 1900, 5353, 5355) or
+                        str(dst_ip).startswith("224.") or str(dst_ip).startswith("239.") or str(dst_ip).endswith(".255") or
+                        str(src_ip).endswith(".1") or str(dst_ip).endswith(".1") or
+                        src_ip in ("127.0.0.1", "0.0.0.0") or dst_ip in ("127.0.0.1", "0.0.0.0")
+                    )
+                    if is_benign_infra:
+                        is_anomaly = False
+                        risk_cat = RiskCategory.LOW
+                        result_dict["prediction"] = "BENIGN"
+                        result_dict["threat_level"] = "LOW"
+
+                    # Only genuine internal lateral attacks (internal -> internal) can trigger Layer 2 quarantine
+                    is_internal_lateral = is_internal and is_internal_ip(dst_ip)
+                    decision = decide(risk=risk_cat, confidence=confidence, is_internal=is_internal_lateral)
                     
                     logger.debug(
                         f"[MonitorService] Flow {src_ip}:{src_port} -> "

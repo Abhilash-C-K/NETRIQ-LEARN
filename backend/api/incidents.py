@@ -37,3 +37,16 @@ async def get_incident_countermeasures(incident_id: str):
         logger.error(f"Failed to get countermeasures for {incident_id}: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to generate countermeasures")
 
+
+@router.delete("/clear-all", dependencies=[Depends(require_permission(Capabilities.TRIGGER_QUARANTINE))])
+async def clear_all_incidents():
+    """Wipes historical test incident records so the live SOC console starts completely fresh."""
+    try:
+        from backend.database.collections import incidents_repo
+        res = await incidents_repo.collection.delete_many({})
+        logger.info(f"Cleared {res.deleted_count} historical incidents from MongoDB.")
+        return {"status": "success", "deleted_count": res.deleted_count}
+    except Exception as e:
+        logger.error(f"Failed to clear incidents: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to clear incidents")
+

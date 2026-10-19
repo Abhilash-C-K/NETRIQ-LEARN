@@ -44,3 +44,16 @@ async def get_raw_logs(req: Request, query: LogQuery = Depends()):
     except Exception as e:
         logger.error(f"Failed to retrieve logs: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to retrieve logs")
+
+
+@router.delete("/clear-all", dependencies=[Depends(require_permission(Capabilities.TRIGGER_QUARANTINE))])
+async def clear_all_threat_logs():
+    """Clears old threat logs so the system only reflects fresh live flows."""
+    try:
+        from backend.database.collections import threats_repo
+        res = await threats_repo.collection.delete_many({})
+        logger.info(f"Cleared {res.deleted_count} threat logs from MongoDB.")
+        return {"status": "success", "deleted_count": res.deleted_count}
+    except Exception as e:
+        logger.error(f"Failed to clear threat logs: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to clear threat logs: {str(e)}")

@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 load_dotenv(Path(__file__).parent / ".env")  # Always load backend/.env regardless of CWD
 
-# NETRIQ Main Entrypoint (Real ML models & WebSockets active)
+# NETRIQ Main Entrypoint (Real ML models & WebSockets active - Updated live pipeline)
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request

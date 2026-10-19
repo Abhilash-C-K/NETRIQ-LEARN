@@ -48,6 +48,7 @@ export const AppRouter = () => {
 
         {/* 04. Threat Detection - Alerts & Feature Explanations */}
         <Route path="/threats" element={<ThreatDetection />} />
+        <Route path="/threat-detection" element={<ThreatDetection />} />
         <Route path="/incidents" element={<ThreatDetection />} />
 
         {/* 05. Device Quarantine - Internal Isolation Controls & Audit Log */}

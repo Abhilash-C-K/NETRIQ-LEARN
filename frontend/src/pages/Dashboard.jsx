@@ -98,7 +98,7 @@ export const Dashboard = () => {
         if (threatsList.length > 0) setThreats(threatsList);
         if (incidentsList.length > 0) setIncidents(incidentsList);
 
-        // 1. Dynamic Summary KPIs from real telemetry
+        // 1. Dynamic Summary KPIs from real live telemetry
         const actualThreatRecords = threatsList.filter(
           (t) =>
             t.is_anomaly ||
@@ -109,11 +109,19 @@ export const Dashboard = () => {
             String(t.severity).toUpperCase() === 'HIGH' ||
             String(t.severity).toUpperCase() === 'CRITICAL'
         );
-        const quarantinedCount = incidentsList.filter(
-          (i) => i.response_action === 'quarantine' || String(i.description).includes('QUARANTINE')
+
+        // Only count genuinely active, non-resolved incidents
+        const activeIncidents = incidentsList.filter(
+          (i) => i.status === 'active' || (!i.status && i.response_action === 'quarantine')
+        );
+
+        const quarantinedCount = activeIncidents.filter(
+          (i) => (i.response_action === 'quarantine' || String(i.description).toUpperCase().includes('QUARANTINE'))
         ).length;
+
         const benignCount = threatsList.filter((t) => !t.is_anomaly && t.prediction === 'BENIGN').length;
-        const normalPct = threatsList.length > 0 ? ((benignCount / threatsList.length) * 100).toFixed(1) + '%' : '100%';
+        const totalEvaluated = benignCount + actualThreatRecords.length;
+        const normalPct = totalEvaluated > 0 ? ((benignCount / totalEvaluated) * 100).toFixed(1) + '%' : '100.0%';
 
         // Compute actual wire byte volume across observed flows
         const totalBytes = threatsList.reduce((acc, t) => {
@@ -130,7 +138,8 @@ export const Dashboard = () => {
           trafficStr = `${Math.max(1, Math.round(totalBytes / 1024))} KB`;
         }
 
-        const totalThreatsDetected = actualThreatRecords.length + (incidentsList ? incidentsList.length : 0);
+        // Live threat count: only real anomalies on the wire plus genuinely active incidents
+        const totalThreatsDetected = actualThreatRecords.length + activeIncidents.length;
 
         setSummary({
           total_traffic_gb: trafficStr,
@@ -141,14 +150,14 @@ export const Dashboard = () => {
           benign_count: benignCount,
         });
 
-        // 2. Dynamic Top Threat Sources (Only populated from actual threats & incidents)
+        // 2. Dynamic Top Threat Sources (Only populated from actual threats & active incidents)
         const threatEntities = [
           ...actualThreatRecords.map((t) => ({
             ip: t.src_ip,
             type: t.prediction || t.reason || 'Network Anomaly',
             severity: t.severity || 'High',
           })),
-          ...incidentsList.map((inc) => ({
+          ...activeIncidents.map((inc) => ({
             ip: inc.src_ip || (inc.affected_assets && inc.affected_assets[0]) || 'Unknown',
             type: inc.description || 'AI Incident',
             severity: inc.severity || 'High',
@@ -182,12 +191,11 @@ export const Dashboard = () => {
           setTotalEndpoints(topoDevices.length);
           const allDevList = topoDevices.map((dev) => {
             const ip = dev.ip;
-            const isQuar = incidentsList.some(
+            const isQuar = !dev.is_gateway && incidentsList.some(
               (inc) =>
                 (inc.src_ip === ip ||
-                  (inc.affected_assets && inc.affected_assets.includes(ip)) ||
-                  (inc.description && inc.description.includes(ip))) &&
-                (inc.response_action === 'quarantine' || String(inc.description).toUpperCase().includes('QUARANTINE')) &&
+                  (Array.isArray(inc.affected_assets) && inc.affected_assets.includes(ip))) &&
+                (inc.response_action === 'quarantine' || String(inc.description || '').toUpperCase().includes('QUARANTINE')) &&
                 inc.status !== 'resolved' &&
                 inc.status !== 'closed'
             );
@@ -213,7 +221,7 @@ export const Dashboard = () => {
           const knownIps = new Set(allDevList.map((d) => d.ip));
           incidentsList.forEach((inc) => {
             const ip = inc.src_ip;
-            if (ip && ip.startsWith('192.168.') && !knownIps.has(ip)) {
+            if (ip && ip.startsWith('192.168.') && !knownIps.has(ip) && inc.status === 'active') {
               knownIps.add(ip);
               allDevList.push({
                 ip,
@@ -274,7 +282,7 @@ export const Dashboard = () => {
 
         // 4. Dynamic Recent Alerts from Real Incidents and Threat Outliers
         const realAlerts = [];
-        incidentsList.slice(0, 3).forEach((inc, idx) => {
+        activeIncidents.slice(0, 3).forEach((inc, idx) => {
           realAlerts.push({
             id: `INC-ALERT-${idx}`,
             type: inc.response_action === 'quarantine' ? 'quarantine' : 'warning',
@@ -285,7 +293,7 @@ export const Dashboard = () => {
           });
         });
 
-        threatsList.filter((t) => t.is_anomaly || t.severity === 'CRITICAL').slice(0, 2).forEach((thr, idx) => {
+        actualThreatRecords.slice(0, 2).forEach((thr, idx) => {
           realAlerts.push({
             id: `THR-ALERT-${idx}`,
             type: 'warning',
@@ -296,9 +304,7 @@ export const Dashboard = () => {
           });
         });
 
-        if (realAlerts.length > 0) {
-          setRecentAlerts(realAlerts.slice(0, 5));
-        }
+        setRecentAlerts(realAlerts.slice(0, 5));
 
         // 5. Dynamic Traffic Analysis Timeline Buckets
         if (threatsList.length > 0) {
@@ -346,7 +352,7 @@ export const Dashboard = () => {
             'Lateral Movement': 0,
             'Others': 0,
           };
-          const anomalies = threatsList.filter((t) => t.is_anomaly || t.prediction !== 'BENIGN');
+          const anomalies = threatsList.filter((t) => t.is_anomaly || (t.prediction && t.prediction !== 'BENIGN'));
           anomalies.forEach((t) => {
             const pred = String(t.prediction || t.reason || '').toLowerCase();
             if (pred.includes('ddos') || pred.includes('syn') || pred.includes('flood')) {
@@ -362,23 +368,27 @@ export const Dashboard = () => {
             }
           });
 
-          const totalAnom = Math.max(anomalies.length, 1);
-          const colors = {
-            'DDoS': '#0047b3',
-            'Port Scan': '#0073e6',
-            'Malware': '#29b6f6',
-            'Lateral Movement': '#81d4fa',
-            'Others': '#b3e5fc',
-          };
-          const distData = Object.entries(catCounts)
-            .filter(([_, count]) => count > 0 || anomalies.length === 0)
-            .map(([name, count]) => ({
-              name,
-              count,
-              value: Math.round((count / totalAnom) * 100) || (anomalies.length === 0 && name === 'Others' ? 100 : 0),
-              color: colors[name],
-            }));
-          setThreatDistributionData(distData.length > 0 ? distData : [{ name: 'Benign Flow', value: 100, count: 0, color: '#10b981' }]);
+          if (anomalies.length === 0) {
+            setThreatDistributionData([{ name: 'Clean Subnet (Benign)', value: 100, count: threatsList.length, color: '#10b981' }]);
+          } else {
+            const totalAnom = anomalies.length;
+            const colors = {
+              'DDoS': '#0047b3',
+              'Port Scan': '#0073e6',
+              'Malware': '#29b6f6',
+              'Lateral Movement': '#81d4fa',
+              'Others': '#b3e5fc',
+            };
+            const distData = Object.entries(catCounts)
+              .filter(([_, count]) => count > 0)
+              .map(([name, count]) => ({
+                name,
+                count,
+                value: Math.round((count / totalAnom) * 100),
+                color: colors[name],
+              }));
+            setThreatDistributionData(distData.length > 0 ? distData : [{ name: 'Clean Subnet (Benign)', value: 100, count: 0, color: '#10b981' }]);
+          }
         }
       } catch (err) {
         console.warn('Dashboard telemetry error:', err);

@@ -70,8 +70,8 @@ export const Login = () => {
       <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
         {/* Ambient cyan depth aura */}
         <div className="absolute w-[700px] h-[700px] rounded-full bg-cyan-500/20 blur-[90px]" />
-        {/* Clearly visible N and Eye emblem - scaled so N and Eye majestically frame and glow through the card */}
-        <div className="relative w-[650px] h-[650px] sm:w-[860px] sm:h-[860px] [mask-image:radial-gradient(circle_at_center,black_55%,transparent_85%)] filter blur-[5px] sm:blur-[7px] opacity-65 mix-blend-screen pointer-events-none">
+        {/* Optically centered N and Eye emblem - smoothly blended behind and around the card */}
+        <div className="relative w-[650px] h-[650px] sm:w-[860px] sm:h-[860px] [mask-image:radial-gradient(circle_at_center,black_45%,transparent_80%)] filter blur-[18px] sm:blur-[22px] opacity-60 mix-blend-screen pointer-events-none -translate-x-[8%] -translate-y-[6%]">
           <img
             src="/logo.jpeg"
             alt="NetrIQ Ambient Emblem"
@@ -79,7 +79,7 @@ export const Login = () => {
           />
         </div>
         {/* Subtle radial vignette darkening around outer edges */}
-        <div className="absolute inset-0 bg-radial from-transparent via-[#030712]/20 to-[#030712]" />
+        <div className="absolute inset-0 bg-radial from-transparent via-[#030712]/30 to-[#030712]" />
       </div>
 
       {/* Login Card: Modern Glassmorphic Dark Cyber Panel */}

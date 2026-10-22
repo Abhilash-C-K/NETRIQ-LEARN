@@ -71,7 +71,7 @@ export const Login = () => {
         {/* Ambient cyan depth aura */}
         <div className="absolute w-[700px] h-[700px] rounded-full bg-cyan-500/20 blur-[90px]" />
         {/* Optically centered N and Eye emblem - smoothly blended behind and around the card */}
-        <div className="relative w-[650px] h-[650px] sm:w-[860px] sm:h-[860px] [mask-image:radial-gradient(circle_at_center,black_45%,transparent_80%)] filter blur-[18px] sm:blur-[22px] opacity-60 mix-blend-screen pointer-events-none -translate-x-[8%] -translate-y-[6%]">
+        <div className="relative w-[650px] h-[650px] sm:w-[860px] sm:h-[860px] [mask-image:radial-gradient(circle_at_center,black_45%,transparent_80%)] filter blur-[18px] sm:blur-[22px] opacity-60 mix-blend-screen pointer-events-none">
           <img
             src="/logo.jpeg"
             alt="NetrIQ Ambient Emblem"

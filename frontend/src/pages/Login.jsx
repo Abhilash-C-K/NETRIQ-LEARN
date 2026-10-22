@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { setAccessToken } from '../services/api';
 import { Lock, User, ShieldAlert, ArrowRight, ShieldCheck, Shield } from 'lucide-react';
@@ -104,22 +104,26 @@ export const Login = () => {
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-start gap-2.5 shadow-sm">
-            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+          <div role="alert" aria-live="assertive" className="mb-6 p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-start gap-2.5 shadow-sm">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-red-400" aria-hidden="true" />
             <p>{error}</p>
           </div>
         )}
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
-            <label className="block text-xs font-sans font-medium text-slate-300 mb-1.5">
+            <label htmlFor="login-username" className="block text-xs font-sans font-medium text-slate-300 mb-1.5">
               USERNAME / EMAIL
             </label>
             <div className="relative">
-              <User className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+              <User className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" aria-hidden="true" />
               <input
+                id="login-username"
+                name="username"
                 type="text"
+                autoComplete="username"
+                aria-required="true"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="analyst / admin"
@@ -129,13 +133,17 @@ export const Login = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-sans font-medium text-slate-300 mb-1.5">
+            <label htmlFor="login-password" className="block text-xs font-sans font-medium text-slate-300 mb-1.5">
               PASSWORD
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
+              <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" aria-hidden="true" />
               <input
+                id="login-password"
+                name="password"
                 type="password"
+                autoComplete="current-password"
+                aria-required="true"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -148,6 +156,7 @@ export const Login = () => {
           <button
             type="submit"
             disabled={loading}
+            aria-label={loading ? "Authenticating security credentials" : "Sign In to NetrIQ Security Operations Console"}
             className="w-full mt-2 py-2.5 bg-gradient-to-r from-[#0066ff] via-[#00a8ff] to-[#00f0ff] hover:from-[#0052cc] hover:via-[#0094e0] hover:to-[#00d8e8] text-slate-950 font-sans font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer shadow-[0_0_20px_rgba(0,168,255,0.35)]"
           >
             {loading ? (
@@ -155,7 +164,7 @@ export const Login = () => {
             ) : (
               <>
                 <span>Sign In</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
               </>
             )}
           </button>
@@ -168,19 +177,25 @@ export const Login = () => {
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button
+              type="button"
               onClick={() => handleQuickFill('admin')}
+              aria-label="Quick fill Admin account credentials"
               className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
             >
               Admin
             </button>
             <button
+              type="button"
               onClick={() => handleQuickFill('analyst')}
+              aria-label="Quick fill Analyst account credentials"
               className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
             >
               Analyst
             </button>
             <button
+              type="button"
               onClick={() => handleQuickFill('viewer')}
+              aria-label="Quick fill Viewer account credentials"
               className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
             >
               Viewer
@@ -189,11 +204,20 @@ export const Login = () => {
         </div>
       </div>
 
-      {/* Footer System Info */}
-      <div className="mt-6 text-center text-xs text-slate-400 font-sans flex items-center gap-1.5 relative z-10">
-        <ShieldCheck className="w-3.5 h-3.5 text-[#00e5ff]" />
-        <span>Strict Security Control • Authorized Personnel Only</span>
-      </div>
+      {/* Footer System Info & Terms Link */}
+      <footer className="mt-6 text-center text-xs text-slate-400 font-sans flex flex-col sm:flex-row items-center gap-2 relative z-10">
+        <div className="flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-[#00e5ff]" aria-hidden="true" />
+          <span>Strict Security Control • Authorized Personnel Only</span>
+        </div>
+        <span className="hidden sm:inline text-slate-600">•</span>
+        <Link
+          to="/terms"
+          className="text-slate-400 hover:text-[#00e5ff] underline underline-offset-2 transition-colors cursor-pointer"
+        >
+          Terms of Service &amp; SOC Compliance
+        </Link>
+      </footer>
     </div>
   );
 };

@@ -15,6 +15,7 @@ import { Settings } from '../pages/Settings';
 import { AIPerformance } from '../pages/AIPerformance';
 import { Users } from '../pages/Users';
 import { History } from '../pages/History';
+import { Terms } from '../pages/Terms';
 import { NotFound } from '../pages/NotFound';
 
 export const AppRouter = () => {
@@ -23,8 +24,9 @@ export const AppRouter = () => {
       {/* Root Route: Splash Screen */}
       <Route path="/" element={<Splash />} />
 
-      {/* Authentication */}
+      {/* Authentication & Compliance */}
       <Route path="/login" element={<Login />} />
+      <Route path="/terms" element={<Terms />} />
 
       {/* Authenticated Application Routes (Protected via AppLayout) */}
       <Route

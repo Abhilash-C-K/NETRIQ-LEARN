@@ -67,15 +67,18 @@ export const Splash = () => {
     >
       {/* Ambient Blurry Logo Background Accent */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
-        <div className="relative w-[480px] h-[480px] sm:w-[650px] sm:h-[650px] rounded-full overflow-hidden filter blur-[75px] sm:blur-[95px] opacity-35 mix-blend-screen scale-110 pointer-events-none">
+        {/* Ambient cyan depth glow */}
+        <div className="absolute w-[550px] h-[550px] rounded-full bg-cyan-500/20 blur-[80px]" />
+        {/* Clearly visible N and Eye emblem with soft blur and feathered radial blend */}
+        <div className="relative w-[520px] h-[520px] sm:w-[720px] sm:h-[720px] [mask-image:radial-gradient(circle_at_center,black_50%,transparent_85%)] filter blur-[5px] sm:blur-[7px] opacity-65 mix-blend-screen pointer-events-none">
           <img
             src="/logo.jpeg"
-            alt=""
+            alt="NetrIQ Ambient Emblem"
             className="w-full h-full object-cover"
           />
         </div>
-        {/* Subtle radial vignette darkening around edges */}
-        <div className="absolute inset-0 bg-radial from-transparent via-[#030712]/40 to-[#030712]" />
+        {/* Subtle radial vignette darkening around outer edges */}
+        <div className="absolute inset-0 bg-radial from-transparent via-[#030712]/20 to-[#030712]" />
       </div>
 
       {/* Central Brand Unit with Entrance Animation */}

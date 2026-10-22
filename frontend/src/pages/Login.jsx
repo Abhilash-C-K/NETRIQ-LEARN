@@ -68,19 +68,22 @@ export const Login = () => {
     <div className="min-h-screen bg-[#030712] flex flex-col justify-center items-center p-4 relative select-none overflow-hidden">
       {/* Ambient Blurry Logo Background Accent */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
-        <div className="relative w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] rounded-full overflow-hidden filter blur-[80px] sm:blur-[100px] opacity-35 mix-blend-screen scale-110 pointer-events-none">
+        {/* Ambient cyan depth aura */}
+        <div className="absolute w-[700px] h-[700px] rounded-full bg-cyan-500/20 blur-[90px]" />
+        {/* Clearly visible N and Eye emblem - scaled so N and Eye majestically frame and glow through the card */}
+        <div className="relative w-[650px] h-[650px] sm:w-[860px] sm:h-[860px] [mask-image:radial-gradient(circle_at_center,black_55%,transparent_85%)] filter blur-[5px] sm:blur-[7px] opacity-65 mix-blend-screen pointer-events-none">
           <img
             src="/logo.jpeg"
-            alt=""
+            alt="NetrIQ Ambient Emblem"
             className="w-full h-full object-cover"
           />
         </div>
-        {/* Subtle radial vignette darkening around edges */}
-        <div className="absolute inset-0 bg-radial from-transparent via-[#030712]/50 to-[#030712]" />
+        {/* Subtle radial vignette darkening around outer edges */}
+        <div className="absolute inset-0 bg-radial from-transparent via-[#030712]/20 to-[#030712]" />
       </div>
 
       {/* Login Card: Modern Glassmorphic Dark Cyber Panel */}
-      <div className="w-full max-w-md bg-[#071324]/85 border border-[#1b365d] rounded-2xl p-8 shadow-[0_0_50px_-10px_rgba(0,180,255,0.18)] backdrop-blur-xl relative z-10">
+      <div className="w-full max-w-md bg-[#071324]/75 border border-[#1b365d] rounded-2xl p-8 shadow-[0_0_60px_-10px_rgba(0,180,255,0.22)] backdrop-blur-md relative z-10">
         {/* Header with NetrIQ Logo */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-2xl bg-[#091b36] border border-[#1f4273] mx-auto mb-4 p-1.5 flex items-center justify-center overflow-hidden shadow-[0_0_25px_-5px_rgba(0,200,255,0.3)]">

@@ -65,31 +65,44 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#3b2a27] flex flex-col justify-center items-center p-4 relative select-none">
-      {/* Login Card: #4a3330, 1px solid #6b4c45, no glow */}
-      <div className="w-full max-w-md bg-[#4a3330] border border-[#6b4c45] rounded-lg p-8 shadow-none relative z-10">
+    <div className="min-h-screen bg-[#030712] flex flex-col justify-center items-center p-4 relative select-none overflow-hidden">
+      {/* Ambient Blurry Logo Background Accent */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none flex items-center justify-center">
+        <div className="relative w-[500px] h-[500px] sm:w-[700px] sm:h-[700px] rounded-full overflow-hidden filter blur-[80px] sm:blur-[100px] opacity-35 mix-blend-screen scale-110 pointer-events-none">
+          <img
+            src="/logo.jpeg"
+            alt=""
+            className="w-full h-full object-cover"
+          />
+        </div>
+        {/* Subtle radial vignette darkening around edges */}
+        <div className="absolute inset-0 bg-radial from-transparent via-[#030712]/50 to-[#030712]" />
+      </div>
+
+      {/* Login Card: Modern Glassmorphic Dark Cyber Panel */}
+      <div className="w-full max-w-md bg-[#071324]/85 border border-[#1b365d] rounded-2xl p-8 shadow-[0_0_50px_-10px_rgba(0,180,255,0.18)] backdrop-blur-xl relative z-10">
         {/* Header with NetrIQ Logo */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-xl bg-[#5c3d38] border border-[#6b4c45] mx-auto mb-4 p-1 flex items-center justify-center overflow-hidden">
+          <div className="w-16 h-16 rounded-2xl bg-[#091b36] border border-[#1f4273] mx-auto mb-4 p-1.5 flex items-center justify-center overflow-hidden shadow-[0_0_25px_-5px_rgba(0,200,255,0.3)]">
             <img
               src="/logo.jpeg"
               alt="NetrIQ Logo"
-              className="w-full h-full object-cover rounded-lg block"
+              className="w-full h-full object-cover rounded-xl block"
             />
           </div>
           <div className="flex items-center justify-center font-corpta text-2xl tracking-[0.16em] uppercase select-none pl-1">
-            <span className="text-[#f8f4e7]">NETR</span>
-            <span className="text-[#cc5500]">IQ</span>
+            <span className="text-white drop-shadow-sm">NETR</span>
+            <span className="text-[#00e5ff] drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">IQ</span>
           </div>
-          <p className="text-xs text-[#d4bfb0] mt-1 font-sans">
+          <p className="text-xs text-slate-400 mt-1.5 font-sans font-medium">
             Security Operations Console
           </p>
         </div>
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-3 rounded-lg bg-[#b83a2e]/15 border border-[#b83a2e]/40 text-[#b83a2e] text-xs flex items-start gap-2.5">
-            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+          <div className="mb-6 p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-red-300 text-xs flex items-start gap-2.5 shadow-sm">
+            <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
             <p>{error}</p>
           </div>
         )}
@@ -97,42 +110,42 @@ export const Login = () => {
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-sans font-medium text-[#d4bfb0] mb-1.5">
+            <label className="block text-xs font-sans font-medium text-slate-300 mb-1.5">
               USERNAME / EMAIL
             </label>
             <div className="relative">
-              <User className="w-4 h-4 absolute left-3 top-3 text-[#a08070]" />
+              <User className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="analyst / admin"
-                className="w-full pl-9 pr-3.5 py-2.5 bg-[#5c3d38] border border-[#6b4c45] rounded-lg text-sm text-[#f8f4e7] placeholder-[#a08070] focus:outline-none focus:border-[#cc5500] transition-colors font-sans"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-[#040b17]/90 border border-[#1d3a63] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff]/50 transition-all font-sans"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-sans font-medium text-[#d4bfb0] mb-1.5">
+            <label className="block text-xs font-sans font-medium text-slate-300 mb-1.5">
               PASSWORD
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3 text-[#a08070]" />
+              <Lock className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-3.5 py-2.5 bg-[#5c3d38] border border-[#6b4c45] rounded-lg text-sm text-[#f8f4e7] placeholder-[#a08070] focus:outline-none focus:border-[#cc5500] transition-colors font-sans"
+                className="w-full pl-10 pr-3.5 py-2.5 bg-[#040b17]/90 border border-[#1d3a63] rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff]/50 transition-all font-sans"
               />
             </div>
           </div>
 
-          {/* Login Button: #cc5500 (Olive) with #3b2a27 text */}
+          {/* Login Button: Radiant Cyan / Cobalt Gradient */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-2.5 bg-[#cc5500] hover:bg-[#e06010] text-[#3b2a27] font-sans font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer"
+            className="w-full mt-2 py-2.5 bg-gradient-to-r from-[#0066ff] via-[#00a8ff] to-[#00f0ff] hover:from-[#0052cc] hover:via-[#0094e0] hover:to-[#00d8e8] text-slate-950 font-sans font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer shadow-[0_0_20px_rgba(0,168,255,0.35)]"
           >
             {loading ? (
               <span>Authenticating...</span>
@@ -146,26 +159,26 @@ export const Login = () => {
         </form>
 
         {/* Quick Fill Preset Buttons for Demo */}
-        <div className="mt-8 pt-6 border-t border-[#6b4c45] text-center">
-          <p className="text-[11px] font-sans font-medium text-[#d4bfb0] mb-2.5 tracking-wider">
+        <div className="mt-8 pt-6 border-t border-[#162e52] text-center">
+          <p className="text-[11px] font-sans font-medium text-slate-400 mb-2.5 tracking-wider">
             QUICK FILL DEMO ACCOUNTS
           </p>
           <div className="grid grid-cols-3 gap-2">
             <button
               onClick={() => handleQuickFill('admin')}
-              className="py-1.5 px-2 bg-[#3b2a27] hover:bg-[#5c3d38] border border-[#6b4c45] hover:border-[#c4956a] text-[#f8f4e7] rounded-lg text-xs font-sans transition-colors text-center cursor-pointer"
+              className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
             >
               Admin
             </button>
             <button
               onClick={() => handleQuickFill('analyst')}
-              className="py-1.5 px-2 bg-[#3b2a27] hover:bg-[#5c3d38] border border-[#6b4c45] hover:border-[#cc5500] text-[#f8f4e7] rounded-lg text-xs font-sans transition-colors text-center cursor-pointer"
+              className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
             >
               Analyst
             </button>
             <button
               onClick={() => handleQuickFill('viewer')}
-              className="py-1.5 px-2 bg-[#3b2a27] hover:bg-[#5c3d38] border border-[#6b4c45] hover:border-[#d4bfb0] text-[#f8f4e7] rounded-lg text-xs font-sans transition-colors text-center cursor-pointer"
+              className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
             >
               Viewer
             </button>
@@ -174,8 +187,8 @@ export const Login = () => {
       </div>
 
       {/* Footer System Info */}
-      <div className="mt-6 text-center text-xs text-[#a08070] font-sans flex items-center gap-1.5">
-        <ShieldCheck className="w-3.5 h-3.5 text-[#cc5500]" />
+      <div className="mt-6 text-center text-xs text-slate-400 font-sans flex items-center gap-1.5 relative z-10">
+        <ShieldCheck className="w-3.5 h-3.5 text-[#00e5ff]" />
         <span>Strict Security Control • Authorized Personnel Only</span>
       </div>
     </div>

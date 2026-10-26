@@ -58,9 +58,6 @@ export const Login = () => {
     } else if (userType === 'analyst') {
       setUsername('analyst@netriq.local');
       setPassword('AnalystPassword123!');
-    } else if (userType === 'viewer') {
-      setUsername('viewer@netriq.local');
-      setPassword('ViewerPassword123!');
     }
   };
 
@@ -175,7 +172,7 @@ export const Login = () => {
           <p className="text-[11px] font-sans font-medium text-slate-400 mb-2.5 tracking-wider">
             QUICK FILL DEMO ACCOUNTS
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
               onClick={() => handleQuickFill('admin')}
@@ -191,14 +188,6 @@ export const Login = () => {
               className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
             >
               Analyst
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickFill('viewer')}
-              aria-label="Quick fill Viewer account credentials"
-              className="py-1.5 px-2 bg-[#061224] hover:bg-[#0c1f3d] border border-[#19355e] hover:border-[#00e5ff]/60 text-slate-300 hover:text-white rounded-lg text-xs font-sans transition-all text-center cursor-pointer shadow-2xs"
-            >
-              Viewer
             </button>
           </div>
         </div>

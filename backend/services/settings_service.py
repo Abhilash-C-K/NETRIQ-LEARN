@@ -30,6 +30,9 @@ class SettingsService:
             "threat_retention_days": 7,
             "login_max_attempts": 5,
             "login_lockout_minutes": 15,
+            "layer1_threshold": 0.85,
+            "layer2_threshold": 0.78,
+            "auto_quarantine": True,
         }
         merged.update(persisted)
         return merged

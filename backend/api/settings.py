@@ -24,6 +24,9 @@ class SettingsUpdateReq(BaseModel):
     high_anomaly_threshold: Optional[float] = Field(None, ge=0.0, le=100.0)
     zero_day_weight: Optional[float] = Field(None, ge=0.0, le=1.0)
     heuristic_min_rules_for_quarantine: Optional[int] = Field(None, ge=1, le=10)
+    layer1_threshold: Optional[float] = Field(None, ge=0.1, le=1.0)
+    layer2_threshold: Optional[float] = Field(None, ge=0.1, le=1.0)
+    auto_quarantine: Optional[bool] = None
 
 
 @router.get("", response_model=Dict[str, Any], dependencies=[Depends(require_permission(Capabilities.MANAGE_SETTINGS))])

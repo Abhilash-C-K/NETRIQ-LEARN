@@ -33,6 +33,8 @@ import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
 import { responseService } from '../services/response';
 import { monitoringService } from '../services/monitoring';
+import { behaviorService } from '../services/behaviors';
+import { Clock, ShieldCheck } from 'lucide-react';
 
 // Custom Node for SOC Devices with React Flow connection handles
 const SOCDeviceNode = ({ data }) => {
@@ -144,6 +146,51 @@ export const InternalNetworkLayer2 = () => {
   const [actionInProgress, setActionInProgress] = useState(false);
   const [viewMode, setViewMode] = useState('live'); // 'live' (Real Wi-Fi Devices) | 'simulation' (Enterprise SOC Testbed)
   const [topologyMeta, setTopologyMeta] = useState(null);
+  const [deviceProfile, setDeviceProfile] = useState(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
+  const [simulatingAnomaly, setSimulatingAnomaly] = useState(false);
+
+  // Fetch real behavioral profile when a node is selected
+  useEffect(() => {
+    if (!selectedNode?.data?.ip) {
+      setDeviceProfile(null);
+      return;
+    }
+    let isCurrent = true;
+    setLoadingProfile(true);
+    behaviorService.getDeviceBehavior(selectedNode.data.mac || selectedNode.data.ip)
+      .then((prof) => {
+        if (isCurrent) setDeviceProfile(prof);
+      })
+      .catch(() => {
+        if (isCurrent) setDeviceProfile(null);
+      })
+      .finally(() => {
+        if (isCurrent) setLoadingProfile(false);
+      });
+    return () => { isCurrent = false; };
+  }, [selectedNode?.data?.ip, selectedNode?.data?.mac]);
+
+  const handleSimulateBehaviorAnomaly = async (anomalyType = 'LATERAL_SMB') => {
+    if (!selectedNode?.data?.ip) return;
+    setSimulatingAnomaly(true);
+    try {
+      await behaviorService.simulateAnomaly({
+        ip: selectedNode.data.ip,
+        mac: selectedNode.data.mac,
+        hostname: selectedNode.data.hostname || selectedNode.data.label,
+        type: anomalyType,
+      });
+      // Refresh profile & topology to reflect anomaly
+      const updated = await behaviorService.getDeviceBehavior(selectedNode.data.mac || selectedNode.data.ip);
+      setDeviceProfile(updated);
+      loadTopologyData(viewMode, true);
+    } catch (err) {
+      console.error('Failed to trigger simulation:', err);
+    } finally {
+      setSimulatingAnomaly(false);
+    }
+  };
 
   // Helper to construct React Flow nodes and edges with position preservation
   const buildRealTopology = (devices, incidents = [], threats = [], prevNodes = []) => {
@@ -664,10 +711,82 @@ export const InternalNetworkLayer2 = () => {
                 </div>
 
                 <div>
-                  <span className="text-[11px] font-semibold text-[#64748b]">Internal Behavioral Findings</span>
-                  <p className="text-xs text-[#334155] mt-1 p-2.5 rounded bg-slate-50 border border-slate-200 leading-relaxed">
-                    {selectedNode.data.details}
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#64748b]">UEBA Behavioral Baseline</span>
+                    {deviceProfile && (
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold uppercase">
+                        {deviceProfile.role || 'Workstation'}
+                      </span>
+                    )}
+                  </div>
+
+                  {deviceProfile ? (
+                    <div className="mt-1.5 p-3 rounded-lg bg-[#0b172a] text-slate-200 text-xs space-y-2 border border-[#1e3a63]">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400 flex items-center gap-1.5">
+                          <Clock className="w-3.5 h-3.5 text-[#00e5ff]" /> Operating Hours:
+                        </span>
+                        <span className="font-mono font-bold text-white">
+                          {String(deviceProfile.time_profile?.active_start_hour || 8).padStart(2, '0')}:00 - {String(deviceProfile.time_profile?.active_end_hour || 20).padStart(2, '0')}:00
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400">Allowed Days:</span>
+                        <span className="font-mono text-slate-300">Mon - Fri</span>
+                      </div>
+
+                      <div className="pt-1.5 border-t border-slate-700/60">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Forbidden Target Ports:</span>
+                        <div className="flex flex-wrap gap-1">
+                          {(deviceProfile.network_policy?.forbidden_ports || [22, 445, 3389]).map((p) => (
+                            <span key={p} className="px-1.5 py-0.5 rounded bg-red-950/80 border border-red-500/40 text-red-300 text-[10px] font-mono font-bold">
+                              Port {p}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      {deviceProfile.recent_violations && deviceProfile.recent_violations.length > 0 && (
+                        <div className="pt-1.5 border-t border-red-900/40">
+                          <span className="text-[10px] text-red-400 uppercase tracking-wider font-bold block mb-1">Recent Deviations:</span>
+                          <p className="text-[11px] text-red-300 bg-red-950/40 p-2 rounded border border-red-500/30 leading-tight font-sans">
+                            {deviceProfile.recent_violations[deviceProfile.recent_violations.length - 1].details}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[#334155] mt-1 p-2.5 rounded bg-slate-50 border border-slate-200 leading-relaxed">
+                      {selectedNode.data.details}
+                    </p>
+                  )}
+                </div>
+
+                {/* Behavioral Test Simulation Trigger for Live Demonstration */}
+                <div className="p-3 rounded-lg bg-purple-50/70 border border-purple-200 text-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-purple-900 text-[11px]">Demonstrate Behavior Anomaly</span>
+                    <span className="text-[10px] text-purple-600 font-mono">Layer 2 Test</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      disabled={simulatingAnomaly}
+                      onClick={() => handleSimulateBehaviorAnomaly('LATERAL_SMB')}
+                      className="py-1.5 px-2 bg-white hover:bg-purple-100 border border-purple-300 text-purple-800 rounded text-[11px] font-semibold transition-all cursor-pointer shadow-2xs"
+                    >
+                      Lateral SMB (445)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={simulatingAnomaly}
+                      onClick={() => handleSimulateBehaviorAnomaly('OUT_OF_HOURS')}
+                      className="py-1.5 px-2 bg-white hover:bg-purple-100 border border-purple-300 text-purple-800 rounded text-[11px] font-semibold transition-all cursor-pointer shadow-2xs"
+                    >
+                      Out-of-Hours (3 AM)
+                    </button>
+                  </div>
                 </div>
 
                 <div>

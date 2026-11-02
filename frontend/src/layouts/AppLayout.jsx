@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Navbar } from './Navbar';
 import { PageErrorBoundary } from '../components/PageErrorBoundary';
+import { AdminBehaviorAlertModal } from '../components/AdminBehaviorAlertModal';
 
 export const AppLayout = () => {
   const location = useLocation();
@@ -23,6 +24,9 @@ export const AppLayout = () => {
             <Outlet />
           </PageErrorBoundary>
         </main>
+
+        {/* Global Admin Layer 2 Behavioral Anomaly Alert Modal */}
+        <AdminBehaviorAlertModal />
       </div>
     </div>
   );

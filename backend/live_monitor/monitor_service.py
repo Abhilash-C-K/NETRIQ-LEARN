@@ -188,6 +188,13 @@ class MonitorService:
             for flow in completed_flows:
                 self.flows_processed += 1
                 try:
+                    # Layer 2 Host Behavior Inspection (UEBA)
+                    try:
+                        from backend.services.behavior_service import behavior_engine
+                        loop.create_task(behavior_engine.inspect_internal_flow(flow))
+                    except Exception as b_err:
+                        logger.debug(f"[MonitorService] Behavior inspection skipped: {b_err}")
+
                     features = FeatureExtractor.extract_features(flow)
                     result_dict = self.predictor.predict(features)
                     

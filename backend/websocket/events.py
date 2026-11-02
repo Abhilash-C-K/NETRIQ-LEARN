@@ -8,6 +8,7 @@ class EventType(str, Enum):
     QUARANTINE_ACTION = "quarantine_action"
     MONITOR_STATUS = "monitor_status"
     NEW_INCIDENT = "new_incident"
+    BEHAVIOR_ALERT = "behavior_alert"
 
 class Event(BaseModel):
     """Base class for all broadcastable events."""
@@ -32,3 +33,8 @@ class MonitorStatusEvent(Event):
 class NewIncidentEvent(Event):
     event_type: EventType = EventType.NEW_INCIDENT
     target_audience: List[Role] = [Role.VIEWER, Role.ANALYST, Role.ADMIN]
+
+class BehaviorAlertEvent(Event):
+    event_type: EventType = EventType.BEHAVIOR_ALERT
+    # Broadcast to Analysts and Admins who possess quarantine authority
+    target_audience: List[Role] = [Role.ANALYST, Role.ADMIN]

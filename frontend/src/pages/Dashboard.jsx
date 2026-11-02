@@ -138,12 +138,8 @@ export const Dashboard = () => {
           trafficStr = `${Math.max(1, Math.round(totalBytes / 1024))} KB`;
         }
 
-        // Live threat count: genuinely active security incidents plus any distinct un-incidented wire threat sources
-        const activeIncidentIps = new Set(activeIncidents.map((i) => i.src_ip).filter(Boolean));
-        const unIncidentedAnomalies = new Set(
-          actualThreatRecords.filter((t) => t.src_ip && !activeIncidentIps.has(t.src_ip)).map((t) => t.src_ip)
-        );
-        const totalThreatsDetected = activeIncidents.length + unIncidentedAnomalies.size;
+        // Live threat count: only real anomalies on the wire plus genuinely active incidents
+        const totalThreatsDetected = actualThreatRecords.length + activeIncidents.length;
 
         setSummary({
           total_traffic_gb: trafficStr,
@@ -267,9 +263,9 @@ export const Dashboard = () => {
               type: 'workstation',
               lastActivity: t.timestamp
                 ? new Date(t.timestamp * (t.timestamp < 10000000000 ? 1000 : 1)).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
                 : 'Just now',
               is_host: false,
               is_gateway: false,
@@ -365,23 +361,22 @@ export const Dashboard = () => {
           return 'Others';
         };
 
-        // Categorize each active incident into the donut
-        activeIncidents.forEach((inc) => {
-          const cat = categorizeThreat(inc.description || inc.severity);
+        // Combine anomalies on the wire AND active incidents so the donut is always in sync with detected threats
+        const anomalies = threatsList.filter((t) => t.is_anomaly || (t.prediction && t.prediction !== 'BENIGN'));
+        anomalies.forEach((t) => {
+          const cat = categorizeThreat(t.prediction || t.reason);
           catCounts[cat] += 1;
         });
 
-        // Add any distinct un-incidented wire anomaly sources
-        unIncidentedAnomalies.forEach((ip) => {
-          const wireThreat = actualThreatRecords.find((t) => t.src_ip === ip);
-          const cat = categorizeThreat(wireThreat?.prediction || wireThreat?.reason);
+        activeIncidents.forEach((inc) => {
+          const cat = categorizeThreat(inc.description || inc.severity);
           catCounts[cat] += 1;
         });
 
         const totalThreatsInDonut = Object.values(catCounts).reduce((a, b) => a + b, 0);
 
         if (totalThreatsInDonut === 0) {
-          setThreatDistributionData([{ name: 'Clean Subnet (Benign)', value: 100, count: 0, color: '#10b981' }]);
+          setThreatDistributionData([{ name: 'Clean Subnet (Benign)', value: 100, count: 0, color: '#6ae512ff' }]);
         } else {
           const colors = {
             'DDoS': '#ef4444',            // Red
@@ -418,7 +413,7 @@ export const Dashboard = () => {
   useEffect(() => {
     const handleNewVerdict = (payload) => {
       if (!payload) return;
-      const isMalicious = 
+      const isMalicious =
         payload.action === 'RECOMMEND_BLOCK' ||
         payload.action === 'QUARANTINE' ||
         payload.verdict === 'BLOCK' ||
@@ -440,6 +435,10 @@ export const Dashboard = () => {
           time: nowTime,
         };
         setRecentAlerts((prev) => [newAlert, ...prev.slice(0, 4)]);
+        setSummary((prev) => ({
+          ...prev,
+          detected_threats: (prev.detected_threats || 0) + 1,
+        }));
       }
 
       // Live Traffic Timeline updates with real incoming flow counts
@@ -482,8 +481,10 @@ export const Dashboard = () => {
         time: nowTime,
       };
       setRecentAlerts((prev) => [newAlert, ...prev.slice(0, 4)]);
-      // Refresh dashboard state to reflect accurate reconciled ground truth
-      fetchDashboardData(false);
+      setSummary((prev) => ({
+        ...prev,
+        detected_threats: (prev.detected_threats || 0) + 1,
+      }));
     };
 
     const handleQuarantine = (payload) => {
@@ -685,9 +686,8 @@ export const Dashboard = () => {
                 {summary.detected_threats}
               </div>
               <div
-                className={`text-xs font-semibold mt-0.5 flex items-center gap-1 ${
-                  summary.detected_threats > 0 ? 'text-[#ef4444]' : 'text-[#10b981]'
-                }`}
+                className={`text-xs font-semibold mt-0.5 flex items-center gap-1 ${summary.detected_threats > 0 ? 'text-[#ef4444]' : 'text-[#10b981]'
+                  }`}
               >
                 <span>●</span> {summary.detected_threats > 0 ? `${summary.detected_threats} flagged` : 'Subnet clean'}
               </div>
@@ -721,9 +721,8 @@ export const Dashboard = () => {
                 {summary.quarantined_devices}
               </div>
               <div
-                className={`text-xs font-semibold mt-0.5 flex items-center gap-1 ${
-                  summary.quarantined_devices > 0 ? 'text-[#f59e0b]' : 'text-[#687d9a]'
-                }`}
+                className={`text-xs font-semibold mt-0.5 flex items-center gap-1 ${summary.quarantined_devices > 0 ? 'text-[#f59e0b]' : 'text-[#687d9a]'
+                  }`}
               >
                 <span>●</span> {summary.quarantined_devices > 0 ? `${summary.quarantined_devices} isolated` : '0 isolated'}
               </div>
@@ -985,13 +984,12 @@ export const Dashboard = () => {
                       <td className="py-2.5 font-mono text-[11px] text-[#475569] text-center">{row.count}</td>
                       <td className="py-2.5 text-right">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                            row.risk === 'High'
-                              ? 'bg-[#fee2e2] text-[#ef4444]'
-                              : row.risk === 'Medium'
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${row.risk === 'High'
+                            ? 'bg-[#fee2e2] text-[#ef4444]'
+                            : row.risk === 'Medium'
                               ? 'bg-[#fef3c7] text-[#f59e0b]'
                               : 'bg-[#dcfce7] text-[#10b981]'
-                          }`}
+                            }`}
                         >
                           {row.risk}
                         </span>
@@ -1057,21 +1055,20 @@ export const Dashboard = () => {
                       <td className="py-2.5 text-[11px]">
                         <span className="flex items-center gap-1.5 font-medium">
                           <span
-                            className={`w-2 h-2 rounded-full ${
-                              row.status === 'Normal'
-                                ? 'bg-[#10b981]'
-                                : row.status === 'Quarantined'
+                            className={`w-2 h-2 rounded-full ${row.status === 'Normal'
+                              ? 'bg-[#10b981]'
+                              : row.status === 'Quarantined'
                                 ? 'bg-[#ef4444] animate-pulse'
                                 : 'bg-[#f59e0b]'
-                            }`}
+                              }`}
                           />
                           <span
                             className={
                               row.status === 'Normal'
                                 ? 'text-[#10b981]'
                                 : row.status === 'Quarantined'
-                                ? 'text-[#ef4444] font-semibold'
-                                : 'text-[#f59e0b] font-semibold'
+                                  ? 'text-[#ef4444] font-semibold'
+                                  : 'text-[#f59e0b] font-semibold'
                             }
                           >
                             {row.status}
@@ -1082,11 +1079,10 @@ export const Dashboard = () => {
                         {!row.is_gateway ? (
                           <button
                             onClick={() => handleToggleDeviceQuarantine(row)}
-                            className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
-                              row.status === 'Quarantined'
-                                ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
-                                : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 opacity-80 group-hover:opacity-100'
-                            }`}
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${row.status === 'Quarantined'
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200'
+                              : 'bg-slate-100 text-slate-600 hover:bg-red-50 hover:text-red-600 opacity-80 group-hover:opacity-100'
+                              }`}
                             title={row.status === 'Quarantined' ? 'Click to unquarantine device' : 'Click to quarantine device'}
                           >
                             {row.status === 'Quarantined' ? 'Unquarantine' : 'Isolate'}

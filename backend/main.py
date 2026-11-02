@@ -3,6 +3,7 @@ from pathlib import Path
 load_dotenv(Path(__file__).parent / ".env")  # Always load backend/.env regardless of CWD
 
 # NETRIQ Main Entrypoint (Real ML models & WebSockets active - Updated live pipeline)
+import os
 import uvicorn
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
@@ -33,6 +34,7 @@ from backend.api.response import router as response_router
 from backend.api.users import router as users_router
 from backend.api.settings import router as settings_router
 from backend.api.health import router as health_router
+from backend.api.behaviors import router as behaviors_router
 from backend.api.websocket import router as websocket_router, websocket_endpoint
 
 logger = get_logger(__name__)
@@ -124,6 +126,7 @@ app.include_router(response_router, prefix="/api/v1")
 app.include_router(users_router, prefix="/api/v1")
 app.include_router(settings_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
+app.include_router(behaviors_router, prefix="/api/v1")
 app.include_router(health_router)  # Also expose root /health for docker/lb health checks
 app.include_router(websocket_router)  # WebSockets sit at root /ws
 app.websocket("/ws")(websocket_endpoint)
@@ -133,5 +136,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
     reload_mode = os.environ.get("ENVIRONMENT", "production").lower() == "development"
     uvicorn.run("backend.main:app", host="0.0.0.0", port=port, reload=reload_mode)
-# Pipeline reload trigger
-

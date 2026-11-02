@@ -138,3 +138,4 @@ async def simulate_behavioral_anomaly(payload: dict):
     except Exception as e:
         logger.error(f"Failed to simulate behavioral anomaly: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to trigger simulation")
+

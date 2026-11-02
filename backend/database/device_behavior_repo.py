@@ -153,3 +153,4 @@ class DeviceBehaviorRepository(BaseRepository):
         )
 
 device_behaviors_repo = DeviceBehaviorRepository()
+

@@ -252,3 +252,4 @@ class BehaviorEngine:
         return alert_payload
 
 behavior_engine = BehaviorEngine()
+

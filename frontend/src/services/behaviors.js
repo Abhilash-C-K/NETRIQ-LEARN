@@ -39,3 +39,4 @@ export const behaviorService = {
     return response.data;
   },
 };
+

@@ -763,23 +763,23 @@ export const InternalNetworkLayer2 = () => {
             <span>Interactive Topology (Live DB Endpoints)</span>
           </div>
 
-          {/* Color Scheme & Grouped Side Zones Legend */}
+          {/* Color Scheme & Device Types Legend */}
           <div className="absolute top-3 right-3 z-10 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg border border-[#e2e8f0] text-[11px] font-semibold text-[#475569] shadow-sm flex items-center gap-3">
-            <span className="flex items-center gap-1.5 text-zinc-900" title="Top Zone">
+            <span className="flex items-center gap-1.5 text-zinc-900">
               <span className="w-2.5 h-2.5 rounded-full bg-black border border-zinc-700 inline-block shadow-2xs" />
-              Router (Top)
+              Router
             </span>
-            <span className="flex items-center gap-1.5 text-[#0747a1]" title="Left Column">
+            <span className="flex items-center gap-1.5 text-[#0747a1]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#0747a1] border border-[#0747a1]/40 inline-block shadow-2xs" />
-              IoT (#0747a1)
+              IoT
             </span>
-            <span className="flex items-center gap-1.5 text-[#034466]" title="Center Area">
+            <span className="flex items-center gap-1.5 text-[#034466]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#C1E8FF] border border-[#7EC5F2] inline-block shadow-2xs" />
-              Phones (#C1E8FF)
+              Phones
             </span>
-            <span className="flex items-center gap-1.5 text-[#065A72]" title="Right Column">
+            <span className="flex items-center gap-1.5 text-[#065A72]">
               <span className="w-2.5 h-2.5 rounded-full bg-[#065A72] border border-[#065A72]/40 inline-block shadow-2xs" />
-              Laptops (#065A72)
+              Laptops
             </span>
           </div>
 

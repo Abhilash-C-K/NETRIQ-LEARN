@@ -36,8 +36,8 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
   };
 
   return (
-    <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[#e2eaf4]">
+    <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[#C1E8FF]">
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2.5">
@@ -93,9 +93,9 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
         </div>
       </CardHeader>
 
-      {/* Statistics Row: Clean light typography */}
+      {/* Statistics Row: Clean light typography with #C1E8FF border accents */}
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             CAPTURE INTERFACE
           </div>
@@ -104,7 +104,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
           </div>
         </div>
 
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             ENGINE UPTIME
           </div>
@@ -113,7 +113,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
           </div>
         </div>
 
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             PACKETS CAPTURED
           </div>
@@ -122,7 +122,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
           </div>
         </div>
 
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             EVALUATED FLOWS
           </div>

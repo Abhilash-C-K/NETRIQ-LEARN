@@ -99,7 +99,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (viewMode === 'raw' && !hasRawAccess) {
     return (
-      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-sans">
+      <div className="p-4 bg-amber-50 border border-[#C1E8FF] rounded-xl text-xs text-amber-800 flex items-center gap-2 font-sans">
         <Lock className="w-4 h-4 text-amber-600 shrink-0" />
         <span>Restricted View: Raw feature vectors are only available to SOC Analysts and Administrators.</span>
       </div>
@@ -108,7 +108,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (loading) {
     return (
-      <div className="p-4 bg-white border border-[#e2eaf4] rounded-xl space-y-3 animate-pulse">
+      <div className="p-4 bg-white border border-[#C1E8FF] rounded-xl space-y-3 animate-pulse">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 bg-slate-200 rounded" />
           <div className="h-4 bg-slate-200 rounded w-1/3" />
@@ -154,7 +154,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (!activeExplanation) {
     return (
-      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-center gap-2 font-sans">
+      <div className="p-4 bg-slate-50 border border-[#C1E8FF] rounded-xl text-xs text-slate-600 flex items-center gap-2 font-sans">
         <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
         <span>{error || 'No feature explanation record available.'}</span>
       </div>
@@ -167,8 +167,8 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (viewMode === 'raw') {
     return (
-      <div className="p-4 bg-white border border-[#e2eaf4] rounded-xl space-y-4 font-mono text-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e2eaf4] pb-2 text-[11px] text-[#687d9a]">
+      <div className="p-4 bg-white border border-[#C1E8FF] rounded-xl space-y-4 font-mono text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#C1E8FF] pb-2 text-[11px] text-[#687d9a]">
           <div className="flex items-center gap-2">
             <span className="text-blue-700 uppercase font-semibold">
               Source: {activeExplanation.explanation_source || 'Feature Attribution'}
@@ -182,7 +182,7 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#e2eaf4] text-[#687d9a] text-[10px] uppercase font-sans font-semibold">
+              <tr className="border-b border-[#C1E8FF] text-[#687d9a] text-[10px] uppercase font-sans font-semibold">
                 <th className="py-2 px-2">Raw Feature Name</th>
                 <th className="py-2 px-2 text-right">Value</th>
                 <th className="py-2 px-2 text-right">Impact</th>
@@ -224,8 +224,8 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   // Smart Summary View Mode
   return (
-    <div className="p-4 bg-white border border-[#e2eaf4] rounded-xl space-y-3">
-      <div className="flex items-center justify-between border-b border-[#e2eaf4] pb-2">
+    <div className="p-4 bg-white border border-[#C1E8FF] rounded-xl space-y-3">
+      <div className="flex items-center justify-between border-b border-[#C1E8FF] pb-2">
         <div className="flex items-center gap-2 text-xs font-sans font-bold text-blue-700 uppercase tracking-wide">
           <Cpu className="w-4 h-4 text-blue-600" />
           <span>Top AI Decision Factors</span>
@@ -243,12 +243,12 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
           const pct = Math.min(Math.round((Math.abs(feat.contribution || 0) / maxContribution) * 100), 100);
 
           return (
-            <div key={idx} className="space-y-1.5 bg-[#f8fafc] p-3 rounded-lg border border-[#e2eaf4]">
+            <div key={idx} className="space-y-1.5 bg-[#f8fafc] p-3 rounded-lg border border-[#C1E8FF]">
               <div className="flex items-center justify-between text-xs font-sans">
                 <div className="flex items-center gap-2 font-semibold text-[#0a1c3d]">
                   <span>{labelStr}</span>
                   {hasRawAccess && feat.value !== undefined && (
-                    <span className="text-[10px] text-slate-600 font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">
+                    <span className="text-[10px] text-slate-600 font-mono bg-white px-1.5 py-0.5 rounded border border-[#C1E8FF]">
                       {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value} {meta?.unit || ''}
                     </span>
                   )}

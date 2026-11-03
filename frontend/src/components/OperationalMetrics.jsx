@@ -11,7 +11,7 @@ export const OperationalMetrics = ({ metrics }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {/* Queue Overflow Drops */}
-      <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl hover:shadow-sm transition-shadow">
+      <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl hover:shadow-sm transition-shadow">
         <CardContent className="p-4 flex items-center justify-between">
           <div>
             <p className="text-xs font-sans font-semibold uppercase tracking-wider text-[#687d9a]">Queue Drops</p>
@@ -27,7 +27,7 @@ export const OperationalMetrics = ({ metrics }) => {
       </Card>
 
       {/* Non-IP Filtered (Case A) */}
-      <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl hover:shadow-sm transition-shadow">
+      <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl hover:shadow-sm transition-shadow">
         <CardContent className="p-4 flex items-center justify-between">
           <div>
             <p className="text-xs font-sans font-semibold uppercase tracking-wider text-[#687d9a]">Non-IP Filtered</p>
@@ -43,7 +43,7 @@ export const OperationalMetrics = ({ metrics }) => {
       </Card>
 
       {/* Malformed Traffic (Case B) */}
-      <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl hover:shadow-sm transition-shadow">
+      <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl hover:shadow-sm transition-shadow">
         <CardContent className="p-4 flex items-center justify-between">
           <div>
             <p className="text-xs font-sans font-semibold uppercase tracking-wider text-[#687d9a]">Malformed (Case B)</p>

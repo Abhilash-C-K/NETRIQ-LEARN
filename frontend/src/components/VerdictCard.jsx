@@ -68,12 +68,12 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
   };
 
   return (
-    <Card className="relative overflow-hidden transition-colors bg-white hover:bg-slate-50/80 border border-[#e2eaf4] rounded-xl shadow-xs">
+    <Card className="relative overflow-hidden transition-colors bg-white hover:bg-slate-50/80 border border-[#C1E8FF] rounded-xl shadow-xs">
       {/* Primary Card Summary Row */}
       <div className="p-4 flex flex-wrap items-center justify-between gap-4">
         {/* Connection & Target Identifier */}
         <div className="flex items-center gap-3 min-w-[280px]">
-          <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-slate-100 border border-[#C1E8FF] flex items-center justify-center text-slate-700 shrink-0">
             {effectiveDstDomain || effectiveSrcDomain ? <Globe className="w-4 h-4 text-blue-600" /> : <Terminal className="w-4 h-4 text-slate-500" />}
           </div>
           <div>
@@ -130,7 +130,7 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
 
       {/* Expandable Explanation Panel */}
       {isExpanded && (
-        <div className="border-t border-[#e2eaf4] bg-[#f8fafc] p-4">
+        <div className="border-t border-[#C1E8FF] bg-[#f8fafc] p-4">
           <ExplanationPanel
             predictionId={effectivePredictionId}
             viewMode={viewMode}

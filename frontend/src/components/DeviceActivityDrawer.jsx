@@ -147,12 +147,12 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl h-full bg-white border-l border-[#e2eaf4] shadow-2xl text-[#0a1c3d] flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-2xl h-full bg-white border-l border-[#C1E8FF] shadow-2xl text-[#0a1c3d] flex flex-col overflow-hidden">
         
         {/* Drawer Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#e2eaf4] bg-white">
+        <div className="flex items-center justify-between p-5 border-b border-[#C1E8FF] bg-white">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 shadow-xs">
+            <div className="p-2.5 rounded-xl bg-blue-50 border border-[#C1E8FF] text-blue-600 shadow-xs">
               <Laptop className="w-5 h-5" />
             </div>
             <div>
@@ -163,7 +163,7 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
                   title="Copy IP address"
                   className="p-1 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
                 </button>
                 {role === 'viewer' && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-sans font-semibold bg-slate-100 text-slate-600 border border-slate-200">
@@ -196,26 +196,26 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
         </div>
 
         {/* Summary Metric Header */}
-        <div className="p-5 bg-[#f8fafc] border-b border-[#e2eaf4] space-y-4">
+        <div className="p-5 bg-[#f8fafc] border-b border-[#C1E8FF] space-y-4">
           <div className="grid grid-cols-4 gap-2.5">
-            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+            <div className="p-3 rounded-xl bg-white border border-[#C1E8FF] shadow-xs">
               <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">TOTAL EVENTS</span>
               <span className="font-mono text-lg font-bold text-[#0a1c3d]">{metrics.totalEvents}</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+            <div className="p-3 rounded-xl bg-white border border-[#C1E8FF] shadow-xs">
               <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">DISTINCT TARGETS</span>
               <span className="font-mono text-lg font-bold text-blue-600">{metrics.distinctDestinations}</span>
             </div>
 
-            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+            <div className="p-3 rounded-xl bg-white border border-[#C1E8FF] shadow-xs">
               <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">ENFORCEMENTS</span>
               <span className={`font-mono text-lg font-bold ${metrics.enforcementCount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                 {metrics.enforcementCount}
               </span>
             </div>
 
-            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+            <div className="p-3 rounded-xl bg-white border border-[#C1E8FF] shadow-xs">
               <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">MAX SEVERITY</span>
               {metrics.highestSev !== 'NONE' ? (
                 <div className="pt-0.5">
@@ -230,7 +230,7 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
           {/* Quick Filters */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-sans">
             {/* Time Window Buttons */}
-            <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-[#C1E8FF] shadow-xs">
               <span className="text-[#687d9a] px-1 text-[11px] font-semibold uppercase">WINDOW:</span>
               {[
                 { id: '24h', label: '24h' },
@@ -252,7 +252,7 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
             </div>
 
             {/* Severity Filter Dropdown */}
-            <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-[#C1E8FF] shadow-xs">
               <span className="text-[#687d9a] px-1 text-[11px] font-semibold uppercase">SEV:</span>
               {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
                 <button
@@ -284,7 +284,7 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
               <p>{error}</p>
             </div>
           ) : trail.length === 0 ? (
-            <div className="py-20 text-center bg-[#f8fafc] border border-slate-200 rounded-2xl space-y-3 p-8">
+            <div className="py-20 text-center bg-[#f8fafc] border border-[#C1E8FF] rounded-2xl space-y-3 p-8">
               <ShieldCheck className="w-10 h-10 text-emerald-600 mx-auto" />
               <h4 className="text-sm font-bold text-[#0a1c3d]">No Historical Activity Recorded</h4>
               <p className="text-xs text-[#687d9a] max-w-sm mx-auto">
@@ -304,17 +304,17 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
                 <div key={dayLabel} className="space-y-3">
                   {/* Day Divider Badge */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-sans font-bold uppercase tracking-wider text-slate-700 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-xs">
+                    <span className="text-xs font-sans font-bold uppercase tracking-wider text-slate-700 bg-white px-2.5 py-1 rounded-full border border-[#C1E8FF] shadow-xs">
                       {dayLabel}
                     </span>
-                    <div className="flex-1 h-px bg-slate-200" />
+                    <div className="flex-1 h-px bg-[#C1E8FF]" />
                     <span className="text-[11px] font-sans text-slate-500">
                       {entries.length} {entries.length === 1 ? 'event' : 'events'}
                     </span>
                   </div>
 
                   {/* Events in Day */}
-                  <div className="space-y-2 relative before:absolute before:top-2 before:bottom-2 before:left-[19px] before:w-[2px] before:bg-slate-200">
+                  <div className="space-y-2 relative before:absolute before:top-2 before:bottom-2 before:left-[19px] before:w-[2px] before:bg-[#C1E8FF]">
                     {entries.map((item, idx) => {
                       const action = (item.action || item.action_taken || 'NOTIFY').toUpperCase();
                       const isQuarantined = action.includes('QUARANTINE');
@@ -339,12 +339,12 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
                           />
 
                           {/* Event Card */}
-                          <div className="p-3.5 rounded-xl bg-white border border-[#e2eaf4] hover:border-slate-300 shadow-xs transition-all space-y-2">
+                          <div className="p-3.5 rounded-xl bg-white border border-[#C1E8FF] hover:border-blue-400 shadow-xs transition-all space-y-2">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <div className="flex items-center gap-2 font-mono text-xs">
                                 <span className="text-slate-500 font-semibold">{formatClockTime(item.timestamp)}</span>
                                 <span className="text-slate-300">•</span>
-                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-semibold uppercase">
+                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 border border-[#C1E8FF] text-slate-700 font-semibold uppercase">
                                   {item.protocol || 'TCP'}
                                 </span>
                               </div>
@@ -409,11 +409,11 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 border-t border-[#e2eaf4] bg-[#f8fafc] flex items-center justify-between text-xs font-sans text-[#687d9a]">
+        <div className="p-4 border-t border-[#C1E8FF] bg-[#f8fafc] flex items-center justify-between text-xs font-sans text-[#687d9a]">
           <span>Showing up to 100 chronological records</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg transition-colors cursor-pointer font-semibold shadow-xs"
+            className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-[#C1E8FF] rounded-lg transition-colors cursor-pointer font-semibold shadow-xs"
           >
             Close
           </button>

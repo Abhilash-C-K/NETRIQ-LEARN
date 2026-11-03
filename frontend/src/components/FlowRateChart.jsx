@@ -40,8 +40,8 @@ export const FlowRateChart = ({ entries = [], feed = [] }) => {
   }, [entries, feed]);
 
   return (
-    <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#e2eaf4]">
+    <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#C1E8FF]">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-blue-600" />
           <CardTitle className="text-sm font-bold text-[#0a1c3d] font-sans">
@@ -67,15 +67,15 @@ export const FlowRateChart = ({ entries = [], feed = [] }) => {
       </CardHeader>
 
       <CardContent className="pt-4">
-        {/* SVG Bar Chart Container */}
-        <div className="h-36 w-full flex items-end justify-between gap-2 pt-4 px-3 bg-[#f8fafc] rounded-xl border border-[#e2eaf4]">
+        {/* SVG Bar Chart Container with #C1E8FF border */}
+        <div className="h-36 w-full flex items-end justify-between gap-2 pt-4 px-3 bg-[#f8fafc] rounded-xl border border-[#C1E8FF]">
           {chartData.buckets.map((b) => {
             const heightPct = Math.min((b.count / chartData.maxCount) * 100, 100);
 
             return (
               <div key={b.index} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                 {/* Tooltip on Hover */}
-                <div className="absolute -top-10 hidden group-hover:flex flex-col items-center bg-white border border-slate-200 text-[11px] px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap z-20">
+                <div className="absolute -top-10 hidden group-hover:flex flex-col items-center bg-white border border-[#C1E8FF] text-[11px] px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap z-20">
                   <span className="font-bold text-[#0a1c3d]">{b.count} flows</span>
                   <span className="text-[#687d9a] font-mono text-[10px]">{b.label}</span>
                 </div>

@@ -89,8 +89,8 @@ export const ConnectionTable = ({
   };
 
   return (
-    <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
-      <CardHeader className="flex flex-col gap-3 pb-3 border-b border-[#C1E8FF] bg-white p-4">
+    <Card className="bg-white border border-slate-700 text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-col gap-3 pb-3 border-b border-slate-300 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Network className="w-4 h-4 text-blue-600" />
@@ -101,14 +101,14 @@ export const ConnectionTable = ({
           </div>
 
           {/* Severity Filter Pills */}
-          <div className="flex items-center gap-1 text-xs bg-[#f1f5f9] p-1 rounded-lg border border-[#C1E8FF]">
+          <div className="flex items-center gap-1 text-xs bg-[#f1f5f9] p-1 rounded-lg border border-slate-400">
             {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
               <button
                 key={sev}
                 onClick={() => setFilterSeverity(sev)}
                 className={`px-2.5 py-0.5 rounded-md font-sans text-xs transition-colors cursor-pointer ${
                   filterSeverity === sev
-                    ? 'bg-white text-blue-700 shadow-xs border border-[#C1E8FF] font-semibold'
+                    ? 'bg-white text-blue-700 shadow-xs border border-slate-400 font-semibold'
                     : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
                 }`}
               >
@@ -120,15 +120,15 @@ export const ConnectionTable = ({
 
         {/* Group by Connected System Filter Bar */}
         {devices && devices.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#C1E8FF]">
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-300">
             <span className="text-[11px] font-bold text-[#687d9a] uppercase tracking-wider mr-1">System Group:</span>
             <button
               type="button"
               onClick={() => setDeviceFilter('ALL')}
               className={`px-2.5 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
                 activeDeviceFilter === 'ALL'
-                  ? 'bg-blue-50 text-blue-700 border border-blue-300 font-semibold shadow-xs'
-                  : 'bg-[#f8fafc] text-slate-700 hover:bg-slate-100 border border-[#C1E8FF] font-medium'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-400 font-semibold shadow-xs'
+                  : 'bg-[#f8fafc] text-slate-700 hover:bg-slate-100 border border-slate-400 font-medium'
               }`}
             >
               All Systems ({entries.length})
@@ -149,8 +149,8 @@ export const ConnectionTable = ({
                   onClick={() => setDeviceFilter(isSelected ? 'ALL' : dev.ip)}
                   className={`px-2.5 py-1 rounded-lg text-xs transition-colors flex items-center gap-1.5 cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-50 text-blue-700 border border-blue-300 font-semibold shadow-xs'
-                      : 'bg-[#f8fafc] text-slate-700 hover:bg-slate-100 border border-[#C1E8FF] font-medium'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-400 font-semibold shadow-xs'
+                      : 'bg-[#f8fafc] text-slate-700 hover:bg-slate-100 border border-slate-400 font-medium'
                   }`}
                   title={`${dev.label || dev.hostname} (${dev.ip})`}
                 >
@@ -180,7 +180,7 @@ export const ConnectionTable = ({
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-[#f8fafc] text-[#687d9a] uppercase tracking-wider text-[11px] border-b border-[#C1E8FF] font-sans font-semibold">
+              <thead className="bg-[#f8fafc] text-[#687d9a] uppercase tracking-wider text-[11px] border-b border-slate-300 font-sans font-semibold">
                 <tr>
                   <th className="py-2.5 px-4">Timestamp</th>
                   <th className="py-2.5 px-4">Source</th>
@@ -191,7 +191,7 @@ export const ConnectionTable = ({
                   <th className="py-2.5 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#C1E8FF]/40 bg-white">
+              <tbody className="divide-y divide-slate-200 bg-white">
                 {filteredEntries.map((item, idx) => {
                   const timestamp = formatTime(item.timestamp);
 
@@ -244,7 +244,7 @@ export const ConnectionTable = ({
                           const info = getFriendlyDomainInfo(srcDomain);
                           return (
                             <div className="flex items-center gap-1 mb-0.5">
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-indigo-50 text-indigo-700 border-indigo-200">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-indigo-50 text-indigo-700 border-indigo-300">
                                 <Globe className="w-2.5 h-2.5 text-indigo-600 shrink-0" />
                                 <span className="truncate max-w-[150px]" title={info.raw}>{info.display}</span>
                                 {info.alias && (
@@ -259,7 +259,7 @@ export const ConnectionTable = ({
                           const isLocal = isLocalPrivateIp(cleanSrcIp);
                           return (
                             <div className="flex items-center gap-1 mb-0.5">
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-slate-100 text-slate-700 border-slate-200">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-slate-100 text-slate-700 border-slate-300">
                                 {isLocal ? <Laptop className="w-2.5 h-2.5 text-[#065A72]" /> : <Globe className="w-2.5 h-2.5 text-slate-500" />}
                                 <span>{isLocal ? 'Local LAN Node' : 'External Host'}</span>
                               </span>
@@ -320,7 +320,7 @@ export const ConnectionTable = ({
                                 <Globe className="w-3 h-3 text-indigo-600 shrink-0" />
                                 <span className="truncate max-w-[170px]" title={`${info.raw} (${dstIp})`}>{info.display}</span>
                                 {info.alias && (
-                                  <span className="text-[9px] font-normal px-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
+                                  <span className="text-[9px] font-normal px-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-300 shrink-0">
                                     {info.alias}
                                   </span>
                                 )}
@@ -348,7 +348,7 @@ export const ConnectionTable = ({
                       <td className="py-2.5 px-4 text-slate-700 font-mono text-[11px] font-semibold">{protocol}</td>
                       <td className="py-2.5 px-4 font-sans text-xs">
                         {isHeuristic ? (
-                          <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px] font-semibold">
+                          <span className="text-amber-700 bg-amber-50 border border-amber-300 px-1.5 py-0.5 rounded text-[11px] font-semibold">
                             Heuristic
                           </span>
                         ) : (
@@ -362,8 +362,8 @@ export const ConnectionTable = ({
                         <span
                           className={`inline-flex items-center font-sans text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
                             action.toLowerCase().includes('quarantine') || action.toLowerCase().includes('block')
-                              ? 'bg-rose-50 text-rose-700 border-rose-200'
-                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                              ? 'bg-rose-50 text-rose-700 border-rose-300'
+                              : 'bg-slate-100 text-slate-600 border-slate-300'
                           }`}
                         >
                           {action}

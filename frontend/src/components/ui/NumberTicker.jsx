@@ -39,7 +39,7 @@ export function NumberTicker({
   return (
     <span
       className={cn(
-        "inline-block font-mono tracking-tight text-slate-100",
+        "inline-block font-mono tracking-tight text-slate-900 font-extrabold",
         className
       )}
       ref={ref}
@@ -48,3 +48,5 @@ export function NumberTicker({
     </span>
   );
 }
+
+export default NumberTicker;

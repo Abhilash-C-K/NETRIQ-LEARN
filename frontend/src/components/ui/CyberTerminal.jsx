@@ -32,9 +32,9 @@ export function CyberTerminal({
   };
 
   return (
-    <div className={cn("rounded-xl border border-[#C1E8FF] bg-white shadow-xs overflow-hidden", className)}>
+    <div className={cn("rounded-xl border border-slate-700 bg-white shadow-xs overflow-hidden", className)}>
       {/* Top Bar matching light app header */}
-      <div className="flex items-center justify-between px-4 py-2.5 bg-[#f8fafc] border-b border-[#C1E8FF]">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-[#f8fafc] border-b border-slate-300">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4 text-blue-600" />
           <span className="text-xs text-[#0a1c3d] font-sans font-bold">{title}</span>
@@ -42,7 +42,7 @@ export function CyberTerminal({
 
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 text-xs text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-[#C1E8FF] px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-xs font-sans font-medium"
+          className="flex items-center gap-1.5 text-xs text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-400 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-xs font-sans font-medium"
         >
           {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
           <span>{copied ? "Copied" : "Copy"}</span>

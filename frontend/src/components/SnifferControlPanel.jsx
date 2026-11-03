@@ -36,8 +36,8 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
   };
 
   return (
-    <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[#C1E8FF]">
+    <Card className="bg-white border border-slate-700 text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-slate-300">
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2.5">
@@ -45,13 +45,13 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
                 NIDS Packet Capture Engine
               </CardTitle>
               {isRunning ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-300">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   SNIFFING ACTIVE
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
-                  <span className="w-2 h-2 rounded-full bg-slate-400" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-medium text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-300">
+                  <span className="w-2 h-2 rounded-full bg-slate-500" />
                   STOPPED
                 </span>
               )}
@@ -65,7 +65,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
         {/* Control Button */}
         <div className="flex items-center gap-3">
           {!isAdmin && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg font-sans">
+            <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-lg font-sans">
               <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
               <span>Admin Role Required to Start/Stop</span>
             </div>
@@ -75,7 +75,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
             <button
               onClick={onStop}
               disabled={!isAdmin || isLoading}
-              className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold h-8 px-3.5 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 text-xs font-semibold h-8 px-3.5 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
               Stop Capture
@@ -93,9 +93,9 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
         </div>
       </CardHeader>
 
-      {/* Statistics Row: Clean light typography with #C1E8FF border accents */}
+      {/* Statistics Row: Clean light typography with dark borders */}
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-slate-700 hover:border-slate-900 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             CAPTURE INTERFACE
           </div>
@@ -104,7 +104,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
           </div>
         </div>
 
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-slate-700 hover:border-slate-900 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             ENGINE UPTIME
           </div>
@@ -113,7 +113,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
           </div>
         </div>
 
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-slate-700 hover:border-slate-900 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             PACKETS CAPTURED
           </div>
@@ -122,7 +122,7 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
           </div>
         </div>
 
-        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#C1E8FF] hover:border-blue-400 transition-colors">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-slate-700 hover:border-slate-900 transition-colors">
           <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             EVALUATED FLOWS
           </div>

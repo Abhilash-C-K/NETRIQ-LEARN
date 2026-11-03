@@ -254,15 +254,15 @@ export const Monitoring = () => {
 
       {/* 4. Connected Network Systems (Wi-Fi / LAN) Overview */}
       {devices && devices.length > 0 && (
-        <Card className="bg-white border border-[#C1E8FF] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+        <Card className="bg-white border border-slate-700 text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
           <CardContent className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-[#C1E8FF]">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-300">
               <div className="flex items-center gap-2">
                 <Network className="w-4 h-4 text-blue-600" />
                 <h3 className="text-sm font-bold text-[#0a1c3d] font-sans">
                   Connected Systems on Local Network
                 </h3>
-                <span className="text-xs text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-[#C1E8FF] font-semibold">
+                <span className="text-xs text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-300 font-semibold">
                   {devices.length} {devices.length === 1 ? 'System' : 'Systems'} Online
                 </span>
               </div>
@@ -297,8 +297,8 @@ export const Monitoring = () => {
                     onClick={() => setSelectedDevice(isSelected ? 'ALL' : dev.ip)}
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-blue-50/70 border-2 border-blue-500 shadow-sm ring-1 ring-blue-500'
-                        : 'bg-[#f8fafc] hover:bg-slate-50 border-[#C1E8FF] hover:border-blue-400'
+                        ? 'bg-blue-50/70 border-2 border-blue-600 shadow-sm ring-1 ring-blue-600'
+                        : 'bg-[#f8fafc] hover:bg-slate-50 border-slate-700 hover:border-slate-900'
                     }`}
                   >
                     <div>
@@ -339,30 +339,30 @@ export const Monitoring = () => {
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
                             isSelected
                               ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-300'
                           }`}
                         >
                           {isSelected ? 'FILTERED' : 'ONLINE'}
                         </span>
                       </div>
 
-                      <div className="space-y-1 text-[11px] font-mono text-slate-600 bg-white p-2.5 rounded-lg border border-[#C1E8FF]">
+                      <div className="space-y-1 text-[11px] font-mono text-slate-700 bg-white p-2.5 rounded-lg border border-slate-400">
                         <div className="flex justify-between">
-                          <span className="text-slate-400">IP:</span>
+                          <span className="text-slate-500">IP:</span>
                           <span className="text-slate-900 font-bold">{dev.ip}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-400">MAC:</span>
-                          <span className="text-slate-600 truncate max-w-[130px]">{dev.mac || 'Active Interface'}</span>
+                          <span className="text-slate-500">MAC:</span>
+                          <span className="text-slate-700 truncate max-w-[130px]">{dev.mac || 'Active Interface'}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-400">Packets in Buffer:</span>
+                          <span className="text-slate-500">Packets in Buffer:</span>
                           <span className="text-blue-600 font-bold">{count}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-[#C1E8FF]/60 flex items-center justify-between text-xs">
+                    <div className="mt-3 pt-2.5 border-t border-slate-300 flex items-center justify-between text-xs">
                       <span className="text-[11px] text-blue-600 font-semibold">
                         {isSelected ? '✓ Filtering stream' : 'Click to group/filter'}
                       </span>
@@ -385,7 +385,7 @@ export const Monitoring = () => {
             </div>
 
             {selectedDevice !== 'ALL' && (
-              <div className="mt-4 pt-3 border-t border-[#C1E8FF] flex items-center justify-between text-xs">
+              <div className="mt-4 pt-3 border-t border-slate-300 flex items-center justify-between text-xs">
                 <span className="text-[#0a1c3d] text-xs">
                   Showing stream filtered to system: <strong className="text-blue-700 font-mono">{selectedDevice}</strong>
                 </span>
@@ -403,14 +403,14 @@ export const Monitoring = () => {
       )}
 
       {/* 5. Live Stream Header Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#C1E8FF] pb-3 pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-700 pb-3 pt-2">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-600" />
           <h2 className="text-sm font-bold text-[#0a1c3d] font-sans">
             Live Stream Feed
           </h2>
           {isRunning && (
-            <span className="flex items-center gap-1.5 text-xs font-sans font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+            <span className="flex items-center gap-1.5 text-xs font-sans font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-300">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               SNIFFING ACTIVE
             </span>
@@ -421,18 +421,18 @@ export const Monitoring = () => {
           {isAdmin && (
             <button
               onClick={handleSimulateThreat}
-              className="bg-white hover:bg-slate-50 text-[#0a1c3d] border border-[#C1E8FF] font-sans text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              className="bg-white hover:bg-slate-50 text-[#0a1c3d] border border-slate-400 font-sans text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <Zap className="w-3.5 h-3.5 text-amber-500" />
               <span>Simulate Threat</span>
             </button>
           )}
 
-          <div className="flex items-center gap-1 bg-[#f1f5f9] p-1 rounded-lg border border-[#C1E8FF] text-xs font-sans">
+          <div className="flex items-center gap-1 bg-[#f1f5f9] p-1 rounded-lg border border-slate-400 text-xs font-sans">
             <button
               onClick={() => setViewMode('table')}
               className={`px-3 py-1 rounded-md font-sans text-xs transition-colors cursor-pointer ${
-                viewMode === 'table' ? 'bg-white text-blue-700 shadow-xs border border-[#C1E8FF] font-semibold' : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
+                viewMode === 'table' ? 'bg-white text-blue-700 shadow-xs border border-slate-400 font-semibold' : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
               }`}
             >
               Connection Table
@@ -440,7 +440,7 @@ export const Monitoring = () => {
             <button
               onClick={() => setViewMode('cards')}
               className={`px-3 py-1 rounded-md font-sans text-xs transition-colors cursor-pointer ${
-                viewMode === 'cards' ? 'bg-white text-blue-700 shadow-xs border border-[#C1E8FF] font-semibold' : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
+                viewMode === 'cards' ? 'bg-white text-blue-700 shadow-xs border border-slate-400 font-semibold' : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
               }`}
             >
               Verdict Cards
@@ -448,7 +448,7 @@ export const Monitoring = () => {
             <button
               onClick={() => setViewMode('terminal')}
               className={`px-3 py-1 rounded-md font-sans text-xs transition-colors flex items-center gap-1 cursor-pointer ${
-                viewMode === 'terminal' ? 'bg-white text-blue-700 shadow-xs border border-[#C1E8FF] font-semibold' : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
+                viewMode === 'terminal' ? 'bg-white text-blue-700 shadow-xs border border-slate-400 font-semibold' : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
               }`}
             >
               <TerminalIcon className="w-3.5 h-3.5 text-blue-600" />
@@ -460,7 +460,7 @@ export const Monitoring = () => {
 
       {/* Disconnected WS Banner */}
       {connectionStatus !== 'connected' && (
-        <Card className="bg-amber-50 border border-amber-200 text-amber-800 rounded-xl shadow-xs">
+        <Card className="bg-amber-50 border border-amber-300 text-amber-800 rounded-xl shadow-xs">
           <CardContent className="p-3.5 flex items-center justify-between text-xs font-sans">
             <div className="flex items-center gap-2">
               <Radio className="w-4 h-4 text-amber-600" />
@@ -475,7 +475,7 @@ export const Monitoring = () => {
 
       {/* Error Alert */}
       {error && (
-        <Card className="bg-rose-50 border border-rose-200 text-rose-800 rounded-xl shadow-xs">
+        <Card className="bg-rose-50 border border-rose-300 text-rose-800 rounded-xl shadow-xs">
           <CardContent className="p-3.5 flex items-center justify-between text-xs font-sans">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-rose-600" />
@@ -490,9 +490,9 @@ export const Monitoring = () => {
 
       {/* 6. Packet Data Content View */}
       {!isRunning && feed.length === 0 ? (
-        <Card className="bg-white border border-[#C1E8FF] p-8 text-center rounded-xl shadow-xs">
+        <Card className="bg-white border border-slate-700 p-8 text-center rounded-xl shadow-xs">
           <CardContent className="space-y-3">
-            <div className="w-12 h-12 rounded-full bg-slate-100 border border-[#C1E8FF] flex items-center justify-center mx-auto text-slate-500">
+            <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-400 flex items-center justify-center mx-auto text-slate-500">
               <Activity className="w-6 h-6" />
             </div>
             <h3 className="text-base font-bold text-[#0a1c3d] font-sans">

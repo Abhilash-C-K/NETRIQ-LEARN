@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { Button } from './ui/button';
-import { Play, Square, ShieldAlert, Cpu, Clock, Layers } from 'lucide-react';
+import { Play, Square, ShieldAlert, Cpu, Clock, Layers, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
@@ -36,28 +36,27 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
   };
 
   return (
-    <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
-      <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[#2A3944]">
+    <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-[#e2eaf4]">
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2.5">
-              <CardTitle className="text-base font-semibold text-[#E7ECEF] font-sans">
+              <CardTitle className="text-base font-bold text-[#0a1c3d] font-sans">
                 NIDS Packet Capture Engine
               </CardTitle>
-              {/* Small top status indicator with #cc5500 */}
               {isRunning ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-[#cc5500] bg-[#cc5500]/15 px-2 py-0.5 rounded border border-[#cc5500]/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#cc5500]" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   SNIFFING ACTIVE
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-medium text-[#9AA8B2] bg-[#202D36] px-2 py-0.5 rounded border border-[#2A3944]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#687883]" />
+                <span className="inline-flex items-center gap-1.5 text-xs font-sans font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                  <span className="w-2 h-2 rounded-full bg-slate-400" />
                   STOPPED
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#9AA8B2] mt-0.5 font-sans">
+            <p className="text-xs text-[#687d9a] mt-0.5 font-sans">
               Live Scapy wire capture, bidirectional flow aggregation, and ML inference
             </p>
           </div>
@@ -66,27 +65,26 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
         {/* Control Button */}
         <div className="flex items-center gap-3">
           {!isAdmin && (
-            <div className="flex items-center gap-1.5 text-xs text-[#D3A35D] bg-[#D3A35D]/10 border border-[#D3A35D]/20 px-2.5 py-1 rounded-md font-sans">
-              <ShieldAlert className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 text-xs text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg font-sans">
+              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
               <span>Admin Role Required to Start/Stop</span>
             </div>
           )}
 
           {isRunning ? (
-            <Button
+            <button
               onClick={onStop}
               disabled={!isAdmin || isLoading}
-              variant="destructive"
-              className="text-xs h-8 px-3 font-sans font-medium flex items-center gap-1.5"
+              className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold h-8 px-3.5 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Square className="w-3.5 h-3.5 fill-current" />
               Stop Capture
-            </Button>
+            </button>
           ) : (
             <button
               onClick={onStart}
               disabled={!isAdmin || isLoading}
-              className="bg-[#cc5500] hover:bg-[#60958a] text-[#101820] font-sans text-xs font-semibold h-8 px-3.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-sans text-xs font-semibold h-8 px-3.5 rounded-lg shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               Start Capture
@@ -95,40 +93,40 @@ export const SnifferControlPanel = ({ status, onStart, onStop, isLoading }) => {
         </div>
       </CardHeader>
 
-      {/* Statistics Row: Clean white/gray typography */}
+      {/* Statistics Row: Clean light typography */}
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-4">
-        <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944]">
-          <div className="text-[11px] text-[#9AA8B2] font-sans font-medium uppercase mb-1">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+          <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             CAPTURE INTERFACE
           </div>
-          <div className="font-mono text-sm font-semibold text-[#E7ECEF] truncate">
+          <div className="font-mono text-sm font-bold text-[#0a1c3d] truncate">
             {status?.interface || 'Default (Auto-select)'}
           </div>
         </div>
 
-        <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944]">
-          <div className="text-[11px] text-[#9AA8B2] font-sans font-medium uppercase mb-1">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+          <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             ENGINE UPTIME
           </div>
-          <div className="font-mono text-sm font-semibold text-[#E7ECEF]">
+          <div className="font-mono text-sm font-bold text-[#0a1c3d]">
             {formatUptime(localUptime)}
           </div>
         </div>
 
-        <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944]">
-          <div className="text-[11px] text-[#9AA8B2] font-sans font-medium uppercase mb-1">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+          <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             PACKETS CAPTURED
           </div>
-          <div className="font-mono text-sm font-semibold text-[#E7ECEF]">
+          <div className="font-mono text-sm font-bold text-[#0a1c3d]">
             {(status?.packets_captured || 0).toLocaleString()}
           </div>
         </div>
 
-        <div className="bg-[#101820] p-3.5 rounded-lg border border-[#2A3944]">
-          <div className="text-[11px] text-[#9AA8B2] font-sans font-medium uppercase mb-1">
+        <div className="bg-[#f8fafc] p-3.5 rounded-xl border border-[#e2eaf4] hover:border-blue-200 transition-colors">
+          <div className="text-[11px] text-[#687d9a] font-sans font-semibold uppercase tracking-wider mb-1">
             EVALUATED FLOWS
           </div>
-          <div className="font-mono text-sm font-semibold text-[#E7ECEF]">
+          <div className="font-mono text-sm font-bold text-[#0a1c3d]">
             {(status?.flows_processed || 0).toLocaleString()}
           </div>
         </div>

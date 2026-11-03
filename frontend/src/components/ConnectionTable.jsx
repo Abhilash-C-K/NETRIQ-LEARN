@@ -89,27 +89,27 @@ export const ConnectionTable = ({
   };
 
   return (
-    <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
-      <CardHeader className="flex flex-col gap-2.5 pb-3 border-b border-[#2A3944]">
+    <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-col gap-3 pb-3 border-b border-[#e2eaf4] bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <Network className="w-4 h-4 text-[#7895B2]" />
-            <CardTitle className="text-sm font-semibold text-[#E7ECEF] font-sans">
+            <Network className="w-4 h-4 text-blue-600" />
+            <CardTitle className="text-sm font-bold text-[#0a1c3d] font-sans">
               Active Connection Feed
             </CardTitle>
-            <span className="text-xs text-[#9AA8B2] font-mono">({filteredEntries.length} entries)</span>
+            <span className="text-xs text-[#687d9a] font-medium font-sans">({filteredEntries.length} entries)</span>
           </div>
 
           {/* Severity Filter Pills */}
-          <div className="flex items-center gap-1 text-xs bg-[#101820] p-1 rounded-lg border border-[#2A3944]">
+          <div className="flex items-center gap-1 text-xs bg-[#f1f5f9] p-1 rounded-lg border border-slate-200">
             {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
               <button
                 key={sev}
                 onClick={() => setFilterSeverity(sev)}
-                className={`px-2 py-0.5 rounded font-sans font-medium transition-colors cursor-pointer ${
+                className={`px-2.5 py-0.5 rounded-md font-sans text-xs transition-colors cursor-pointer ${
                   filterSeverity === sev
-                    ? 'bg-[#202D36] text-[#E7ECEF] border border-[#2A3944]'
-                    : 'text-[#9AA8B2] hover:text-[#E7ECEF]'
+                    ? 'bg-white text-blue-700 shadow-xs border border-slate-200 font-semibold'
+                    : 'text-[#687d9a] hover:text-[#0a1c3d] font-medium'
                 }`}
               >
                 {sev}
@@ -120,15 +120,15 @@ export const ConnectionTable = ({
 
         {/* Group by Connected System Filter Bar */}
         {devices && devices.length > 0 && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#2A3944]/40">
-            <span className="text-[11px] font-semibold text-[#9AA8B2] mr-1">System Group:</span>
+          <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#e2eaf4]">
+            <span className="text-[11px] font-bold text-[#687d9a] uppercase tracking-wider mr-1">System Group:</span>
             <button
               type="button"
               onClick={() => setDeviceFilter('ALL')}
-              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
                 activeDeviceFilter === 'ALL'
-                  ? 'bg-[#202D36] text-[#E7ECEF] border border-[#3b4c5a]'
-                  : 'bg-[#101820] text-[#9AA8B2] hover:text-[#E7ECEF] border border-[#2A3944]'
+                  ? 'bg-blue-50 text-blue-700 border border-blue-300 font-semibold shadow-xs'
+                  : 'bg-[#f8fafc] text-slate-700 hover:bg-slate-100 border border-slate-200 font-medium'
               }`}
             >
               All Systems ({entries.length})
@@ -147,24 +147,24 @@ export const ConnectionTable = ({
                   key={dev.ip}
                   type="button"
                   onClick={() => setDeviceFilter(isSelected ? 'ALL' : dev.ip)}
-                  className={`px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-lg text-xs transition-colors flex items-center gap-1.5 cursor-pointer ${
                     isSelected
-                      ? 'bg-blue-900/40 text-blue-300 border border-blue-500'
-                      : 'bg-[#101820] text-[#9AA8B2] hover:text-[#E7ECEF] border border-[#2A3944]'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-300 font-semibold shadow-xs'
+                      : 'bg-[#f8fafc] text-slate-700 hover:bg-slate-100 border border-slate-200 font-medium'
                   }`}
                   title={`${dev.label || dev.hostname} (${dev.ip})`}
                 >
                   {dev.is_gateway || dev.type === 'router' ? (
-                    <Router className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
+                    <Router className="w-3.5 h-3.5 text-zinc-950 shrink-0" />
                   ) : dev.type === 'mobile' || dev.type === 'smartphone' ? (
-                    <Smartphone className="w-3.5 h-3.5 text-[#0284c7] shrink-0" />
+                    <Smartphone className="w-3.5 h-3.5 text-[#034466] shrink-0" />
                   ) : dev.type === 'server' || dev.type === 'iot' ? (
                     <Server className="w-3.5 h-3.5 text-[#0747a1] shrink-0" />
                   ) : (
                     <Laptop className="w-3.5 h-3.5 text-[#065A72] shrink-0" />
                   )}
                   <span>{dev.hostname || dev.label}</span>
-                  <span className="text-[10px] font-mono opacity-80">({count})</span>
+                  <span className="text-[10px] font-mono text-[#687d9a]">({count})</span>
                 </button>
               );
             })}
@@ -174,13 +174,13 @@ export const ConnectionTable = ({
 
       <CardContent className="p-0">
         {filteredEntries.length === 0 ? (
-          <div className="p-8 text-center text-[#9AA8B2] text-xs font-sans">
+          <div className="p-8 text-center text-[#687d9a] text-xs font-sans">
             No active connections matching current system or severity filters.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-[#131D25] text-[#9AA8B2] uppercase tracking-wider text-[11px] border-b border-[#2A3944] font-sans font-medium">
+              <thead className="bg-[#f8fafc] text-[#687d9a] uppercase tracking-wider text-[11px] border-b border-[#e2eaf4] font-sans font-semibold">
                 <tr>
                   <th className="py-2.5 px-4">Timestamp</th>
                   <th className="py-2.5 px-4">Source</th>
@@ -191,7 +191,7 @@ export const ConnectionTable = ({
                   <th className="py-2.5 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#2A3944]/50">
+              <tbody className="divide-y divide-slate-100 bg-white">
                 {filteredEntries.map((item, idx) => {
                   const timestamp = formatTime(item.timestamp);
 
@@ -214,28 +214,28 @@ export const ConnectionTable = ({
                   const dstDomain = sni || resolvedDns[cleanDstIp] || getCachedDomain(cleanDstIp);
 
                   return (
-                    <tr key={item.id || idx} className="hover:bg-[#202D36] transition-colors">
-                      <td className="py-2.5 px-4 text-[#9AA8B2] font-mono text-[11px]">{timestamp}</td>
-                      <td className="py-2.5 px-4 font-semibold text-[#E7ECEF] font-mono">
+                    <tr key={item.id || idx} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-2.5 px-4 text-[#687d9a] font-mono text-[11px]">{timestamp}</td>
+                      <td className="py-2.5 px-4 font-semibold text-[#0a1c3d] font-mono">
                         {srcDevice ? (
                           <div className="flex items-center gap-1 mb-0.5">
                             <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
                               srcDevice.is_gateway || srcDevice.type === 'router'
                                 ? 'bg-zinc-950 text-white border-zinc-700'
                                 : srcDevice.type === 'mobile' || srcDevice.type === 'smartphone'
-                                ? 'bg-[#C1E8FF]/30 text-[#0284c7] border-[#7EC5F2]/50'
+                                ? 'bg-[#C1E8FF] text-[#034466] border-[#7EC5F2]'
                                 : srcDevice.type === 'server' || srcDevice.type === 'iot'
-                                ? 'bg-[#0747a1]/20 text-[#0747a1] border-[#0747a1]/40'
-                                : 'bg-[#065A72]/20 text-[#065A72] border-[#065A72]/40'
+                                ? 'bg-[#0747a1] text-white border-[#0747a1]'
+                                : 'bg-[#065A72] text-white border-[#065A72]'
                             }`}>
                               {srcDevice.is_gateway || srcDevice.type === 'router' ? (
-                                <Router className="w-2.5 h-2.5 text-zinc-300" />
+                                <Router className="w-2.5 h-2.5 text-white" />
                               ) : srcDevice.type === 'mobile' || srcDevice.type === 'smartphone' ? (
-                                <Smartphone className="w-2.5 h-2.5 text-[#0284c7]" />
+                                <Smartphone className="w-2.5 h-2.5 text-[#034466]" />
                               ) : srcDevice.type === 'server' || srcDevice.type === 'iot' ? (
-                                <Server className="w-2.5 h-2.5 text-[#0747a1]" />
+                                <Server className="w-2.5 h-2.5 text-white" />
                               ) : (
-                                <Laptop className="w-2.5 h-2.5 text-[#065A72]" />
+                                <Laptop className="w-2.5 h-2.5 text-white" />
                               )}
                               <span>{srcDevice.hostname || srcDevice.label}</span>
                             </span>
@@ -244,11 +244,11 @@ export const ConnectionTable = ({
                           const info = getFriendlyDomainInfo(srcDomain);
                           return (
                             <div className="flex items-center gap-1 mb-0.5">
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-indigo-950/60 text-indigo-300 border-indigo-500/40">
-                                <Globe className="w-2.5 h-2.5 text-indigo-400 shrink-0" />
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-indigo-50 text-indigo-700 border-indigo-200">
+                                <Globe className="w-2.5 h-2.5 text-indigo-600 shrink-0" />
                                 <span className="truncate max-w-[150px]" title={info.raw}>{info.display}</span>
                                 {info.alias && (
-                                  <span className="text-[9px] font-normal px-1 rounded bg-[#202D36] text-[#cc5500] border border-[#3b4c5a]">
+                                  <span className="text-[9px] font-normal px-1 rounded bg-indigo-100 text-indigo-800">
                                     {info.alias}
                                   </span>
                                 )}
@@ -259,8 +259,8 @@ export const ConnectionTable = ({
                           const isLocal = isLocalPrivateIp(cleanSrcIp);
                           return (
                             <div className="flex items-center gap-1 mb-0.5">
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-slate-800/80 text-slate-300 border-slate-600/40">
-                                {isLocal ? <Laptop className="w-2.5 h-2.5 text-[#065A72]" /> : <Globe className="w-2.5 h-2.5 text-[#7895B2]" />}
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-slate-100 text-slate-700 border-slate-200">
+                                {isLocal ? <Laptop className="w-2.5 h-2.5 text-[#065A72]" /> : <Globe className="w-2.5 h-2.5 text-slate-500" />}
                                 <span>{isLocal ? 'Local LAN Node' : 'External Host'}</span>
                               </span>
                             </div>
@@ -270,15 +270,16 @@ export const ConnectionTable = ({
                           <button
                             type="button"
                             onClick={() => onSelectDevice(srcIp)}
-                            className="text-left font-mono hover:text-[#cc5500] hover:underline transition-colors focus:outline-none flex items-center gap-1 group cursor-pointer"
+                            className="text-left font-mono hover:text-blue-600 hover:underline transition-colors focus:outline-none flex items-center gap-1 group cursor-pointer"
                             title={`View activity trail for ${srcIp}`}
                           >
-                            <span className="group-hover:text-[#cc5500] font-semibold">{srcIp}</span>
-                            <span className="text-[#687883] text-[11px] font-normal">:{srcPort}</span>
+                            <span className="group-hover:text-blue-600 font-bold text-slate-900">{srcIp}</span>
+                            <span className="text-slate-400 text-[11px] font-normal">:{srcPort}</span>
                           </button>
                         ) : (
                           <span>
-                            {srcIp}:{srcPort}
+                            <span className="text-slate-900 font-bold">{srcIp}</span>
+                            <span className="text-slate-400 text-[11px] font-normal">:{srcPort}</span>
                           </span>
                         )}
                       </td>
@@ -290,24 +291,24 @@ export const ConnectionTable = ({
                                 dstDevice.is_gateway || dstDevice.type === 'router'
                                   ? 'bg-zinc-950 text-white border-zinc-700'
                                   : dstDevice.type === 'mobile' || dstDevice.type === 'smartphone'
-                                  ? 'bg-[#C1E8FF]/30 text-[#0284c7] border-[#7EC5F2]/50'
+                                  ? 'bg-[#C1E8FF] text-[#034466] border-[#7EC5F2]'
                                   : dstDevice.type === 'server' || dstDevice.type === 'iot'
-                                  ? 'bg-[#0747a1]/20 text-[#0747a1] border-[#0747a1]/40'
-                                  : 'bg-[#065A72]/20 text-[#065A72] border-[#065A72]/40'
+                                  ? 'bg-[#0747a1] text-white border-[#0747a1]'
+                                  : 'bg-[#065A72] text-white border-[#065A72]'
                               }`}>
                                 {dstDevice.is_gateway || dstDevice.type === 'router' ? (
-                                  <Router className="w-2.5 h-2.5 text-zinc-300" />
+                                  <Router className="w-2.5 h-2.5 text-white" />
                                 ) : dstDevice.type === 'mobile' || dstDevice.type === 'smartphone' ? (
-                                  <Smartphone className="w-2.5 h-2.5 text-[#0284c7]" />
+                                  <Smartphone className="w-2.5 h-2.5 text-[#034466]" />
                                 ) : dstDevice.type === 'server' || dstDevice.type === 'iot' ? (
-                                  <Server className="w-2.5 h-2.5 text-[#0747a1]" />
+                                  <Server className="w-2.5 h-2.5 text-white" />
                                 ) : (
-                                  <Laptop className="w-2.5 h-2.5 text-[#065A72]" />
+                                  <Laptop className="w-2.5 h-2.5 text-white" />
                                 )}
                                 <span>{dstDevice.hostname || dstDevice.label}</span>
                               </span>
                             </div>
-                            <span className="text-[10px] text-[#687883] block font-mono">
+                            <span className="text-[10px] text-slate-500 block font-mono">
                               {dstIp}:{dstPort}
                             </span>
                           </div>
@@ -315,16 +316,16 @@ export const ConnectionTable = ({
                           const info = getFriendlyDomainInfo(dstDomain);
                           return (
                             <div>
-                              <span className="flex items-center gap-1 text-[#7895B2] font-semibold">
-                                <Globe className="w-3 h-3 text-[#7895B2] shrink-0" />
+                              <span className="flex items-center gap-1 text-slate-800 font-semibold">
+                                <Globe className="w-3 h-3 text-indigo-600 shrink-0" />
                                 <span className="truncate max-w-[170px]" title={`${info.raw} (${dstIp})`}>{info.display}</span>
                                 {info.alias && (
-                                  <span className="text-[9px] font-normal px-1 rounded bg-[#202D36] text-[#cc5500] border border-[#3b4c5a] shrink-0">
+                                  <span className="text-[9px] font-normal px-1 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
                                     {info.alias}
                                   </span>
                                 )}
                               </span>
-                              <span className="text-[10px] text-[#687883] block">
+                              <span className="text-[10px] text-slate-400 block font-mono">
                                 {dstIp}:{dstPort}
                               </span>
                             </div>
@@ -333,25 +334,25 @@ export const ConnectionTable = ({
                           const isLocalDst = isLocalPrivateIp(cleanDstIp);
                           return (
                             <div>
-                              <span className="flex items-center gap-1 text-[#9AA8B2] font-semibold">
-                                {isLocalDst ? <Router className="w-3 h-3 text-emerald-400 shrink-0" /> : <Globe className="w-3 h-3 text-[#7895B2] shrink-0" />}
+                              <span className="flex items-center gap-1 text-slate-700 font-semibold">
+                                {isLocalDst ? <Router className="w-3 h-3 text-emerald-600 shrink-0" /> : <Globe className="w-3 h-3 text-slate-500 shrink-0" />}
                                 <span>{isLocalDst ? 'Local Gateway / Node' : 'External Host'}</span>
                               </span>
-                              <span className="text-[10px] text-[#687883] block">
+                              <span className="text-[10px] text-slate-400 block font-mono">
                                 {dstIp}:{dstPort}
                               </span>
                             </div>
                           );
                         })()}
                       </td>
-                      <td className="py-2.5 px-4 text-[#9AA8B2] font-mono text-[11px]">{protocol}</td>
+                      <td className="py-2.5 px-4 text-slate-700 font-mono text-[11px] font-semibold">{protocol}</td>
                       <td className="py-2.5 px-4 font-sans text-xs">
                         {isHeuristic ? (
-                          <span className="text-[#D3A35D] text-[11px] font-medium">
+                          <span className="text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[11px] font-semibold">
                             Heuristic
                           </span>
                         ) : (
-                          <span className="text-[#9AA8B2] text-[11px]">{modelUsed}</span>
+                          <span className="text-slate-600 text-[11px]">{modelUsed}</span>
                         )}
                       </td>
                       <td className="py-2.5 px-4">
@@ -359,10 +360,10 @@ export const ConnectionTable = ({
                       </td>
                       <td className="py-2.5 px-4 text-right">
                         <span
-                          className={`inline-flex items-center font-sans text-[10px] font-semibold px-2 py-0.5 rounded border uppercase ${
+                          className={`inline-flex items-center font-sans text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase ${
                             action.toLowerCase().includes('quarantine') || action.toLowerCase().includes('block')
-                              ? 'bg-[#DF857C]/15 text-[#DF857C] border-[#DF857C]/30'
-                              : 'bg-[#202D36] text-[#9AA8B2] border-[#2A3944]'
+                              ? 'bg-rose-50 text-rose-700 border-rose-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
                           }`}
                         >
                           {action}
@@ -379,3 +380,5 @@ export const ConnectionTable = ({
     </Card>
   );
 };
+
+export default ConnectionTable;

@@ -40,11 +40,11 @@ export const FlowRateChart = ({ entries = [], feed = [] }) => {
   }, [entries, feed]);
 
   return (
-    <Card className="bg-[#19242E] border border-[#2A3944] text-[#E7ECEF] shadow-none rounded-lg">
-      <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#2A3944]">
+    <Card className="bg-white border border-[#e2eaf4] text-[#0a1c3d] shadow-xs rounded-xl overflow-hidden">
+      <CardHeader className="flex flex-row items-center justify-between pb-3 border-b border-[#e2eaf4]">
         <div className="flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-[#7895B2]" />
-          <CardTitle className="text-sm font-semibold text-[#E7ECEF] font-sans">
+          <BarChart3 className="w-4 h-4 text-blue-600" />
+          <CardTitle className="text-sm font-bold text-[#0a1c3d] font-sans">
             Real-Time Flow Throughput (60s Window)
           </CardTitle>
         </div>
@@ -52,65 +52,65 @@ export const FlowRateChart = ({ entries = [], feed = [] }) => {
         {/* Legend matching NetrIQ specification */}
         <div className="flex items-center gap-4 text-xs font-sans">
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-sm bg-[#DF857C] inline-block" />
-            <span className="text-[#9AA8B2]">Critical</span>
+            <span className="w-2.5 h-2.5 rounded-sm bg-rose-500 inline-block" />
+            <span className="text-[#687d9a] font-medium">Critical</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-sm bg-[#D3A35D] inline-block" />
-            <span className="text-[#9AA8B2]">Suspicious</span>
+            <span className="w-2.5 h-2.5 rounded-sm bg-amber-500 inline-block" />
+            <span className="text-[#687d9a] font-medium">Suspicious</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-sm bg-[#7895B2] inline-block" />
-            <span className="text-[#9AA8B2]">Normal</span>
+            <span className="w-2.5 h-2.5 rounded-sm bg-blue-600 inline-block" />
+            <span className="text-[#687d9a] font-medium">Normal</span>
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="pt-4">
         {/* SVG Bar Chart Container */}
-        <div className="h-36 w-full flex items-end justify-between gap-2 pt-4 px-3 bg-[#101820] rounded-lg border border-[#2A3944]">
+        <div className="h-36 w-full flex items-end justify-between gap-2 pt-4 px-3 bg-[#f8fafc] rounded-xl border border-[#e2eaf4]">
           {chartData.buckets.map((b) => {
             const heightPct = Math.min((b.count / chartData.maxCount) * 100, 100);
 
             return (
               <div key={b.index} className="flex-1 flex flex-col items-center h-full justify-end group relative">
                 {/* Tooltip on Hover */}
-                <div className="absolute -top-9 hidden group-hover:flex flex-col items-center bg-[#19242E] border border-[#2A3944] text-[11px] px-2 py-0.5 rounded shadow-none whitespace-nowrap z-20">
-                  <span className="font-semibold text-[#E7ECEF]">{b.count} flows</span>
-                  <span className="text-[#9AA8B2] font-mono text-[10px]">{b.label}</span>
+                <div className="absolute -top-10 hidden group-hover:flex flex-col items-center bg-white border border-slate-200 text-[11px] px-2.5 py-1 rounded-lg shadow-md whitespace-nowrap z-20">
+                  <span className="font-bold text-[#0a1c3d]">{b.count} flows</span>
+                  <span className="text-[#687d9a] font-mono text-[10px]">{b.label}</span>
                 </div>
 
                 {/* Stacked Bar */}
                 <div
-                  className="w-full max-w-[24px] bg-[#202D36] rounded-t overflow-hidden flex flex-col justify-end transition-all duration-200"
+                  className="w-full max-w-[24px] bg-slate-200/80 rounded-t overflow-hidden flex flex-col justify-end transition-all duration-200"
                   style={{ height: `${Math.max(heightPct, 4)}%` }}
                 >
-                  {/* Critical: #DF857C */}
+                  {/* Critical: Rose-500 */}
                   {b.critical > 0 && (
                     <div
                       style={{ height: `${(b.critical / (b.count || 1)) * 100}%` }}
-                      className="bg-[#DF857C]"
+                      className="bg-rose-500"
                     />
                   )}
-                  {/* Suspicious / High / Medium: #D3A35D */}
+                  {/* Suspicious / High / Medium: Amber-500 */}
                   {b.high + b.medium > 0 && (
                     <div
                       style={{ height: `${((b.high + b.medium) / (b.count || 1)) * 100}%` }}
-                      className="bg-[#D3A35D]"
+                      className="bg-amber-500"
                     />
                   )}
-                  {/* Normal: #7895B2 */}
+                  {/* Low / Benign: Blue-600 */}
                   {b.low > 0 && (
                     <div
                       style={{ height: `${(b.low / (b.count || 1)) * 100}%` }}
-                      className="bg-[#7895B2]"
+                      className="bg-blue-600"
                     />
                   )}
                 </div>
 
-                {/* X Axis Label */}
-                <span className="text-[10px] text-[#687883] font-mono mt-2 truncate w-full text-center">
-                  {b.index % 3 === 0 ? b.label : ''}
+                {/* X-axis Label indicator */}
+                <span className="text-[9px] text-[#687d9a] font-mono mt-1.5 opacity-70">
+                  {b.index % 3 === 0 ? b.label.replace(' ago', '') : ''}
                 </span>
               </div>
             );
@@ -120,3 +120,5 @@ export const FlowRateChart = ({ entries = [], feed = [] }) => {
     </Card>
   );
 };
+
+export default FlowRateChart;

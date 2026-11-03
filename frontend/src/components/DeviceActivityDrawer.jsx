@@ -106,17 +106,17 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
     return groups;
   }, [trail]);
 
-  // Compute Summary Header Metrics
+  // Dynamic Metrics derived from trail
   const metrics = useMemo(() => {
     const totalEvents = trail.length;
     const destinations = new Set();
     let enforcementCount = 0;
-    const severityRank = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
     let highestSev = 'LOW';
+    const severityRank = { LOW: 1, MEDIUM: 2, HIGH: 3, CRITICAL: 4 };
 
     trail.forEach((item) => {
-      const dest = item.sni || (item.dst_ip ? `${item.dst_ip}:${item.dst_port || 0}` : null);
-      if (dest) destinations.add(dest);
+      if (item.dst_ip) destinations.add(item.dst_ip);
+      if (item.sni) destinations.add(item.sni);
 
       const action = (item.action || item.action_taken || '').toUpperCase();
       if (action.includes('QUARANTINE') || action.includes('BLOCK')) {
@@ -146,32 +146,32 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl h-full bg-slate-900 border-l border-slate-800 shadow-2xl text-slate-100 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl h-full bg-white border-l border-[#e2eaf4] shadow-2xl text-[#0a1c3d] flex flex-col overflow-hidden">
         
         {/* Drawer Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-950/80">
+        <div className="flex items-center justify-between p-5 border-b border-[#e2eaf4] bg-white">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/30 text-teal-400">
+            <div className="p-2.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 shadow-xs">
               <Laptop className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-mono text-base font-bold text-slate-100">{srcIp || 'Unknown Device'}</span>
+                <span className="font-mono text-base font-bold text-[#0a1c3d]">{srcIp || 'Unknown Device'}</span>
                 <button
                   onClick={handleCopyIp}
                   title="Copy IP address"
-                  className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition-colors"
+                  className="p-1 rounded-md hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
                 >
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
                 {role === 'viewer' && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-slate-400 border border-slate-700">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-sans font-semibold bg-slate-100 text-slate-600 border border-slate-200">
                     Viewer (Metadata-Only)
                   </span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5 font-mono">
+              <p className="text-xs text-[#687d9a] mt-0.5 font-sans">
                 Historical Connection & Intrusion Activity Trail
               </p>
             </div>
@@ -182,13 +182,13 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
               onClick={fetchTrail}
               disabled={isLoading}
               title="Refresh trail"
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors disabled:opacity-50"
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50 cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -196,42 +196,42 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
         </div>
 
         {/* Summary Metric Header */}
-        <div className="p-5 bg-slate-950/50 border-b border-slate-800/80 space-y-4">
-          <div className="grid grid-cols-4 gap-2">
-            <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] font-mono text-slate-400 block mb-1">TOTAL EVENTS</span>
-              <span className="font-mono text-lg font-bold text-slate-100">{metrics.totalEvents}</span>
+        <div className="p-5 bg-[#f8fafc] border-b border-[#e2eaf4] space-y-4">
+          <div className="grid grid-cols-4 gap-2.5">
+            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">TOTAL EVENTS</span>
+              <span className="font-mono text-lg font-bold text-[#0a1c3d]">{metrics.totalEvents}</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] font-mono text-slate-400 block mb-1">DISTINCT TARGETS</span>
-              <span className="font-mono text-lg font-bold text-cyan-300">{metrics.distinctDestinations}</span>
+            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">DISTINCT TARGETS</span>
+              <span className="font-mono text-lg font-bold text-blue-600">{metrics.distinctDestinations}</span>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] font-mono text-slate-400 block mb-1">ENFORCEMENTS</span>
-              <span className={`font-mono text-lg font-bold ${metrics.enforcementCount > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">ENFORCEMENTS</span>
+              <span className={`font-mono text-lg font-bold ${metrics.enforcementCount > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
                 {metrics.enforcementCount}
               </span>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
-              <span className="text-[10px] font-mono text-slate-400 block mb-1">MAX SEVERITY</span>
+            <div className="p-3 rounded-xl bg-white border border-[#e2eaf4] shadow-xs">
+              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-[#687d9a] block mb-1">MAX SEVERITY</span>
               {metrics.highestSev !== 'NONE' ? (
                 <div className="pt-0.5">
                   <SeverityBadge severity={metrics.highestSev} size="small" />
                 </div>
               ) : (
-                <span className="font-mono text-xs text-slate-500">N/A</span>
+                <span className="font-mono text-xs text-slate-400">N/A</span>
               )}
             </div>
           </div>
 
           {/* Quick Filters */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-mono">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs font-sans">
             {/* Time Window Buttons */}
-            <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-800">
-              <span className="text-slate-500 px-1 text-[11px]">WINDOW:</span>
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
+              <span className="text-[#687d9a] px-1 text-[11px] font-semibold uppercase">WINDOW:</span>
               {[
                 { id: '24h', label: '24h' },
                 { id: '7d', label: '7 Days' },
@@ -240,10 +240,10 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
                 <button
                   key={w.id}
                   onClick={() => setTimeWindow(w.id)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
                     timeWindow === w.id
-                      ? 'bg-teal-500/20 text-teal-300 border border-teal-500/30 font-bold'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-300 font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {w.label}
@@ -252,16 +252,16 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
             </div>
 
             {/* Severity Filter Dropdown */}
-            <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-lg border border-slate-800">
-              <span className="text-slate-500 px-1 text-[11px]">SEV:</span>
+            <div className="flex items-center gap-1.5 bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
+              <span className="text-[#687d9a] px-1 text-[11px] font-semibold uppercase">SEV:</span>
               {['ALL', 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'].map((sev) => (
                 <button
                   key={sev}
                   onClick={() => setFilterSeverity(sev)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition-all cursor-pointer ${
                     filterSeverity === sev
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-50 text-blue-700 border border-blue-300 font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {sev}
@@ -274,28 +274,28 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
         {/* Drawer Body — Chronological Timeline */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {isLoading ? (
-            <div className="py-20 text-center text-slate-400 space-y-3">
-              <div className="w-8 h-8 border-2 border-teal-500/30 border-t-teal-400 rounded-full animate-spin mx-auto" />
+            <div className="py-20 text-center text-slate-500 space-y-3">
+              <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto" />
               <p className="text-xs font-mono">Loading activity trail for {srcIp}...</p>
             </div>
           ) : error ? (
-            <div className="p-6 text-center bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs space-y-2">
-              <AlertTriangle className="w-6 h-6 mx-auto text-rose-400" />
+            <div className="p-6 text-center bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs space-y-2">
+              <AlertTriangle className="w-6 h-6 mx-auto text-rose-600" />
               <p>{error}</p>
             </div>
           ) : trail.length === 0 ? (
-            <div className="py-20 text-center bg-slate-950/40 border border-slate-800/80 rounded-2xl space-y-3 p-8">
-              <ShieldCheck className="w-10 h-10 text-emerald-400 mx-auto" />
-              <h4 className="text-sm font-bold text-slate-200">No Historical Activity Recorded</h4>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                No network flows or threat records matching <span className="text-slate-300 font-mono">{srcIp}</span> found in the retention window.
+            <div className="py-20 text-center bg-[#f8fafc] border border-slate-200 rounded-2xl space-y-3 p-8">
+              <ShieldCheck className="w-10 h-10 text-emerald-600 mx-auto" />
+              <h4 className="text-sm font-bold text-[#0a1c3d]">No Historical Activity Recorded</h4>
+              <p className="text-xs text-[#687d9a] max-w-sm mx-auto">
+                No network flows or threat records matching <span className="text-slate-900 font-bold font-mono">{srcIp}</span> found in the retention window.
               </p>
             </div>
           ) : (
             <div className="space-y-6">
               {trail.length === 1 && (
-                <div className="p-3 bg-teal-950/30 border border-teal-500/20 rounded-lg text-teal-300 text-xs font-mono flex items-center gap-2">
-                  <Activity className="w-4 h-4 shrink-0 text-teal-400" />
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-xs font-sans flex items-center gap-2">
+                  <Activity className="w-4 h-4 shrink-0 text-blue-600" />
                   <span>Single isolated observation recorded in the active query window.</span>
                 </div>
               )}
@@ -304,17 +304,17 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
                 <div key={dayLabel} className="space-y-3">
                   {/* Day Divider Badge */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 bg-slate-950 px-2.5 py-1 rounded border border-slate-800">
+                    <span className="text-xs font-sans font-bold uppercase tracking-wider text-slate-700 bg-white px-2.5 py-1 rounded-full border border-slate-200 shadow-xs">
                       {dayLabel}
                     </span>
-                    <div className="flex-1 h-px bg-slate-800" />
-                    <span className="text-[11px] font-mono text-slate-500">
+                    <div className="flex-1 h-px bg-slate-200" />
+                    <span className="text-[11px] font-sans text-slate-500">
                       {entries.length} {entries.length === 1 ? 'event' : 'events'}
                     </span>
                   </div>
 
                   {/* Events in Day */}
-                  <div className="space-y-2 relative before:absolute before:top-2 before:bottom-2 before:left-[19px] before:w-[2px] before:bg-slate-800/80">
+                  <div className="space-y-2 relative before:absolute before:top-2 before:bottom-2 before:left-[19px] before:w-[2px] before:bg-slate-200">
                     {entries.map((item, idx) => {
                       const action = (item.action || item.action_taken || 'NOTIFY').toUpperCase();
                       const isQuarantined = action.includes('QUARANTINE');
@@ -331,20 +331,20 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
                           <div
                             className={`absolute left-2.5 top-3.5 w-4 h-4 rounded-full border-2 transform -translate-x-1/2 flex items-center justify-center transition-all ${
                               isQuarantined
-                                ? 'border-rose-500 bg-rose-950 text-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.6)]'
+                                ? 'border-rose-500 bg-rose-500 text-white shadow-xs'
                                 : isBlock
-                                ? 'border-amber-500 bg-amber-950 text-amber-400'
-                                : 'border-teal-500/70 bg-slate-950 text-teal-400'
+                                ? 'border-amber-500 bg-amber-500 text-white shadow-xs'
+                                : 'border-blue-500 bg-white text-blue-600 shadow-xs'
                             }`}
                           />
 
                           {/* Event Card */}
-                          <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-all space-y-2">
+                          <div className="p-3.5 rounded-xl bg-white border border-[#e2eaf4] hover:border-slate-300 shadow-xs transition-all space-y-2">
                             <div className="flex flex-wrap items-center justify-between gap-2">
                               <div className="flex items-center gap-2 font-mono text-xs">
-                                <span className="text-slate-400 font-semibold">{formatClockTime(item.timestamp)}</span>
-                                <span className="text-slate-600">•</span>
-                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-400 uppercase">
+                                <span className="text-slate-500 font-semibold">{formatClockTime(item.timestamp)}</span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-[11px] px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-semibold uppercase">
                                   {item.protocol || 'TCP'}
                                 </span>
                               </div>
@@ -352,12 +352,12 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
                               <div className="flex items-center gap-2">
                                 <SeverityBadge severity={item.severity} size="small" />
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider ${
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-sans font-bold uppercase tracking-wider ${
                                     isQuarantined
-                                      ? 'bg-rose-950/80 border border-rose-500/40 text-rose-300'
+                                      ? 'bg-rose-50 border border-rose-200 text-rose-700'
                                       : isBlock
-                                      ? 'bg-amber-950/80 border border-amber-500/40 text-amber-300'
-                                      : 'bg-slate-900 border border-slate-800 text-slate-400'
+                                      ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                                      : 'bg-slate-100 border border-slate-200 text-slate-700'
                                   }`}
                                 >
                                   {action === 'NOTIFY' ? 'PASS / NOTIFY' : action}
@@ -367,18 +367,18 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
 
                             {/* Destination & Target Details */}
                             <div className="flex items-center gap-2 font-mono text-xs">
-                              <span className="text-slate-500 text-[11px]">TARGET:</span>
+                              <span className="text-slate-400 text-[11px]">TARGET:</span>
                               {sni ? (
-                                <span className="flex items-center gap-1.5 text-cyan-300 font-semibold hover:underline">
-                                  <Globe className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+                                <span className="flex items-center gap-1.5 text-blue-700 font-bold hover:underline">
+                                  <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
                                   {sni}
                                 </span>
                               ) : (
-                                <span className="text-slate-200 font-semibold">{dst}</span>
+                                <span className="text-slate-900 font-bold">{dst}</span>
                               )}
 
                               {sni && (
-                                <span className="text-slate-500 text-[11px] ml-auto">
+                                <span className="text-slate-400 text-[11px] ml-auto">
                                   ({dst})
                                 </span>
                               )}
@@ -386,12 +386,12 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
 
                             {/* Model / Verdict Attribution */}
                             {item.prediction && item.prediction !== 'BENIGN' && (
-                              <div className="text-[11px] font-mono text-slate-400 flex items-center gap-1.5 pt-1 border-t border-slate-900">
-                                <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
+                              <div className="text-[11px] font-mono text-slate-600 flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                                <ShieldAlert className="w-3.5 h-3.5 text-rose-600" />
                                 <span>Verdict:</span>
-                                <span className="text-rose-300 font-semibold">{item.prediction}</span>
+                                <span className="text-rose-700 font-bold">{item.prediction}</span>
                                 {item.confidence > 0 && (
-                                  <span className="text-slate-500">
+                                  <span className="text-slate-400">
                                     ({(item.confidence * 100).toFixed(0)}% confidence)
                                   </span>
                                 )}
@@ -409,11 +409,11 @@ export const DeviceActivityDrawer = ({ isOpen, onClose, srcIp }) => {
         </div>
 
         {/* Drawer Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-xs font-mono text-slate-400">
+        <div className="p-4 border-t border-[#e2eaf4] bg-[#f8fafc] flex items-center justify-between text-xs font-sans text-[#687d9a]">
           <span>Showing up to 100 chronological records</span>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors"
+            className="px-4 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg transition-colors cursor-pointer font-semibold shadow-xs"
           >
             Close
           </button>

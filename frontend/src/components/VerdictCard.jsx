@@ -55,104 +55,82 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
       return `Internal host ${src_ip} isolated due to anomalous behavior.`;
     }
     if (normAction === 'RECOMMEND_BLOCK') {
-      return `External source ${src_domain || src_ip} flagged for External firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
+      return `External source ${src_domain || src_ip} flagged for external firewall block targeting ${sni || `${dst_ip}:${dst_port}`}.`;
     }
     return `Traffic flow ${src_domain ? `${src_domain} (${src_ip})` : src_ip} → ${sni || `${dst_ip}:${dst_port}`} evaluated as verified benign payload.`;
   };
 
   const actionBadgeStyles = {
-    QUARANTINE: 'bg-[#b83a2e]/15 text-[#b83a2e] border-[#b83a2e]/40', // Muted crimson
-    RECOMMEND_BLOCK: 'bg-[#cc5500]/15 text-[#cc5500] border-[#cc5500]/40', // High risk rust
-    NOTIFY: 'bg-[#5c3d38] text-[#d4bfb0] border-[#6b4c45]',
-    PASS: 'bg-[#cc5500]/15 text-[#cc5500] border-[#cc5500]/30',
+    QUARANTINE: 'bg-rose-50 text-rose-700 border-rose-200',
+    RECOMMEND_BLOCK: 'bg-amber-50 text-amber-700 border-amber-200',
+    NOTIFY: 'bg-slate-100 text-slate-700 border-slate-200',
+    PASS: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
 
   return (
-    <Card className="relative overflow-hidden transition-colors bg-[#4a3330] hover:bg-[#5c3d38] border border-[#6b4c45] rounded-lg shadow-none">
+    <Card className="relative overflow-hidden transition-colors bg-white hover:bg-slate-50/80 border border-[#e2eaf4] rounded-xl shadow-xs">
       {/* Primary Card Summary Row */}
       <div className="p-4 flex flex-wrap items-center justify-between gap-4">
         {/* Connection & Target Identifier */}
         <div className="flex items-center gap-3 min-w-[280px]">
-          <div className="w-9 h-9 rounded-lg bg-[#3b2a27] border border-[#6b4c45] flex items-center justify-center text-[#c4956a] shrink-0">
-            {effectiveDstDomain || effectiveSrcDomain ? <Globe className="w-4 h-4 text-[#c4956a]" /> : <Terminal className="w-4 h-4 text-[#d4bfb0]" />}
+          <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 shrink-0">
+            {effectiveDstDomain || effectiveSrcDomain ? <Globe className="w-4 h-4 text-blue-600" /> : <Terminal className="w-4 h-4 text-slate-500" />}
           </div>
           <div>
-            <div className="flex items-center gap-2 font-mono text-sm font-semibold text-[#f8f4e7]">
+            <div className="flex items-center gap-2 font-mono text-sm font-bold text-[#0a1c3d]">
               {onSelectDevice ? (
                 <button
                   type="button"
-                  onClick={() => onSelectDevice(src_ip)}
-                  className="hover:text-[#cc5500] hover:underline cursor-pointer focus:outline-none"
-                  title={`View device activity trail for ${src_ip}`}
+                  onClick={() => onSelectDevice(cleanSrc)}
+                  className="hover:text-blue-600 hover:underline cursor-pointer"
+                  title={`View device activity trail for ${cleanSrc}`}
                 >
-                  {effectiveSrcDomain ? `${effectiveSrcDomain} (${src_ip})` : src_ip}
+                  {effectiveSrcDomain || src_ip}
                 </button>
               ) : (
-                <span>{effectiveSrcDomain ? `${effectiveSrcDomain} (${src_ip})` : src_ip}</span>
+                <span>{effectiveSrcDomain || src_ip}</span>
               )}
-              <ArrowRight className="w-3.5 h-3.5 text-[#a08070]" />
-              <span className="text-[#d4bfb0]">{effectiveDstDomain ? `${effectiveDstDomain} (${dst_ip}:${dst_port})` : `${dst_ip}:${dst_port}`}</span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+              <span>{effectiveDstDomain || dst_ip}</span>
             </div>
-            <div className="text-xs text-[#a08070] font-mono flex items-center gap-2 mt-0.5">
-              <span className="text-[#cc5500] font-semibold bg-[#3b2a27] px-1.5 py-0.2 rounded border border-[#6b4c45]">
-                {effectivePredictionId ? `#ALERT-${String(effectivePredictionId).slice(-4).toUpperCase()}` : '#ALERT-101'}
-              </span>
-              <span>•</span>
-              <span>{protocol}</span>
-              <span>•</span>
-              <span>Port {src_port}</span>
-              <span>•</span>
-              <span>{formattedTime}</span>
-            </div>
-
+            <p className="text-xs text-[#687d9a] mt-0.5 line-clamp-1 max-w-xl">
+              {getSummarySentence()}
+            </p>
           </div>
         </div>
 
-        {/* Action & Verdict Badges */}
-        <div className="flex items-center gap-3">
-          <SeverityBadge severity={severity} size="medium" />
+        {/* Action, Confidence & Expand Controls */}
+        <div className="flex items-center gap-3 ml-auto">
+          <div className="text-right hidden sm:block">
+            <div className="text-xs font-mono font-bold text-[#0a1c3d]">
+              {confidencePercent}% AI Conf
+            </div>
+            <div className="text-[10px] text-[#687d9a] font-mono">
+              {formattedTime} • {protocol}
+            </div>
+          </div>
 
-          {/* Action Signal Pill */}
-          <span
-            className={`text-xs px-2.5 py-0.5 rounded-md border font-mono font-semibold uppercase tracking-wider ${
-              actionBadgeStyles[normAction] || actionBadgeStyles.NOTIFY
-            }`}
-          >
+          <SeverityBadge severity={severity} size="small" />
+
+          <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${actionBadgeStyles[normAction] || actionBadgeStyles.NOTIFY}`}>
             {normAction}
           </span>
 
-          {/* Confidence Score Pill */}
-          <div className="hidden sm:flex flex-col items-end pl-2 border-l border-[#6b4c45]">
-            <span className="text-[10px] uppercase font-mono text-[#a08070]">Confidence</span>
-            <span className="text-xs font-mono font-bold text-[#f8f4e7]">
-              {confidencePercent}%
-            </span>
-          </div>
-
-          {/* Explanation Toggle */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-1 text-xs border-[#6b4c45] bg-[#3b2a27] hover:bg-[#5c3d38] text-[#d4bfb0] hover:text-[#f8f4e7] flex items-center gap-1.5 h-8 px-2.5 font-sans"
+            className="text-xs text-[#687d9a] hover:text-[#0a1c3d] hover:bg-slate-100 p-1.5 h-8 w-8 rounded-lg cursor-pointer"
+            aria-label="Toggle AI feature explanation"
           >
-            <span>{isExpanded ? 'Hide' : 'Explain'}</span>
-            {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </Button>
         </div>
       </div>
 
-      {/* Human-Readable Sentence Translation */}
-      <div className="px-4 pb-3 pt-0">
-        <p className="text-xs text-[#d4bfb0] font-sans flex items-center gap-2 bg-[#3b2a27]/60 px-3 py-2 rounded border border-[#6b4c45]/60">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#cc5500] shrink-0" />
-          <span className="line-clamp-1">{getSummarySentence()}</span>
-        </p>
-      </div>
-
-      {/* Expandable Technical Explanations Panel */}
+      {/* Expandable Explanation Panel */}
       {isExpanded && (
-        <div className="border-t border-[#6b4c45] bg-[#3b2a27] p-4">
+        <div className="border-t border-[#e2eaf4] bg-[#f8fafc] p-4">
           <ExplanationPanel
             predictionId={effectivePredictionId}
             viewMode={viewMode}
@@ -164,4 +142,5 @@ export const VerdictCard = ({ threat, viewMode = 'smart', hasRawAccess = true, o
     </Card>
   );
 };
+
 export default VerdictCard;

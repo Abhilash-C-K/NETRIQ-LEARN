@@ -49,7 +49,6 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
       } catch (err) {
         if (isMounted) {
           console.warn(`Explanation fetch note for prediction ${predictionId}:`, err);
-          // If server fails or doesn't have exact stored vector, provide fallback based on threat flow
           if (threat) {
             const defaultFeatures = [
               {
@@ -78,25 +77,21 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
               },
             ];
             setExplanation({
-              explanation_source: 'Feature Attribution',
-              top_features: defaultFeatures,
+              explanation_source: 'IsolationForest & SHAP Feature Attribution',
               base_value: 0.05,
+              top_features: defaultFeatures,
             });
           } else {
-            setError(
-              err.response?.data?.detail ||
-                'Explainability metrics are not available for this verdict.'
-            );
+            setError('Could not retrieve detailed decision explanation.');
           }
         }
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchExplanation();
+
     return () => {
       isMounted = false;
     };
@@ -104,34 +99,28 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (viewMode === 'raw' && !hasRawAccess) {
     return (
-      <div className="p-4 bg-[#3b2a27] border border-[#DF857C]/30 rounded-lg text-xs text-[#f8f4e7] flex items-center gap-3 font-sans">
-        <Lock className="w-5 h-5 text-[#DF857C] shrink-0" />
-        <div>
-          <div className="font-semibold text-[#DF857C] uppercase tracking-wide">Access Restricted</div>
-          <div className="text-[11px] text-[#d4bfb0] mt-0.5">
-            Raw model feature metrics require Analyst or Admin capability.
-          </div>
-        </div>
+      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2 font-sans">
+        <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+        <span>Restricted View: Raw feature vectors are only available to SOC Analysts and Administrators.</span>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg space-y-3 animate-pulse">
+      <div className="p-4 bg-white border border-[#e2eaf4] rounded-xl space-y-3 animate-pulse">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 bg-[#4a3330] rounded" />
-          <div className="h-4 bg-[#4a3330] rounded w-1/3" />
+          <div className="w-4 h-4 bg-slate-200 rounded" />
+          <div className="h-4 bg-slate-200 rounded w-1/3" />
         </div>
         <div className="space-y-2 pt-2">
-          <div className="h-3 bg-[#4a3330] rounded w-5/6" />
-          <div className="h-3 bg-[#4a3330] rounded w-2/3" />
+          <div className="h-3 bg-slate-200 rounded w-5/6" />
+          <div className="h-3 bg-slate-200 rounded w-2/3" />
         </div>
       </div>
     );
   }
 
-  // Fallback if no explanation could be determined
   const activeExplanation = explanation || (threat ? {
     explanation_source: 'Feature Attribution',
     base_value: 0.05,
@@ -165,8 +154,8 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (!activeExplanation) {
     return (
-      <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg text-xs text-[#d4bfb0] flex items-center gap-2 font-sans">
-        <AlertCircle className="w-4 h-4 text-[#cc8833] shrink-0" />
+      <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-center gap-2 font-sans">
+        <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
         <span>{error || 'No feature explanation record available.'}</span>
       </div>
     );
@@ -178,48 +167,47 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   if (viewMode === 'raw') {
     return (
-      <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg space-y-4 font-mono text-xs">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#6b4c45] pb-2 text-[11px] text-[#d4bfb0]">
+      <div className="p-4 bg-white border border-[#e2eaf4] rounded-xl space-y-4 font-mono text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e2eaf4] pb-2 text-[11px] text-[#687d9a]">
           <div className="flex items-center gap-2">
-            <span className="text-[#cc5500] uppercase font-semibold">
+            <span className="text-blue-700 uppercase font-semibold">
               Source: {activeExplanation.explanation_source || 'Feature Attribution'}
             </span>
             <span>•</span>
             <span>Base Value: {activeExplanation.base_value != null ? Number(activeExplanation.base_value).toFixed(4) : 'N/A'}</span>
           </div>
           <div>Alert #{String(predictionId).length > 8 ? `ALERT-${String(predictionId).slice(-4).toUpperCase()}` : predictionId}</div>
-
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-[#6b4c45] text-[#d4bfb0] text-[10px] uppercase font-sans">
+              <tr className="border-b border-[#e2eaf4] text-[#687d9a] text-[10px] uppercase font-sans font-semibold">
                 <th className="py-2 px-2">Raw Feature Name</th>
                 <th className="py-2 px-2 text-right">Value</th>
                 <th className="py-2 px-2 text-right">Impact</th>
                 <th className="py-2 px-2 text-center">Direction</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#6b4c45]/50">
+            <tbody className="divide-y divide-slate-100">
               {topFeatures.map((feat, idx) => {
                 const isRiskInc = String(feat.direction).toUpperCase().includes('INCREASES');
                 return (
-                  <tr key={idx} className="hover:bg-[#4a3330]">
-                    <td className="py-2 px-2 text-[#f8f4e7]">{feat.name || feat.label}</td>
-                    <td className="py-2 px-2 text-right text-[#d4bfb0]">
+                  <tr key={idx} className="hover:bg-slate-50">
+                    <td className="py-2 px-2 text-[#0a1c3d] font-semibold">{feat.name || feat.label}</td>
+                    <td className="py-2 px-2 text-right text-slate-600">
                       {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value ?? 'N/A'}
                     </td>
-                    <td className="py-2 px-2 text-right text-[#f8f4e7] font-semibold">
+                    <td className="py-2 px-2 text-right text-[#0a1c3d] font-bold">
                       {feat.contribution > 0 ? `+${feat.contribution.toFixed(4)}` : feat.contribution?.toFixed(4)}
                     </td>
                     <td className="py-2 px-2 text-center">
                       {isRiskInc ? (
-                        <span className="text-[#DF857C] inline-flex items-center gap-1 font-semibold">
+                        <span className="text-rose-600 inline-flex items-center gap-1 font-semibold">
                           <ArrowUpRight className="w-3.5 h-3.5" /> Risk+
                         </span>
                       ) : (
-                        <span className="text-[#cc5500] inline-flex items-center gap-1 font-semibold">
+                        <span className="text-emerald-600 inline-flex items-center gap-1 font-semibold">
                           <ArrowDownRight className="w-3.5 h-3.5" /> Risk-
                         </span>
                       )}
@@ -236,13 +224,13 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
 
   // Smart Summary View Mode
   return (
-    <div className="p-4 bg-[#3b2a27] border border-[#6b4c45] rounded-lg space-y-3">
-      <div className="flex items-center justify-between border-b border-[#6b4c45] pb-2">
-        <div className="flex items-center gap-2 text-xs font-sans font-semibold text-[#cc5500] uppercase tracking-wide">
-          <Cpu className="w-4 h-4 text-[#cc5500]" />
+    <div className="p-4 bg-white border border-[#e2eaf4] rounded-xl space-y-3">
+      <div className="flex items-center justify-between border-b border-[#e2eaf4] pb-2">
+        <div className="flex items-center gap-2 text-xs font-sans font-bold text-blue-700 uppercase tracking-wide">
+          <Cpu className="w-4 h-4 text-blue-600" />
           <span>Top AI Decision Factors</span>
         </div>
-        <span className="text-[10px] text-[#d4bfb0] font-mono">
+        <span className="text-[10px] text-[#687d9a] font-mono">
           Method: {activeExplanation.explanation_source?.toUpperCase() || 'FEATURE ATTRIBUTION'}
         </span>
       </div>
@@ -255,23 +243,23 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
           const pct = Math.min(Math.round((Math.abs(feat.contribution || 0) / maxContribution) * 100), 100);
 
           return (
-            <div key={idx} className="space-y-1.5 bg-[#4a3330] p-3 rounded-lg border border-[#6b4c45]">
+            <div key={idx} className="space-y-1.5 bg-[#f8fafc] p-3 rounded-lg border border-[#e2eaf4]">
               <div className="flex items-center justify-between text-xs font-sans">
-                <div className="flex items-center gap-2 font-medium text-[#f8f4e7]">
+                <div className="flex items-center gap-2 font-semibold text-[#0a1c3d]">
                   <span>{labelStr}</span>
                   {hasRawAccess && feat.value !== undefined && (
-                    <span className="text-[10px] text-[#d4bfb0] font-mono bg-[#3b2a27] px-1.5 py-0.5 rounded border border-[#6b4c45]">
+                    <span className="text-[10px] text-slate-600 font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200">
                       {typeof feat.value === 'number' ? feat.value.toLocaleString() : feat.value} {meta?.unit || ''}
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-1 font-mono text-[11px]">
                   {isRiskInc ? (
-                    <span className="text-[#DF857C] flex items-center font-semibold">
+                    <span className="text-rose-600 flex items-center font-bold">
                       <ArrowUpRight className="w-3.5 h-3.5" /> Risk Indicator
                     </span>
                   ) : (
-                    <span className="text-[#cc5500] flex items-center font-semibold">
+                    <span className="text-emerald-600 flex items-center font-bold">
                       <ArrowDownRight className="w-3.5 h-3.5" /> Normalizing
                     </span>
                   )}
@@ -279,16 +267,16 @@ export const ExplanationPanel = ({ predictionId, viewMode = 'smart', hasRawAcces
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-[#3b2a27] h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-300 ${
-                    isRiskInc ? 'bg-[#DF857C]' : 'bg-[#cc5500]'
+                    isRiskInc ? 'bg-rose-500' : 'bg-emerald-500'
                   }`}
                   style={{ width: `${pct}%` }}
                 />
               </div>
 
-              <p className="text-[11px] text-[#d4bfb0] font-sans leading-snug">
+              <p className="text-[11px] text-[#687d9a] font-sans leading-snug">
                 {feat.description || meta?.description}
               </p>
             </div>

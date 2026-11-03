@@ -92,6 +92,12 @@ class DeviceBehaviorRepository(BaseRepository):
         if "anomaly_score" in profile_data:
             update_fields["anomaly_score"] = profile_data["anomaly_score"]
 
+        # CRITICAL: In MongoDB, setting the same field in both $setOnInsert and $set
+        # triggers WriteError code 40 (Path Conflict).
+        # Remove any keys from insert_defaults that are already present in update_fields.
+        for k in update_fields.keys():
+            insert_defaults.pop(k, None)
+
         update_ops: Dict[str, Any] = {
             "$setOnInsert": insert_defaults,
             "$set": update_fields
@@ -99,9 +105,13 @@ class DeviceBehaviorRepository(BaseRepository):
 
         # If destinations are provided, add them into the mathematical set (zero duplication)
         if "allowed_destinations" in profile_data and profile_data["allowed_destinations"]:
-            update_ops["$addToSet"] = {
-                "network_policy.allowed_destinations": {"$each": profile_data["allowed_destinations"]}
-            }
+            if "network_policy" in insert_defaults:
+                existing_dests = insert_defaults["network_policy"].setdefault("allowed_destinations", [])
+                insert_defaults["network_policy"]["allowed_destinations"] = list(set(existing_dests + profile_data["allowed_destinations"]))
+            else:
+                update_ops["$addToSet"] = {
+                    "network_policy.allowed_destinations": {"$each": profile_data["allowed_destinations"]}
+                }
 
         await self.collection.update_one(
             {"mac": mac_clean},

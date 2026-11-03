@@ -9,8 +9,14 @@ import subprocess
 import urllib.request
 import urllib.error
 
-# Configuration (defaults to the local NetrIQ server port 8000; can be overridden via ENV)
-SERVER_URL = os.environ.get("NETRIQ_SERVER_URL", "http://127.0.0.1:8000").rstrip("/")
+# Configuration (can be passed via CLI arg, e.g.: python netriq_agent.py http://192.168.1.99:8000)
+_cli_server = None
+if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+    _cli_server = sys.argv[1].strip()
+    if not _cli_server.startswith("http://") and not _cli_server.startswith("https://"):
+        _cli_server = f"http://{_cli_server}"
+
+SERVER_URL = (_cli_server or os.environ.get("NETRIQ_SERVER_URL", "http://127.0.0.1:8000")).rstrip("/")
 REPORT_INTERVAL = int(os.environ.get("NETRIQ_INTERVAL", "15"))  # seconds between heartbeats
 
 def get_mac_address():
@@ -117,6 +123,15 @@ def send_heartbeat(telemetry):
         with urllib.request.urlopen(req, timeout=5) as resp:
             body = json.loads(resp.read().decode("utf-8"))
             return body
+    except urllib.error.HTTPError as e:
+        err_msg = f"HTTP {e.code} ({e.reason})"
+        try:
+            err_body = e.read().decode("utf-8", errors="ignore")
+            if err_body:
+                err_msg += f" - {err_body}"
+        except Exception:
+            pass
+        return {"status": "error", "message": err_msg}
     except urllib.error.URLError as e:
         return {"status": "error", "message": str(e)}
 

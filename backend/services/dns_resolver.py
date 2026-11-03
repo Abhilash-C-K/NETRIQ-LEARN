@@ -197,16 +197,19 @@ class DynamicDnsResolver:
 
             try:
                 import subprocess, re
+                from backend.services.monitoring_service import monitoring_service
                 arp_chk = subprocess.check_output(["arp", "-a", ip], text=True)
                 m_mac = re.search(r"([0-9a-fA-F-]{17})", arp_chk)
                 if m_mac:
-                    mac_str = m_mac.group(1).replace("-", ":")
-                    if (int(mac_str.split(':')[0], 16) & 2) != 0:
-                        return f"Smartphone ({ip})"
+                    mac_str = m_mac.group(1).replace("-", ":").upper()
+                    dev_info = monitoring_service._resolve_device_identity(ip, mac_str, gateway_ip=gateway_ip)
+                    if dev_info and dev_info.get("hostname"):
+                        return dev_info["hostname"]
             except Exception:
                 pass
 
-            return f"Workstation ({ip})"
+            last_octet = ip.split(".")[-1]
+            return f"LAN Device ({last_octet})"
 
         # B. Handle External Public IPs
         # 1. Ultra-fast DNS PTR lookup (0.01s - 0.05s)

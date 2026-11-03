@@ -22,6 +22,8 @@ import {
   Terminal as TerminalIcon,
   Laptop,
   Router,
+  Smartphone,
+  Server,
   Network,
   ArrowRight,
   ExternalLink,
@@ -304,14 +306,24 @@ export const Monitoring = () => {
                         <div className="flex items-center gap-2">
                           <div
                             className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${
-                              dev.is_host
-                                ? 'bg-blue-600 text-white'
-                                : dev.is_gateway
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-purple-600 text-white'
+                              dev.is_gateway || dev.type === 'router'
+                                ? 'bg-zinc-950 text-white border border-zinc-700'
+                                : dev.type === 'mobile' || dev.type === 'smartphone'
+                                ? 'bg-[#C1E8FF] text-[#034466] border border-[#7EC5F2]'
+                                : dev.type === 'server' || dev.type === 'iot'
+                                ? 'bg-[#0747a1] text-white border border-[#0747a1]'
+                                : 'bg-[#065A72] text-white border border-[#065A72]'
                             }`}
                           >
-                            {dev.is_host ? <Laptop className="w-4 h-4" /> : <Router className="w-4 h-4" />}
+                            {dev.is_gateway || dev.type === 'router' ? (
+                              <Router className="w-4 h-4" />
+                            ) : dev.type === 'mobile' || dev.type === 'smartphone' ? (
+                              <Smartphone className="w-4 h-4 text-[#034466]" />
+                            ) : dev.type === 'server' || dev.type === 'iot' ? (
+                              <Server className="w-4 h-4 text-white" />
+                            ) : (
+                              <Laptop className="w-4 h-4 text-white" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <h4 className="text-xs font-bold text-[#E7ECEF] truncate">

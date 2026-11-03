@@ -47,6 +47,7 @@ export const getFriendlyDomainInfo = (rawDomain) => {
     else if (lower.includes('cloudflare')) alias = 'Cloudflare';
     else if (lower.includes('host pc')) alias = 'Host System';
     else if (lower.includes('gateway') || lower.includes('router')) alias = 'Network Gateway';
+    else if (lower.includes('mobile') || lower.includes('phone') || lower.includes('smartphone')) alias = 'Mobile Device';
     else if (lower.includes('local network') || lower.includes('device')) alias = 'LAN Device';
 
     return {

@@ -19,6 +19,8 @@ import {
   Globe,
   Laptop,
   Router,
+  Smartphone,
+  Server,
 } from 'lucide-react';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { historyService } from '../services/history';
@@ -770,10 +772,14 @@ export const LiveTrafficLayer1 = () => {
                 }`}
                 title={`IP: ${dev.ip} | MAC: ${dev.mac || 'N/A'}`}
               >
-                {dev.is_gateway ? (
-                  <Router className="w-3.5 h-3.5 text-blue-500" />
+                {dev.is_gateway || dev.type === 'router' ? (
+                  <Router className="w-3.5 h-3.5 text-zinc-900" />
+                ) : dev.type === 'mobile' || dev.type === 'smartphone' ? (
+                  <Smartphone className="w-3.5 h-3.5 text-[#0284c7]" />
+                ) : dev.type === 'server' || dev.type === 'iot' ? (
+                  <Server className="w-3.5 h-3.5 text-[#0747a1]" />
                 ) : (
-                  <Laptop className="w-3.5 h-3.5 text-purple-500" />
+                  <Laptop className="w-3.5 h-3.5 text-[#065A72]" />
                 )}
                 <span>{dev.hostname || dev.label}</span>
                 <span className="text-[10px] font-mono opacity-60">({dev.ip})</span>
@@ -865,7 +871,15 @@ export const LiveTrafficLayer1 = () => {
                             return (
                               <div>
                                 <div className="flex items-center gap-1.5 font-sans font-bold text-purple-700 text-xs mb-0.5">
-                                  {dev.is_host ? <Laptop className="w-3.5 h-3.5 text-purple-600 shrink-0" /> : <Router className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                                  {dev.is_gateway || dev.type === 'router' ? (
+                                    <Router className="w-3.5 h-3.5 text-zinc-900 shrink-0" />
+                                  ) : dev.type === 'mobile' || dev.type === 'smartphone' ? (
+                                    <Smartphone className="w-3.5 h-3.5 text-[#0284c7] shrink-0" />
+                                  ) : dev.type === 'server' || dev.type === 'iot' ? (
+                                    <Server className="w-3.5 h-3.5 text-[#0747a1] shrink-0" />
+                                  ) : (
+                                    <Laptop className="w-3.5 h-3.5 text-[#065A72]" />
+                                  )}
                                   <span
                                     className="cursor-pointer hover:underline"
                                     onClick={(e) => {
@@ -1002,7 +1016,15 @@ export const LiveTrafficLayer1 = () => {
                             return (
                               <div>
                                 <div className="flex items-center gap-1.5 font-sans font-bold text-blue-700 text-xs mb-0.5">
-                                  {dstDev.is_host ? <Laptop className="w-3.5 h-3.5 text-blue-600 shrink-0" /> : <Router className="w-3.5 h-3.5 text-emerald-600 shrink-0" />}
+                                  {dstDev.is_gateway || dstDev.type === 'router' ? (
+                                    <Router className="w-3.5 h-3.5 text-zinc-900 shrink-0" />
+                                  ) : dstDev.type === 'mobile' || dstDev.type === 'smartphone' ? (
+                                    <Smartphone className="w-3.5 h-3.5 text-[#0284c7] shrink-0" />
+                                  ) : dstDev.type === 'server' || dstDev.type === 'iot' ? (
+                                    <Server className="w-3.5 h-3.5 text-[#0747a1] shrink-0" />
+                                  ) : (
+                                    <Laptop className="w-3.5 h-3.5 text-[#065A72]" />
+                                  )}
                                   <span
                                     className="cursor-pointer hover:underline"
                                     onClick={(e) => {

@@ -21,6 +21,7 @@ import {
   Laptop,
   Database,
   Router,
+  Smartphone,
   CheckCircle2,
   XCircle,
   Activity,
@@ -28,6 +29,7 @@ import {
   ExternalLink,
   Info,
   RefreshCw,
+  LayoutGrid,
 } from 'lucide-react';
 import { incidentService } from '../services/incidents';
 import { predictionService } from '../services/prediction';
@@ -41,80 +43,134 @@ const SOCDeviceNode = ({ data }) => {
   const isCompromised = data.status === 'COMPROMISED';
   const isSuspicious = data.status === 'SUSPICIOUS';
   const isQuarantined = data.status === 'QUARANTINED';
+  const isRouter = data.type === 'router';
+  const isMobile = data.type === 'mobile' || data.type === 'smartphone';
+  const isServer = data.type === 'server' || data.type === 'iot';
+  const isLaptop = data.type === 'workstation' || data.type === 'laptop' || (!isRouter && !isMobile && !isServer && data.type !== 'database');
 
-  const borderColor = isCompromised
-    ? 'border-red-500 bg-red-50/90 shadow-red-200'
-    : isSuspicious
-    ? 'border-orange-500 bg-orange-50/90 shadow-orange-200'
-    : isQuarantined
-    ? 'border-purple-600 bg-purple-50/90 shadow-purple-200'
-    : 'border-blue-300 bg-white shadow-slate-100';
+  // Device-specific styling rules:
+  // - Router: BLACK color (#09090b)
+  // - Mobile: #C1E8FF (Soft Ice Blue)
+  // - Laptop / PC: #065A72 (Deep Ocean Blue)
+  // - Server / IoT: #0747a1 (Deep Cobalt Blue)
+  let borderColor = 'border-blue-300 bg-white shadow-slate-100';
+  let badgeColor = 'bg-blue-600 text-white';
+  let iconBg = 'bg-blue-50 text-blue-600';
+  let handleBg = '!bg-blue-500';
+  let textPrimary = 'text-[#0f172a]';
+  let textSecondary = 'text-[#475569]';
+  let vlanText = 'text-[#64748b]';
 
-  const badgeColor = isCompromised
-    ? 'bg-red-600 text-white'
-    : isSuspicious
-    ? 'bg-orange-500 text-white'
-    : isQuarantined
-    ? 'bg-purple-600 text-white'
-    : 'bg-blue-600 text-white';
+  if (isCompromised) {
+    borderColor = 'border-red-500 bg-red-50/90 shadow-red-200';
+    badgeColor = 'bg-red-600 text-white';
+    iconBg = 'bg-red-100 text-red-600';
+    handleBg = '!bg-red-500';
+  } else if (isSuspicious) {
+    borderColor = 'border-orange-500 bg-orange-50/90 shadow-orange-200';
+    badgeColor = 'bg-orange-500 text-white';
+    iconBg = 'bg-orange-100 text-orange-600';
+    handleBg = '!bg-orange-500';
+  } else if (isQuarantined) {
+    borderColor = 'border-purple-600 bg-purple-50/90 shadow-purple-200';
+    badgeColor = 'bg-purple-600 text-white';
+    iconBg = 'bg-purple-100 text-purple-600';
+    handleBg = '!bg-purple-600';
+  } else {
+    // Normal Status - Color code devices by type
+    if (isRouter) {
+      // Router: BLACK
+      borderColor = 'border-black bg-zinc-950 text-white shadow-md shadow-zinc-900/40 ring-1 ring-zinc-800';
+      badgeColor = 'bg-black text-white border border-zinc-700';
+      iconBg = 'bg-zinc-800 text-white border border-zinc-700';
+      handleBg = '!bg-black !border-zinc-500';
+      textPrimary = 'text-white';
+      textSecondary = 'text-zinc-300';
+      vlanText = 'text-zinc-400';
+    } else if (isMobile) {
+      // Mobile: #C1E8FF (Soft Ice Blue)
+      borderColor = 'border-[#7EC5F2] bg-[#C1E8FF]/30 shadow-md shadow-[#C1E8FF]/40 ring-1 ring-[#7EC5F2]/40';
+      badgeColor = 'bg-[#C1E8FF] text-[#034466] font-extrabold border border-[#7EC5F2] shadow-2xs';
+      iconBg = 'bg-white/90 text-[#0284c7] border border-[#7EC5F2]';
+      handleBg = '!bg-[#7EC5F2]';
+      textPrimary = 'text-[#0f172a]';
+      textSecondary = 'text-[#034466]';
+      vlanText = 'text-[#034466] font-bold';
+    } else if (isServer) {
+      // Server / IoT: #0747a1 (Deep Cobalt Blue)
+      borderColor = 'border-[#0747a1] bg-[#0747a1]/10 shadow-md shadow-[#0747a1]/20 ring-1 ring-[#0747a1]/30';
+      badgeColor = 'bg-[#0747a1] text-white font-extrabold shadow-2xs';
+      iconBg = 'bg-[#0747a1]/15 text-[#0747a1] border border-[#0747a1]/30';
+      handleBg = '!bg-[#0747a1]';
+      textPrimary = 'text-[#0f172a]';
+      textSecondary = 'text-[#0747a1]';
+      vlanText = 'text-[#0747a1] font-bold';
+    } else if (data.type === 'database') {
+      // Database: AMBER
+      borderColor = 'border-amber-400 bg-amber-50/80 shadow-md shadow-amber-100/70 ring-1 ring-amber-300';
+      badgeColor = 'bg-amber-600 text-white shadow-xs';
+      iconBg = 'bg-amber-100 text-amber-600 border border-amber-200';
+      handleBg = '!bg-amber-500';
+    } else {
+      // Laptop / Workstation / PC: #065A72 (Deep Ocean Blue)
+      borderColor = 'border-[#065A72] bg-[#065A72]/10 shadow-md shadow-[#065A72]/20 ring-1 ring-[#065A72]/30';
+      badgeColor = 'bg-[#065A72] text-white font-extrabold shadow-2xs';
+      iconBg = 'bg-[#065A72]/15 text-[#065A72] border border-[#065A72]/30';
+      handleBg = '!bg-[#065A72]';
+      textPrimary = 'text-[#0f172a]';
+      textSecondary = 'text-[#065A72]';
+      vlanText = 'text-[#065A72] font-bold';
+    }
+  }
 
   return (
     <div
-      className={`px-3.5 py-2.5 rounded-xl border-2 shadow-md min-w-[170px] transition-all cursor-pointer relative ${borderColor} ${
+      className={`px-3.5 py-2.5 rounded-xl border-2 shadow-md min-w-[175px] transition-all cursor-pointer relative ${borderColor} ${
         isCompromised ? 'animate-threat-pulse' : ''
       }`}
     >
       <Handle
         type="target"
         position={Position.Left}
-        className="w-2.5 h-2.5 !bg-blue-500 border-2 !border-white rounded-full"
+        className={`w-2.5 h-2.5 ${handleBg} border-2 !border-white rounded-full`}
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="w-2.5 h-2.5 !bg-blue-500 border-2 !border-white rounded-full"
+        className={`w-2.5 h-2.5 ${handleBg} border-2 !border-white rounded-full`}
       />
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="w-2 h-2 !bg-blue-400 opacity-0"
+        className={`w-2 h-2 ${handleBg} opacity-0`}
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="w-2 h-2 !bg-blue-400 opacity-0"
+        className={`w-2 h-2 ${handleBg} opacity-0`}
       />
 
       <div className="flex items-center justify-between gap-2 mb-1.5">
-        <span className="text-[10px] font-mono text-[#64748b] font-medium">{data.vlan}</span>
+        <span className={`text-[10px] font-mono font-medium ${vlanText}`}>{data.vlan}</span>
         <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded uppercase ${badgeColor}`}>
           {data.status}
         </span>
       </div>
 
       <div className="flex items-center gap-2">
-        <div
-          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-            isCompromised
-              ? 'bg-red-100 text-red-600'
-              : isSuspicious
-              ? 'bg-orange-100 text-orange-600'
-              : isQuarantined
-              ? 'bg-purple-100 text-purple-600'
-              : 'bg-blue-50 text-blue-600'
-          }`}
-        >
-          {data.type === 'router' && <Router className="w-4 h-4" />}
-          {data.type === 'server' && <Server className="w-4 h-4" />}
+        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${iconBg}`}>
+          {isRouter && <Router className="w-4 h-4" />}
+          {isMobile && <Smartphone className="w-4 h-4" />}
+          {isServer && <Server className="w-4 h-4" />}
           {data.type === 'database' && <Database className="w-4 h-4" />}
-          {data.type === 'workstation' && <Laptop className="w-4 h-4" />}
+          {isLaptop && <Laptop className="w-4 h-4" />}
         </div>
 
         <div className="min-w-0">
-          <div className="text-xs font-bold text-[#0f172a] truncate">{data.hostname || data.label}</div>
-          <div className="text-[11px] font-mono text-[#475569]">{data.ip}</div>
+          <div className={`text-xs font-bold truncate ${textPrimary}`}>{data.hostname || data.label}</div>
+          <div className={`text-[11px] font-mono ${textSecondary}`}>{data.ip}</div>
         </div>
       </div>
     </div>
@@ -142,6 +198,7 @@ export const InternalNetworkLayer2 = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNode, setSelectedNode] = useState(null);
+  const [rfInstance, setRfInstance] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionInProgress, setActionInProgress] = useState(false);
   const [viewMode, setViewMode] = useState('live'); // 'live' (Real Wi-Fi Devices) | 'simulation' (Enterprise SOC Testbed)
@@ -192,10 +249,66 @@ export const InternalNetworkLayer2 = () => {
     }
   };
 
-  // Helper to construct React Flow nodes and edges with position preservation
-  const buildRealTopology = (devices, incidents = [], threats = [], prevNodes = []) => {
+  // Helper to construct React Flow nodes and edges with grouped spatial layout:
+  // - Top / Top-Left: Router / Gateway
+  // - Left Column: IoT & Smart Devices
+  // - Center Area: Mobile Phones (2-column layout)
+  // - Right Column: Laptops & Workstations (Host PC at the top)
+  const buildRealTopology = (devices, incidents = [], threats = [], prevNodes = [], forceReset = false) => {
     const prevMap = new Map((prevNodes || []).map((n) => [n.id, n]));
-    const realNodes = devices.map((d, idx) => {
+
+    // Categorize devices into designated functional zones
+    const routers = [];
+    const iotDevices = [];
+    const mobileDevices = [];
+    const workstations = [];
+
+    (devices || []).forEach((d) => {
+      if (d.is_gateway || d.type === 'router') {
+        routers.push(d);
+      } else if (d.type === 'server' || d.type === 'iot') {
+        iotDevices.push(d);
+      } else if (d.type === 'mobile' || d.type === 'smartphone') {
+        mobileDevices.push(d);
+      } else {
+        // Laptop / PC / Workstation
+        if (d.is_host) {
+          workstations.unshift(d); // Host machine at the top of the laptop column
+        } else {
+          workstations.push(d);
+        }
+      }
+    });
+
+    const coordinateMap = new Map();
+
+    // 1. Router at Top (Top-Left)
+    routers.forEach((d, idx) => {
+      coordinateMap.set(d.ip, { x: 40, y: 30 + idx * 140 });
+    });
+
+    // 2. IoT / Smart Devices on Left side (stacked below router)
+    iotDevices.forEach((d, idx) => {
+      const col = Math.floor(idx / 5);
+      const row = idx % 5;
+      coordinateMap.set(d.ip, { x: 40 + col * 260, y: 190 + row * 140 });
+    });
+
+    // 3. Mobile Phones in Center area (2-column grid)
+    mobileDevices.forEach((d, idx) => {
+      const col = idx % 2;
+      const row = Math.floor(idx / 2);
+      coordinateMap.set(d.ip, { x: 320 + col * 260, y: 200 + row * 140 });
+    });
+
+    // 4. Laptops / Workstations in Right column (Host PC at the top)
+    workstations.forEach((d, idx) => {
+      const col = Math.floor(idx / 6);
+      const row = idx % 6;
+      coordinateMap.set(d.ip, { x: 840 + col * 260, y: 30 + row * 140 });
+    });
+
+    const realNodes = (devices || []).map((d) => {
       const matchingThreats = (threats || []).filter((t) => t.src_ip === d.ip || t.dst_ip === d.ip);
       const isQuar =
         (incidents || []).some(
@@ -209,33 +322,21 @@ export const InternalNetworkLayer2 = () => {
 
       const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
 
-      let xPos = 480;
-      let yPos = 80;
-      if (d.is_gateway) {
-        xPos = 120;
-        yPos = 80;
-      } else if (!d.is_host) {
-        const peerIdx = idx - (devices.some((x) => x.is_gateway && x.is_host) ? 1 : 2);
-        const col = Math.max(0, peerIdx) % 3;
-        const row = Math.floor(Math.max(0, peerIdx) / 3);
-        xPos = 60 + col * 260;
-        yPos = 240 + row * 130;
-      }
-
       const nodeId = `dev-${d.ip.replace(/\./g, '-')}`;
       const existingNode = prevMap.get(nodeId);
-      const position = existingNode ? existingNode.position : { x: xPos, y: yPos };
+      const defaultPos = coordinateMap.get(d.ip) || { x: 400, y: 200 };
+      const position = (existingNode && !forceReset) ? existingNode.position : defaultPos;
 
       const ports = Array.from(
         new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))
       ).slice(0, 4);
 
-      const hostname = d.hostname || (d.is_host ? 'Host PC' : d.is_gateway ? 'Wi-Fi Gateway' : `Workstation (${d.ip.split('.').pop()})`);
-      const friendlyLabel = d.is_host
+      const hostname = d.hostname || (d.is_host ? 'Host PC' : d.is_gateway ? 'Wi-Fi Router Gateway' : `${d.type === 'mobile' ? 'Smartphone' : 'Network Device'} (${d.ip.split('.').pop()})`);
+      const friendlyLabel = d.label || (d.is_host
         ? `${hostname} (This PC)`
         : d.is_gateway
         ? `Wi-Fi Router Gateway`
-        : `${hostname} (${d.ip})`;
+        : `${hostname} (${d.ip})`);
 
       return {
         id: nodeId,
@@ -282,7 +383,7 @@ export const InternalNetworkLayer2 = () => {
   };
 
   // Load real telemetry devices from Host OS & MongoDB
-  const loadTopologyData = async (mode = viewMode, isSilent = false) => {
+  const loadTopologyData = async (mode = viewMode, isSilent = false, forceReset = false) => {
     try {
       if (!isSilent) setLoading(true);
 
@@ -294,7 +395,7 @@ export const InternalNetworkLayer2 = () => {
           setTopologyMeta(localTopology);
 
           setNodes((prevNodes) => {
-            const { nodes: newNodes, edges: newEdges } = buildRealTopology(localTopology.devices, [], [], prevNodes);
+            const { nodes: newNodes, edges: newEdges } = buildRealTopology(localTopology.devices, [], [], forceReset ? [] : prevNodes, forceReset);
             setEdges(newEdges);
             setSelectedNode((prevSelected) => {
               if (prevSelected) {
@@ -320,7 +421,8 @@ export const InternalNetworkLayer2 = () => {
                 localTopology.devices,
                 Array.isArray(incidents) ? incidents : [],
                 Array.isArray(threats) ? threats : [],
-                prevNodes
+                forceReset ? [] : prevNodes,
+                forceReset
               );
               return enrichedNodes;
             });
@@ -335,7 +437,7 @@ export const InternalNetworkLayer2 = () => {
             {
               id: `dev-${fallbackGatewayIp.replace(/\./g, '-')}`,
               type: 'socDevice',
-              position: { x: 120, y: 180 },
+              position: { x: 40, y: 30 },
               data: {
                 id: `dev-${fallbackGatewayIp.replace(/\./g, '-')}`,
                 label: 'Wi-Fi Router Gateway',
@@ -354,7 +456,7 @@ export const InternalNetworkLayer2 = () => {
             {
               id: `dev-${fallbackHostIp.replace(/\./g, '-')}`,
               type: 'socDevice',
-              position: { x: 480, y: 180 },
+              position: { x: 840, y: 30 },
               data: {
                 id: `dev-${fallbackHostIp.replace(/\./g, '-')}`,
                 label: 'This PC (Host)',
@@ -408,6 +510,8 @@ export const InternalNetworkLayer2 = () => {
         if (internalIps.size === 0) {
           internalIps.add('10.0.0.1');
           internalIps.add('10.0.0.42');
+          internalIps.add('10.0.0.15');
+          internalIps.add('10.0.0.88');
         }
 
         const ipList = Array.from(internalIps).slice(0, 9);
@@ -426,19 +530,44 @@ export const InternalNetworkLayer2 = () => {
           const status = isQuar ? 'QUARANTINED' : hasCritical ? 'COMPROMISED' : hasWarning ? 'SUSPICIOUS' : 'NORMAL';
           const vlan = isQuar ? 'VLAN-99 (Quarantined)' : ip.endsWith('.1') ? 'VLAN-10 (Trunk)' : 'VLAN-50 (Synthetic)';
 
-          const col = idx % 3;
-          const row = Math.floor(idx / 3);
-          const xPos = 140 + col * 280;
-          const yPos = 40 + row * 150;
+          const isSimRouter = ip.endsWith('.1');
+          const isSimMobile = ip.endsWith('.42') || ip.endsWith('.55');
+          const isSimServer = ip.endsWith('.15') || ip.endsWith('.10');
+          const simType = isSimRouter ? 'router' : isSimMobile ? 'mobile' : isSimServer ? 'server' : 'workstation';
+
+          // Grouped coordinates in simulation mode
+          let xPos = 840;
+          let yPos = 30 + idx * 140;
+          if (isSimRouter) {
+            xPos = 40;
+            yPos = 30;
+          } else if (isSimServer) {
+            xPos = 40;
+            yPos = 190 + (idx % 3) * 140;
+          } else if (isSimMobile) {
+            xPos = 320 + (idx % 2) * 260;
+            yPos = 200 + Math.floor(idx / 2) * 140;
+          } else {
+            xPos = 840;
+            yPos = 30 + (idx % 5) * 140;
+          }
 
           const ports = Array.from(new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))).slice(0, 4);
+          const simLabel = isSimRouter
+            ? 'Gateway Router (Simulated)'
+            : isSimMobile
+            ? `Mobile Phone (${ip})`
+            : isSimServer
+            ? `Database Server (${ip})`
+            : `Workstation Laptop (${ip})`;
 
           deviceMap[ip] = {
             id: `dev-${ip.replace(/\./g, '-')}`,
-            label: ip.endsWith('.1') ? 'Internal Gateway (Simulated)' : `Host (${ip}) [Demo]`,
+            label: simLabel,
+            hostname: simLabel,
             ip,
             mac: `00:1A:2B:3C:${(idx + 10).toString(16).toUpperCase()}:01`,
-            type: ip.endsWith('.1') ? 'router' : ip.endsWith('.10') ? 'server' : 'workstation',
+            type: simType,
             vlan,
             status,
             riskScore: isQuar ? 98 : hasCritical ? 92 : hasWarning ? 65 : 12,
@@ -578,6 +707,22 @@ export const InternalNetworkLayer2 = () => {
           </div>
 
           <button
+            onClick={() => {
+              loadTopologyData(viewMode, false, true);
+              if (rfInstance) {
+                setTimeout(() => {
+                  try { rfInstance.fitView({ padding: 0.25, duration: 400 }); } catch (e) {}
+                }, 100);
+              }
+            }}
+            title="Snap all devices into grouped side zones: Router Top, IoT Left, Phones Center, Laptops Right"
+            className="px-3 py-1.5 rounded-lg border border-[#e2e8f0] hover:bg-[#f8fafc] text-xs font-semibold text-[#475569] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+          >
+            <LayoutGrid className="w-3.5 h-3.5 text-purple-600" />
+            Group Layout
+          </button>
+
+          <button
             onClick={() => loadTopologyData(viewMode, false)}
             className="px-3 py-1.5 rounded-lg border border-[#e2e8f0] hover:bg-[#f8fafc] text-xs font-medium text-[#475569] flex items-center gap-1.5 transition-colors cursor-pointer"
           >
@@ -618,6 +763,26 @@ export const InternalNetworkLayer2 = () => {
             <span>Interactive Topology (Live DB Endpoints)</span>
           </div>
 
+          {/* Color Scheme & Grouped Side Zones Legend */}
+          <div className="absolute top-3 right-3 z-10 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg border border-[#e2e8f0] text-[11px] font-semibold text-[#475569] shadow-sm flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-zinc-900" title="Top Zone">
+              <span className="w-2.5 h-2.5 rounded-full bg-black border border-zinc-700 inline-block shadow-2xs" />
+              Router (Top)
+            </span>
+            <span className="flex items-center gap-1.5 text-[#0747a1]" title="Left Column">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#0747a1] border border-[#0747a1]/40 inline-block shadow-2xs" />
+              IoT (#0747a1)
+            </span>
+            <span className="flex items-center gap-1.5 text-[#034466]" title="Center Area">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#C1E8FF] border border-[#7EC5F2] inline-block shadow-2xs" />
+              Phones (#C1E8FF)
+            </span>
+            <span className="flex items-center gap-1.5 text-[#065A72]" title="Right Column">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#065A72] border border-[#065A72]/40 inline-block shadow-2xs" />
+              Laptops (#065A72)
+            </span>
+          </div>
+
           {loading && nodes.length === 0 && (
             <div className="absolute inset-0 z-20 bg-white/80 backdrop-blur-xs flex flex-col items-center justify-center gap-2">
               <RefreshCw className="w-6 h-6 text-purple-600 animate-spin" />
@@ -633,8 +798,9 @@ export const InternalNetworkLayer2 = () => {
             onEdgesChange={onEdgesChange}
             onNodeClick={onNodeClick}
             nodeTypes={nodeTypes}
+            onInit={setRfInstance}
             fitView
-            fitViewOptions={{ padding: 0.35 }}
+            fitViewOptions={{ padding: 0.25 }}
             attributionPosition="bottom-left"
           >
             <Background color="#cbd5e1" gap={18} size={1} />
@@ -644,7 +810,11 @@ export const InternalNetworkLayer2 = () => {
                 if (n.data?.status === 'COMPROMISED') return '#ef4444';
                 if (n.data?.status === 'SUSPICIOUS') return '#f97316';
                 if (n.data?.status === 'QUARANTINED') return '#7c3aed';
-                return '#2563eb';
+                if (n.data?.type === 'router') return '#09090b';
+                if (n.data?.type === 'mobile' || n.data?.type === 'smartphone') return '#C1E8FF';
+                if (n.data?.type === 'server' || n.data?.type === 'iot') return '#0747a1';
+                if (n.data?.type === 'database') return '#f59e0b';
+                return '#065A72';
               }}
               className="bg-white border border-[#e2e8f0] rounded-lg shadow-sm"
             />
@@ -657,22 +827,51 @@ export const InternalNetworkLayer2 = () => {
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-[#e2e8f0]">
                 <div className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-purple-600" />
+                  {selectedNode.data.type === 'router' ? (
+                    <Router className="w-4 h-4 text-black" />
+                  ) : selectedNode.data.type === 'mobile' || selectedNode.data.type === 'smartphone' ? (
+                    <Smartphone className="w-4 h-4 text-[#0284c7]" />
+                  ) : selectedNode.data.type === 'server' || selectedNode.data.type === 'iot' ? (
+                    <Server className="w-4 h-4 text-[#0747a1]" />
+                  ) : (
+                    <Laptop className="w-4 h-4 text-[#065A72]" />
+                  )}
                   <h3 className="font-bold text-sm text-[#0f172a]">Device Telemetry & Controls</h3>
                 </div>
-                <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
-                    selectedNode.data.status === 'COMPROMISED'
-                      ? 'bg-red-100 text-red-700'
-                      : selectedNode.data.status === 'SUSPICIOUS'
-                      ? 'bg-orange-100 text-orange-700'
-                      : selectedNode.data.status === 'QUARANTINED'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-blue-100 text-blue-700'
-                  }`}
-                >
-                  {selectedNode.data.status}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase ${
+                      selectedNode.data.type === 'router'
+                        ? 'bg-zinc-900 text-white'
+                        : selectedNode.data.type === 'mobile' || selectedNode.data.type === 'smartphone'
+                        ? 'bg-[#C1E8FF] text-[#034466] border border-[#7EC5F2] font-bold'
+                        : selectedNode.data.type === 'server' || selectedNode.data.type === 'iot'
+                        ? 'bg-[#0747a1]/15 text-[#0747a1] border border-[#0747a1]/30 font-bold'
+                        : 'bg-[#065A72]/15 text-[#065A72] border border-[#065A72]/30 font-bold'
+                    }`}
+                  >
+                    {selectedNode.data.type === 'router'
+                      ? 'Router'
+                      : selectedNode.data.type === 'mobile' || selectedNode.data.type === 'smartphone'
+                      ? 'Mobile Phone'
+                      : selectedNode.data.type === 'server' || selectedNode.data.type === 'iot'
+                      ? 'IoT Device'
+                      : 'Laptop / PC'}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${
+                      selectedNode.data.status === 'COMPROMISED'
+                        ? 'bg-red-100 text-red-700'
+                        : selectedNode.data.status === 'SUSPICIOUS'
+                        ? 'bg-orange-100 text-orange-700'
+                        : selectedNode.data.status === 'QUARANTINED'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}
+                  >
+                    {selectedNode.data.status}
+                  </span>
+                </div>
               </div>
 
               <div className="mt-4 space-y-3.5">

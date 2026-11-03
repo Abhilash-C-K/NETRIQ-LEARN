@@ -13,6 +13,10 @@ import {
   Settings,
   Bug,
   Lock,
+  Router,
+  Smartphone,
+  Laptop,
+  Server,
 } from 'lucide-react';
 import {
   AreaChart,
@@ -1039,17 +1043,32 @@ export const Dashboard = () => {
                   deviceStatuses.map((row, i) => (
                     <tr key={i} className="hover:bg-[#f8fbff] transition-colors group">
                       <td className="py-2.5 text-[11px]">
-                        <div className="font-semibold text-[#0a1c3d] truncate max-w-[130px] flex items-center gap-1.5">
-                          <span>{row.hostname || row.ip}</span>
+                        <div className="font-semibold text-[#0a1c3d] truncate max-w-[155px] flex items-center gap-1.5">
+                          {row.is_gateway || row.type === 'router' ? (
+                            <Router className="w-3.5 h-3.5 text-black shrink-0" />
+                          ) : row.type === 'mobile' || row.type === 'smartphone' ? (
+                            <Smartphone className="w-3.5 h-3.5 text-[#0284c7] shrink-0" />
+                          ) : row.type === 'server' || row.type === 'iot' ? (
+                            <Server className="w-3.5 h-3.5 text-[#0747a1] shrink-0" />
+                          ) : (
+                            <Laptop className="w-3.5 h-3.5 text-[#065A72] shrink-0" />
+                          )}
+                          <span className="truncate">{row.hostname || row.ip}</span>
                           {row.is_gateway && (
-                            <span className="text-[9px] font-mono bg-[#e2eaf4] text-[#0047b3] px-1 py-0.2 rounded font-bold">GW</span>
+                            <span className="text-[9px] font-mono bg-zinc-900 text-white px-1 py-0.2 rounded font-bold">ROUTER</span>
                           )}
                           {row.is_host && (
                             <span className="text-[9px] font-mono bg-[#dcfce7] text-[#166534] px-1 py-0.2 rounded font-bold">HOST</span>
                           )}
+                          {(row.type === 'mobile' || row.type === 'smartphone') && !row.is_gateway && !row.is_host && (
+                            <span className="text-[9px] font-mono bg-[#C1E8FF] text-[#034466] border border-[#7EC5F2] px-1.5 py-0.2 rounded font-bold">MOBILE</span>
+                          )}
+                          {(row.type === 'server' || row.type === 'iot') && !row.is_gateway && !row.is_host && (
+                            <span className="text-[9px] font-mono bg-[#0747a1]/15 text-[#0747a1] border border-[#0747a1]/30 px-1.5 py-0.2 rounded font-bold">IOT</span>
+                          )}
                         </div>
                         {row.hostname && row.hostname !== row.ip && (
-                          <div className="text-[10px] text-[#687d9a] font-mono">{row.ip}</div>
+                          <div className="text-[10px] text-[#687d9a] font-mono pl-5">{row.ip}</div>
                         )}
                       </td>
                       <td className="py-2.5 text-[11px]">

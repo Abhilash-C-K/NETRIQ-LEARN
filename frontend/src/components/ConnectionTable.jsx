@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from './ui/card';
 import { SeverityBadge } from './SeverityBadge';
-import { Network, Globe, Laptop, Router } from 'lucide-react';
+import { Network, Globe, Laptop, Router, Smartphone, Server } from 'lucide-react';
 import {
   getFriendlyDomainInfo,
   getDeviceInfo,
@@ -154,10 +154,14 @@ export const ConnectionTable = ({
                   }`}
                   title={`${dev.label || dev.hostname} (${dev.ip})`}
                 >
-                  {dev.is_host ? (
-                    <Laptop className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                  {dev.is_gateway || dev.type === 'router' ? (
+                    <Router className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
+                  ) : dev.type === 'mobile' || dev.type === 'smartphone' ? (
+                    <Smartphone className="w-3.5 h-3.5 text-[#0284c7] shrink-0" />
+                  ) : dev.type === 'server' || dev.type === 'iot' ? (
+                    <Server className="w-3.5 h-3.5 text-[#0747a1] shrink-0" />
                   ) : (
-                    <Router className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <Laptop className="w-3.5 h-3.5 text-[#065A72] shrink-0" />
                   )}
                   <span>{dev.hostname || dev.label}</span>
                   <span className="text-[10px] font-mono opacity-80">({count})</span>
@@ -216,11 +220,23 @@ export const ConnectionTable = ({
                         {srcDevice ? (
                           <div className="flex items-center gap-1 mb-0.5">
                             <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
-                              srcDevice.is_host 
-                                ? 'bg-blue-950/60 text-blue-300 border-blue-500/40' 
-                                : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                              srcDevice.is_gateway || srcDevice.type === 'router'
+                                ? 'bg-zinc-950 text-white border-zinc-700'
+                                : srcDevice.type === 'mobile' || srcDevice.type === 'smartphone'
+                                ? 'bg-[#C1E8FF]/30 text-[#0284c7] border-[#7EC5F2]/50'
+                                : srcDevice.type === 'server' || srcDevice.type === 'iot'
+                                ? 'bg-[#0747a1]/20 text-[#0747a1] border-[#0747a1]/40'
+                                : 'bg-[#065A72]/20 text-[#065A72] border-[#065A72]/40'
                             }`}>
-                              {srcDevice.is_host ? <Laptop className="w-2.5 h-2.5 text-blue-400" /> : <Router className="w-2.5 h-2.5 text-emerald-400" />}
+                              {srcDevice.is_gateway || srcDevice.type === 'router' ? (
+                                <Router className="w-2.5 h-2.5 text-zinc-300" />
+                              ) : srcDevice.type === 'mobile' || srcDevice.type === 'smartphone' ? (
+                                <Smartphone className="w-2.5 h-2.5 text-[#0284c7]" />
+                              ) : srcDevice.type === 'server' || srcDevice.type === 'iot' ? (
+                                <Server className="w-2.5 h-2.5 text-[#0747a1]" />
+                              ) : (
+                                <Laptop className="w-2.5 h-2.5 text-[#065A72]" />
+                              )}
                               <span>{srcDevice.hostname || srcDevice.label}</span>
                             </span>
                           </div>
@@ -244,7 +260,7 @@ export const ConnectionTable = ({
                           return (
                             <div className="flex items-center gap-1 mb-0.5">
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-slate-800/80 text-slate-300 border-slate-600/40">
-                                {isLocal ? <Laptop className="w-2.5 h-2.5 text-blue-400" /> : <Globe className="w-2.5 h-2.5 text-[#7895B2]" />}
+                                {isLocal ? <Laptop className="w-2.5 h-2.5 text-[#065A72]" /> : <Globe className="w-2.5 h-2.5 text-[#7895B2]" />}
                                 <span>{isLocal ? 'Local LAN Node' : 'External Host'}</span>
                               </span>
                             </div>
@@ -271,11 +287,23 @@ export const ConnectionTable = ({
                           <div>
                             <div className="flex items-center gap-1 mb-0.5">
                               <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
-                                dstDevice.is_host 
-                                ? 'bg-blue-950/60 text-blue-300 border-blue-500/40' 
-                                : 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                                dstDevice.is_gateway || dstDevice.type === 'router'
+                                  ? 'bg-zinc-950 text-white border-zinc-700'
+                                  : dstDevice.type === 'mobile' || dstDevice.type === 'smartphone'
+                                  ? 'bg-[#C1E8FF]/30 text-[#0284c7] border-[#7EC5F2]/50'
+                                  : dstDevice.type === 'server' || dstDevice.type === 'iot'
+                                  ? 'bg-[#0747a1]/20 text-[#0747a1] border-[#0747a1]/40'
+                                  : 'bg-[#065A72]/20 text-[#065A72] border-[#065A72]/40'
                               }`}>
-                                {dstDevice.is_host ? <Laptop className="w-2.5 h-2.5 text-blue-400" /> : <Router className="w-2.5 h-2.5 text-emerald-400" />}
+                                {dstDevice.is_gateway || dstDevice.type === 'router' ? (
+                                  <Router className="w-2.5 h-2.5 text-zinc-300" />
+                                ) : dstDevice.type === 'mobile' || dstDevice.type === 'smartphone' ? (
+                                  <Smartphone className="w-2.5 h-2.5 text-[#0284c7]" />
+                                ) : dstDevice.type === 'server' || dstDevice.type === 'iot' ? (
+                                  <Server className="w-2.5 h-2.5 text-[#0747a1]" />
+                                ) : (
+                                  <Laptop className="w-2.5 h-2.5 text-[#065A72]" />
+                                )}
                                 <span>{dstDevice.hostname || dstDevice.label}</span>
                               </span>
                             </div>

@@ -139,3 +139,78 @@ async def simulate_behavioral_anomaly(payload: dict):
         logger.error(f"Failed to simulate behavioral anomaly: {e}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to trigger simulation")
 
+class AgentHeartbeatReq(BaseModel):
+    mac: str
+    ip: str
+    hostname: str
+    os: Optional[str] = None
+    logged_in_user: Optional[str] = None
+    active_processes_count: Optional[int] = None
+    sample_processes: Optional[List[str]] = None
+    suspicious_processes: Optional[List[str]] = None
+    timestamp: Optional[float] = None
+
+
+@router.post("/agent-heartbeat")
+async def receive_agent_heartbeat(payload: AgentHeartbeatReq):
+    """
+    Ingests live telemetry from the lightweight NetrIQ Endpoint Agent installed on client laptops.
+    Records active logged-in user, running processes, and checks if quarantine is active.
+    """
+    try:
+        mac = payload.mac.upper()
+        # 1. Update/Ensure base profile exists in MongoDB with live agent data
+        profile = await behavior_engine.get_or_create_profile(
+            ip=payload.ip,
+            mac=mac,
+            hostname=payload.hostname
+        )
+
+        now_ts = payload.timestamp or time.time()
+        agent_fields = {
+            "last_seen": now_ts,
+            "current_ip": payload.ip,
+            "hostname": payload.hostname,
+            "os_environment": payload.os,
+            "logged_in_user": payload.logged_in_user,
+            "active_processes_count": payload.active_processes_count,
+            "sample_processes": payload.sample_processes or [],
+            "suspicious_processes": payload.suspicious_processes or [],
+            "agent_active": True,
+            "last_agent_heartbeat": now_ts
+        }
+
+        # 2. If agent spotted suspicious hacking/recon tools (mimikatz, nmap, etc.) on the machine
+        if payload.suspicious_processes:
+            proc_list = ", ".join(payload.suspicious_processes)
+            violations = [f"Blacklisted process running on host: {proc_list}"]
+            await behavior_engine._handle_anomaly(
+                profile=profile,
+                src_ip=payload.ip,
+                mac=mac,
+                hostname=payload.hostname,
+                dst_ip="localhost",
+                dst_port=0,
+                violations=violations
+            )
+
+        # Update MongoDB document
+        await device_behaviors_repo.collection.update_one(
+            {"mac": mac},
+            {"$set": agent_fields}
+        )
+
+        # Check if SOC Admin has quarantined this device
+        is_quar = (profile.get("status") == "QUARANTINED")
+        quar_reason = profile.get("quarantine_reason", "Quarantined by SOC Admin")
+
+        return {
+            "status": "success",
+            "is_quarantined": is_quar,
+            "quarantine_reason": quar_reason if is_quar else None,
+            "server_time": time.time()
+        }
+    except Exception as e:
+        logger.error(f"Failed to ingest agent heartbeat from {payload.mac}: {e}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Agent heartbeat processing failed")
+

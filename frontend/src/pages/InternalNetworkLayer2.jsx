@@ -935,6 +935,22 @@ export const InternalNetworkLayer2 = () => {
                         <span className="font-mono text-slate-300">Mon - Fri</span>
                       </div>
 
+                      {deviceProfile.agent_active && (
+                        <div className="pt-1.5 border-t border-slate-700/60 space-y-1">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> EDR Agent Active:
+                            </span>
+                            <span className="font-mono text-emerald-300 font-bold">{deviceProfile.logged_in_user || 'Logged In'}</span>
+                          </div>
+                          {deviceProfile.os_environment && (
+                            <div className="text-[10px] text-slate-400 truncate">
+                              OS: {deviceProfile.os_environment} ({deviceProfile.active_processes_count || 0} procs)
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <div className="pt-1.5 border-t border-slate-700/60">
                         <span className="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">Forbidden Target Ports:</span>
                         <div className="flex flex-wrap gap-1">

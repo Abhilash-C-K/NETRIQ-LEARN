@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { ArrowRight, Shield } from 'lucide-react';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { NetriqBrand } from '../components/ui/NetriqBrand';
 
 const SPLASH_SESSION_KEY = 'netriq_splash_dismissed';
 
@@ -70,9 +71,9 @@ export const Splash = () => {
         {/* Ambient cyan depth glow */}
         <div className="absolute w-[600px] h-[600px] rounded-full bg-cyan-500/20 blur-[90px]" />
         {/* Optically centered N and Eye emblem with silky blur and feathered radial blend */}
-        <div className="relative w-[560px] h-[560px] sm:w-[760px] sm:h-[760px] [mask-image:radial-gradient(circle_at_center,black_45%,transparent_80%)] filter blur-[18px] sm:blur-[22px] opacity-60 mix-blend-screen pointer-events-none">
+        <div className="relative w-[560px] h-[560px] sm:w-[760px] sm:h-[760px] [mask-image:radial-gradient(circle_at_center,black_45%,transparent_80%)] filter blur-[18px] sm:blur-[22px] opacity-30 pointer-events-none">
           <img
-            src="/logo.jpeg"
+            src="/logo-icon.png"
             alt="NetrIQ Ambient Emblem"
             className="w-full h-full object-cover"
           />
@@ -90,11 +91,11 @@ export const Splash = () => {
         }`}
       >
         {/* NetrIQ Brand Logo Container with Glowing Accent */}
-        <div className="w-24 h-24 rounded-2xl bg-[#071326]/90 border border-[#1b365d] p-1.5 mb-6 shadow-[0_0_35px_-5px_rgba(0,180,255,0.3)] flex items-center justify-center overflow-hidden backdrop-blur-md">
+        <div className="w-24 h-24 rounded-2xl bg-white border border-cyan-400/50 p-2 mb-6 shadow-[0_0_35px_-5px_rgba(0,180,255,0.35)] flex items-center justify-center overflow-hidden backdrop-blur-md">
           <img
-            src="/logo.jpeg"
+            src="/logo-icon.png"
             alt="NetrIQ Logo"
-            className="w-full h-full object-cover rounded-xl block"
+            className="w-full h-full object-contain rounded-xl block"
             onLoad={() => setLogoLoaded(true)}
             onError={(e) => {
               // Graceful fallback if image path ever fails
@@ -106,13 +107,10 @@ export const Splash = () => {
           )}
         </div>
 
-        {/* Distinctive Brand Wordmark: Corpta Haute Tech Typography */}
+        {/* Distinctive Brand Wordmark */}
         <div className="flex flex-col items-center mb-3">
-          <div className="flex items-center font-corpta text-3xl sm:text-4xl tracking-[0.16em] uppercase select-none pl-1">
-            <span className="text-white drop-shadow-sm">NETR</span>
-            <span className="text-[#00e5ff] drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">IQ</span>
-          </div>
-          <span className="text-[10px] font-mono tracking-[0.38em] text-[#38bdf8] uppercase mt-2 font-semibold">
+          <NetriqBrand theme="dark" size="xl" showGlow />
+          <span className="text-[10px] font-mono tracking-[0.38em] text-[#38bdf8] uppercase mt-3 font-semibold">
             Autonomous NIDS
           </span>
         </div>

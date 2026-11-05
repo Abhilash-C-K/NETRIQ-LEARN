@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { setAccessToken } from '../services/api';
 import { Lock, User, ShieldAlert, ArrowRight, ShieldCheck, Shield } from 'lucide-react';
+import { NetriqBrand } from '../components/ui/NetriqBrand';
 
 export const Login = () => {
   const [username, setUsername] = useState('');
@@ -68,9 +69,9 @@ export const Login = () => {
         {/* Ambient cyan depth aura */}
         <div className="absolute w-[700px] h-[700px] rounded-full bg-cyan-500/20 blur-[90px]" />
         {/* Optically centered N and Eye emblem - smoothly blended behind and around the card */}
-        <div className="relative w-[650px] h-[650px] sm:w-[860px] sm:h-[860px] [mask-image:radial-gradient(circle_at_center,black_45%,transparent_80%)] filter blur-[18px] sm:blur-[22px] opacity-60 mix-blend-screen pointer-events-none">
+        <div className="relative w-[650px] h-[650px] sm:w-[860px] sm:h-[860px] [mask-image:radial-gradient(circle_at_center,black_45%,transparent_80%)] filter blur-[18px] sm:blur-[22px] opacity-30 pointer-events-none">
           <img
-            src="/logo.jpeg"
+            src="/logo-icon.png"
             alt="NetrIQ Ambient Emblem"
             className="w-full h-full object-cover"
           />
@@ -81,19 +82,20 @@ export const Login = () => {
 
       {/* Login Card: Modern Glassmorphic Dark Cyber Panel */}
       <div className="w-full max-w-md bg-[#071324]/75 border border-[#1b365d] rounded-2xl p-8 shadow-[0_0_60px_-10px_rgba(0,180,255,0.22)] backdrop-blur-md relative z-10">
-        {/* Header with NetrIQ Logo */}
+        {/* Header with NetrIQ Logo and Wordmark */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-[#091b36] border border-[#1f4273] mx-auto mb-4 p-1.5 flex items-center justify-center overflow-hidden shadow-[0_0_25px_-5px_rgba(0,200,255,0.3)]">
+          <div className="w-16 h-16 rounded-2xl bg-white border border-cyan-400/50 mx-auto mb-4 p-1.5 flex items-center justify-center overflow-hidden shadow-[0_0_25px_-5px_rgba(0,200,255,0.35)]">
             <img
-              src="/logo.jpeg"
+              src="/logo-icon.png"
               alt="NetrIQ Logo"
-              className="w-full h-full object-cover rounded-xl block"
+              className="w-full h-full object-contain rounded-xl block"
             />
           </div>
-          <div className="flex items-center justify-center font-corpta text-2xl tracking-[0.16em] uppercase select-none pl-1">
-            <span className="text-white drop-shadow-sm">NETR</span>
-            <span className="text-[#00e5ff] drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">IQ</span>
+
+          <div className="flex items-center justify-center mb-1">
+            <NetriqBrand theme="dark" size="lg" showGlow />
           </div>
+
           <p className="text-xs text-slate-400 mt-1.5 font-sans font-medium">
             Security Operations Console
           </p>

@@ -10,6 +10,8 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['JetBrains Mono', 'Consolas', 'monospace'],
+        brand: ['Orbitron', 'Michroma', 'Space Grotesk', 'sans-serif'],
+        corpta: ['Orbitron', 'Michroma', 'Space Grotesk', 'sans-serif'],
       },
       borderRadius: {
         lg: '8px',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
+import { NetriqBrand } from '../components/ui/NetriqBrand';
 import {
   LayoutDashboard,
   Activity,
@@ -204,19 +205,17 @@ export const Sidebar = () => {
 
       {/* Top Branding & Nav Items */}
       <div className="relative z-10">
-        {/* Brand Header with official NetrIQ Logo Image */}
+        {/* Brand Header with official NetrIQ Logo Image and Wordmark */}
         <div className="p-6 pb-6 flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-[#020b24] border border-cyan-400/40 p-1 flex items-center justify-center shadow-lg shadow-cyan-500/25 shrink-0 overflow-hidden group">
+          <div className="w-11 h-11 rounded-xl bg-white border border-cyan-400/40 p-1 flex items-center justify-center shadow-lg shadow-cyan-500/25 shrink-0 overflow-hidden group">
             <img
-              src="/logo.jpeg"
+              src="/logo-icon.png"
               alt="NetrIQ Logo"
               className="w-full h-full object-contain filter drop-shadow-[0_0_8px_rgba(56,189,248,0.6)] group-hover:scale-105 transition-transform"
             />
           </div>
 
-          <div className="font-extrabold text-2xl text-white tracking-tight flex items-center">
-            NetrIQ
-          </div>
+          <NetriqBrand theme="dark" size="md" showGlow />
         </div>
 
         {/* Nav Links */}
@@ -262,6 +261,7 @@ export const Sidebar = () => {
               {systemHealth.status === 'healthy' ? 'System Online' : 'System Degraded'}
             </span>
           </div>
+
           <p className="text-[11px] text-slate-300 mt-1">
             {systemHealth.components?.live_monitor === 'running'
               ? 'NIDS sniffer actively capturing'
@@ -277,5 +277,3 @@ export const Sidebar = () => {
     </aside>
   );
 };
-
-export default Sidebar;

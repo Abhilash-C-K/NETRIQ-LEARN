@@ -255,6 +255,7 @@ export const InternalNetworkLayer2 = () => {
   // - Center Area: Mobile Phones (2-column layout)
   // - Right Column: Laptops & Workstations (Host PC at the top)
   const buildRealTopology = (devices, incidents = [], threats = [], prevNodes = [], forceReset = false) => {
+    const shouldForceReset = Boolean(forceReset);
     const prevMap = new Map((prevNodes || []).map((n) => [n.id, n]));
 
     // Categorize devices into designated functional zones
@@ -325,7 +326,7 @@ export const InternalNetworkLayer2 = () => {
       const nodeId = `dev-${d.ip.replace(/\./g, '-')}`;
       const existingNode = prevMap.get(nodeId);
       const defaultPos = coordinateMap.get(d.ip) || { x: 400, y: 200 };
-      const position = (existingNode && !forceReset) ? existingNode.position : defaultPos;
+      const position = (existingNode && !shouldForceReset) ? existingNode.position : defaultPos;
 
       const ports = Array.from(
         new Set(matchingThreats.map((t) => t.dst_port || t.src_port).filter(Boolean))
@@ -384,6 +385,7 @@ export const InternalNetworkLayer2 = () => {
 
   // Load real telemetry devices from Host OS & MongoDB
   const loadTopologyData = async (mode = viewMode, isSilent = false, forceReset = false) => {
+    const shouldForceReset = Boolean(forceReset);
     try {
       if (!isSilent) setLoading(true);
 
@@ -395,7 +397,7 @@ export const InternalNetworkLayer2 = () => {
           setTopologyMeta(localTopology);
 
           setNodes((prevNodes) => {
-            const { nodes: newNodes, edges: newEdges } = buildRealTopology(localTopology.devices, [], [], forceReset ? [] : prevNodes, forceReset);
+            const { nodes: newNodes, edges: newEdges } = buildRealTopology(localTopology.devices, [], [], shouldForceReset ? [] : prevNodes, shouldForceReset);
             setEdges(newEdges);
             setSelectedNode((prevSelected) => {
               if (prevSelected) {
@@ -421,8 +423,8 @@ export const InternalNetworkLayer2 = () => {
                 localTopology.devices,
                 Array.isArray(incidents) ? incidents : [],
                 Array.isArray(threats) ? threats : [],
-                forceReset ? [] : prevNodes,
-                forceReset
+                shouldForceReset ? [] : prevNodes,
+                shouldForceReset
               );
               return enrichedNodes;
             });
